@@ -24,3 +24,5 @@ Development failures, resolved: smoke attempted before install finished; missing
 Milestone 2: same lint/test commands passed with 35 tests, including a subprocess crash recovery test and concurrent order-dispatch claiming.
 
 Milestone 3: 53 tests passed, including future-append invariance for candles and historical universe, missing-day rejection, zero/missing distinction, Last/Mark separation, 30-day gap recovery, and inclusive 30/90-second deadlines. Data fixtures are explicitly synthetic. No historical performance run.
+
+Milestone 4: 68 tests passed using the same commands. Signal fixtures test strict price thresholds, inclusive RVOL threshold, previous ATR vs current ATR, no repeat transition after low-volume rejection, long/short symmetry, future-append invariance, complete batch ranking, deadline behavior and indicator checkpoint restart parity.

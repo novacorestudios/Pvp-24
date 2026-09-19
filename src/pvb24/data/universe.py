@@ -113,7 +113,7 @@ def build_universe(
             excluded.append((symbol, tuple(reasons)))
         else:
             eligible.append((symbol, volume))
-    eligible.sort(key=lambda x: (-x[1], x[0]))
+    eligible.sort(key=lambda x: (x[1].copy_negate(), x[0]))
     chosen = eligible[:20]
     excluded.extend((symbol, ("RANK_BELOW_TOP20",)) for symbol, _ in eligible[20:])
     quality = (
