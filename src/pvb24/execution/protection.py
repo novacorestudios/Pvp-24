@@ -184,6 +184,24 @@ class Protection:
         self.terminal = True
         return ()
 
+    def tighten_stop(self, stop: Decimal, last_price: Decimal):
+        """Apply a causal exit-engine proposal; confirmed protection is still separate."""
+        require_decimal(stop, positive=True)
+        require_decimal(last_price, positive=True)
+        if self.remaining <= 0 or self.effective_stop is None:
+            raise Conflict("Cannot trail a position without confirmed entry quantity")
+        if quantize_step(stop, self.tick) != stop:
+            raise ValueError("Trailing proposal must already satisfy tick rounding")
+        with localcontext(CONTEXT):
+            if self.side.sign * (stop - self.effective_stop) < 0:
+                raise ValueError("Protective stop cannot widen")
+            if self.side.sign * (last_price - stop) <= 0:
+                return self.close()
+            if stop == self.effective_stop:
+                return ()
+            self.effective_stop = stop
+            return (self._action("PROTECT", self.remaining, stop),)
+
     def confirm_stop(
         self, sequence: int, quantity: Decimal, stop: Decimal, *, reduce_only: bool, reference: str
     ):

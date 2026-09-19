@@ -38,3 +38,5 @@ Milestone 8B: 172 tests passed with the same commands. Added atomic account/prot
 Milestone 8C: 181 tests passed. Residual-position tests cover exact largest-step buffer repair, reduction fees, adverse fills, funding debits, proportional collateral release, fixed original stop and fail-closed unknown/UNVERIFIED projections.
 
 Milestone 8D: 187 tests passed. Added durable risk-policy initialization, entry-vs-protection dispatch gating, atomic drawdown close/cancel intents, no unknown-close resubmission, additional closure of late confirmed quantity, pre-dispatch cancellation and risk-service restart recovery.
+
+Milestone 8E: 199 tests passed with the same commands. Coverage includes owned open-account cash/quantity proof, stale and future evidence rejection, current-minute risk gating, actual-fill risk freezing, confirmed partial-exit risk release, unchanged initial risk after acknowledged trailing, pending close deduplication, quality labels and post-fill compliance failure.
