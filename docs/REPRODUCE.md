@@ -1,24 +1,22 @@
 # Tested reproduction commands
 
-Working directory: repository root, branch build/pvb24-v1. Python 3.12.14.
-
-The following commands completed successfully with exit code 0 in this workspace:
+Working directory: repository root; Python 3.12.14. All commands below completed with exit code 0.
 
 ```bash
-python -m pip install ruff==0.16.3 pytest==8.4.2 --disable-pip-version-check
-python -m ruff format --check .
-python -m ruff check .
-python -m pytest -q
-python scripts/verify_provenance.py
+python -m venv .venv
+.venv/bin/python -m pip install -e '.[dev]' --disable-pip-version-check
+.venv/bin/python scripts/bootstrap_freqtrade.py --install
+.venv/bin/python -m ruff format --check .
+.venv/bin/python -m ruff check .
+.venv/bin/python -m pytest -q
+.venv/bin/python scripts/verify_provenance.py
+.deps/freqtrade/.venv/bin/python scripts/smoke_freqtrade.py
 ```
 
-Nine governance tests passed. No static type checker configured at Milestone 0.
-No backtest, paper-start or Freqtrade installation command has passed yet.
+16 tests passed at Milestone 1. Freqtrade 2026.8 configuration loaded with dry_run=true and zero submitted orders. Bootstrap verifies the official source SHA and uses the recorded Python 3.12 package lock; no automatic upgrade. Native Linux path conventions are used.
 
-Source acquisition succeeded:
+Initial official installation used the pinned requirements.txt then pip install -e . inside a separate venv. A repeat install through bootstrap_freqtrade.py passed using the derived exact dependency lock. The script follows the pinned official manual-install sequence.
 
-```bash
-git clone --depth 1 --branch 2026.8 https://github.com/freqtrade/freqtrade.git .deps/freqtrade
-```
+No backtest or operational paper-start command has run. No static type checker is configured yet.
 
-The checked-out commit is 9f10e357a93c1dcf10c2a2b367659214d89c073e.
+Development failures, resolved: smoke attempted before install finished; missing smoke user-data directory; disabled Telegram object still required token fields. The final smoke creates its isolated directory and omits optional Telegram/API-server objects. No credentials were supplied.

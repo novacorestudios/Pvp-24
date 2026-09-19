@@ -8,4 +8,4 @@ Official latest stable release observed at bootstrap: **2026.8**, non-draft and 
 - Python selected: 3.12 (pinned pyproject requires >=3.11 and explicitly lists 3.12).
 - Installation instructions: https://github.com/freqtrade/freqtrade/blob/9f10e357a93c1dcf10c2a2b367659214d89c073e/docs/installation.md
 
-Installation and smoke test are pending Milestone 1. No auto-upgrade. .deps/freqtrade is not vendored.
+Installation and offline DRY_RUN configuration validation passed. Exact transitive versions are in config/freqtrade-python312.lock. This is not an operational paper readiness claim. No auto-upgrade. .deps/freqtrade is not vendored.

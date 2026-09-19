@@ -6,6 +6,6 @@ Branch: `build/pvb24-v1`. Existing repository display name is `Pvp-24`; GitHub a
 
 Frozen source SHA256: `098a3ca390bce81d506bdec011fc3a936ecbb793f46c2f117f337998bfc1c5d8`
 
-Freqtrade official **2026.8**, exact commit `9f10e357a93c1dcf10c2a2b367659214d89c073e`, Python 3.12; installation pending.
+Freqtrade official **2026.8**, exact commit `9f10e357a93c1dcf10c2a2b367659214d89c073e`, Python 3.12; installation and offline dry-run configuration smoke passed.
 
 See docs/HANDOFF_STATE.md, docs/PVB24_DECISION_REGISTER.md and docs/REPRODUCE.md. No automatic LIVE trading.
