@@ -32,3 +32,4 @@ jobs:
           key: pvb24-pip-${{ runner.os }}-py312-${{ hashFiles('config/freqtrade-python312.lock') }}
       - run: python scripts/bootstrap_freqtrade.py --install
       - run: .deps/freqtrade/.venv/bin/python scripts/smoke_freqtrade.py
+      - run: .deps/freqtrade/.venv/bin/python scripts/smoke_freqtrade_parity.py

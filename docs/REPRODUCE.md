@@ -58,3 +58,11 @@ Milestone 9F: 248 tests passed, including full-run future-append invariance and 
 ```
 
 It delivered 964 synthetic events, verified account restart and sent zero exchange orders. Trace hash: `14d443af600ab971927ef90121ba9acf49ca62645c73c21cb44dbdd1fdb5f6f0`. Files: manifest.json, synthetic-events.jsonl, trace.jsonl, summary.json, account.sqlite. The successful local implementation run accurately reports worktree_dirty=true; clean CI runs record their exact committed source. These artifacts are reproducible integration evidence, not historical performance reports.
+
+Milestone 10A: 258 local pytest tests passed. The actual pinned Freqtrade environment also passed:
+
+```bash
+.deps/freqtrade/.venv/bin/python scripts/smoke_freqtrade_parity.py
+```
+
+It loaded PVB24Executor and confirmed event/signal/intent parity with zero submitted orders. Signal hash: `fc7ef7cbb1f1dd764f48352ecf24b03172f2572977af7f897c7814e2af8f5363`; intent hash: `73059e20035fe209b1adb8d98677d30dd14ccc05fecd60ed14639c64050ba24c`. Logs: artifacts/freqtrade-parity-m10a.log and artifacts/freqtrade-bootstrap-m10a-repair.log. The first local attempt failed because the copied dependency virtualenv's Python link was broken; after repairing the generated interpreter link, locked bootstrap and parity succeeded. No unexecuted live/dry-run trading startup is claimed.

@@ -1,4 +1,4 @@
-# Handoff — Milestone 9F (reproducible reference integration runner)
+# Handoff — Milestone 10A (Freqtrade shared-core loading and parity)
 
 - Repository: novacorestudios/Pvp-24; branch build/pvb24-v1.
 - Exact current HEAD: read the Git branch ref; main remains initialization only.
@@ -6,7 +6,7 @@
 - Milestone 0 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35422954155 — SUCCESS.
 - Public-disclosure authorization: user explicitly approved publishing these files and will change visibility later. Do not request this approval again.
 - Milestone 1: official Freqtrade 2026.8 / 9f10e357a93c1dcf10c2a2b367659214d89c073e installed; repeat locked install and offline dry-run config smoke passed.
-- Local tests: 248 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
+- Local tests: 258 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
 - Milestone 1 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423197873 — SUCCESS.
 - Milestone 2 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423500106 — SUCCESS.
 - Milestone 3 final CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423929247 — SUCCESS.
@@ -32,7 +32,8 @@
 - Milestone 9C: 822a208c3ac6e5b88fac6a8ae3643520b8f93c98; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35454708288 — SUCCESS.
 - Milestone 9D: f50003585ca9fbcdecdb6f4b9ada205884e2b053; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35455066973 — SUCCESS.
 - Milestone 9E: 6f3ae916f2f53bfdc4fc8b93fdde8a9f5442a2c1; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35469054180 — SUCCESS.
-- Next: verify Milestone 9F CI; wire the Freqtrade shared-core strategy/intent boundary and parity checks. Historical source ingestion and a general historical replay driver remain incomplete; the new CLI is explicitly synthetic only.
+- Milestone 9F: af65c2cf2d79a4acf747ed9d159e17fd3f34f2e8; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35469509614 — SUCCESS.
+- Next: verify Milestone 10A CI; implement the separately qualified Freqtrade PAPER intent transport. Native dry-run is incompatible with required IOC/reduce-only semantics. Historical ingestion/general historical driver, stress/acceptance and paper readiness remain incomplete.
 - Code: immutable Fill/Side types, precision-34 Decimal helpers, canonical IDs, SQLite WAL events/snapshots/write-ahead intents, fail-closed paper guard. Causal Timing/Candle/Mark/rule/security models, as-of revision selection, 30-day gap warmup, deterministic historical Top-20 and stale-universe grace implemented. Streaming Wilder ATR, channel/RVOL, exact long/short transitions, restartable indicator checkpoints, cooldown/status gates and timed simultaneous batch ranking implemented. Risk foundations now include rounded protective-stop costs, separate arrival shortfall gate, causal funding reserve with explicit coverage, immutable open/pending portfolio reservations and proportional confirmed-exit release. Descending quantity-step sizing, 1..5x minimum feasible leverage, isolated tier-consistent liquidation reconstruction, reduce-only post-fill action interface and transactional reservation+ENTRY intent are implemented. Execution market models now include sequence-consistent L2, consumed-depth replay, strict IOC caps and gates, partial sweep previews, and labelled preliminary OHLC proxies. Confirmed-fill protection lifecycle and transactional evidence/state/action-intent persistence now exist. Open-position reconciliation is now implemented; execution adapter and integrated backtest remain unimplemented. Exchange liquidation validation is still absent; actual post-fill collateral must come from the adapter, not a hypothetical newly opened smaller position.
 - Data: none acquired; OHLCV/Mark/funding/historical rules/security-master/L2 coverage remains unassessed. No backtest evidence, PRELIMINARY or VERIFIED.
 - PAPER: NOT READY. LIVE: DISABLED. No orders sent.
@@ -119,3 +120,12 @@ Historical funding coverage, actual exchange tiers/fees/collateral validation, l
 scripts/smoke_reference.py now runs a deterministic synthetic reference lifecycle with 720-hour indicator warmup, ranked signal/entry planning, dense minute risk samples, explicit modeled entry/protection, causal account proof, adverse bar checks, a mid-run SQLite reopen, early-failure exit and final cash identity. The run processes 964 delivered events. Inputs and a manifest are written before account execution; the manifest records frozen policy, baseline config hash, Git SHA, dirty-worktree status, source-tree hash and exact synthetic data SHA-256. Existing output directories are never overwritten.
 
 The run records a trace, ledger-backed summary and account journal under the requested output directory. It reports ENGINE_INTEGRATION_SMOKE, historical_performance=false, acceptance_status=NOT_EVALUATED, paper_ready=false and zero exchange orders. Future-appended fixture data change the source manifest but leave the historical trace, entry, exit and ledger identical. CI invokes this actual command after governance checks. This is not a six-year backtest, general historical file loader, VERIFIED execution run or evidence of profitability. Historical source/coverage integration remains pending.
+
+
+## Freqtrade shared-core strategy and parity (Milestone 10A)
+
+PVB24Executor now loads through the actual pinned Freqtrade StrategyResolver. SharedPaperBridge delegates causal normalized events, signal batches and entry planning to the existing core; no Alpha is recomputed from native float-valued dataframes. Native entry/exit flags are zero and native confirmations refuse dispatch, preventing a second order path. The dedicated paper config is explicitly non-operational and rejects LIVE, changed baseline controls and changing quality after account binding. No fee/price float coercion enters the Decimal core.
+
+The pinned Freqtrade create_order dry-run branch calls create_dry_run_order without forwarding time_in_force or reduceOnly. Its native dry-run fill model also uses its own price-crossing/full-fill assumptions. Therefore native dry-run cannot silently substitute for PVB24 execution. A separately qualified PAPER transport remains necessary; setting operational_ready=true is rejected by the current bridge. This milestone proves strategy loading and signal/intent parity, not operating PAPER or order/venue parity.
+
+The actual Freqtrade 2026.8 loader, configuration validation, startup callback, fixed-fixture event/signal/intent parity, native-order blocking and LIVE rejection were executed successfully offline. CI now repeats the parity script. Source Freqtrade remains pinned and unmodified. During this session its copied virtualenv had a broken circular interpreter symlink; the generated link was repaired and the locked bootstrap reinstalled successfully. No historical source, alpha threshold or dependency pin changed.
