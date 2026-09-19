@@ -1,4 +1,4 @@
-# Handoff — Milestone 8B (atomic account/protection coordination)
+# Handoff — Milestone 8C (actual-collateral liquidation remedy)
 
 - Repository: novacorestudios/Pvp-24; branch build/pvb24-v1.
 - Exact current HEAD: read the Git branch ref; main remains initialization only.
@@ -6,7 +6,7 @@
 - Milestone 0 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35422954155 — SUCCESS.
 - Public-disclosure authorization: user explicitly approved publishing these files and will change visibility later. Do not request this approval again.
 - Milestone 1: official Freqtrade 2026.8 / 9f10e357a93c1dcf10c2a2b367659214d89c073e installed; repeat locked install and offline dry-run config smoke passed.
-- Local tests: 172 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
+- Local tests: 181 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
 - Milestone 1 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423197873 — SUCCESS.
 - Milestone 2 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423500106 — SUCCESS.
 - Milestone 3 final CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423929247 — SUCCESS.
@@ -21,7 +21,9 @@
 - Milestone 7 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35438716400 — SUCCESS.
 - Milestone 8A remote commit: e9a777c9d52c38839658c674c1559eb064754a28.
 - Milestone 8A CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35439083883 — SUCCESS.
-- Next: verify Milestone 8B CI; implement residual-position collateral compliance and open-position reconciliation before wiring the event loop.
+- Milestone 8B remote commit: f4277cb239650ca73154cb672b22d552c4f3b2b9.
+- Milestone 8B CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35439373000 — SUCCESS.
+- Next: verify Milestone 8C CI; implement open-position reconciliation against actual Mark/collateral/margin and connect the equity-control gate before the reference event loop.
 - Code: immutable Fill/Side types, precision-34 Decimal helpers, canonical IDs, SQLite WAL events/snapshots/write-ahead intents, fail-closed paper guard. Causal Timing/Candle/Mark/rule/security models, as-of revision selection, 30-day gap warmup, deterministic historical Top-20 and stale-universe grace implemented. Streaming Wilder ATR, channel/RVOL, exact long/short transitions, restartable indicator checkpoints, cooldown/status gates and timed simultaneous batch ranking implemented. Risk foundations now include rounded protective-stop costs, separate arrival shortfall gate, causal funding reserve with explicit coverage, immutable open/pending portfolio reservations and proportional confirmed-exit release. Descending quantity-step sizing, 1..5x minimum feasible leverage, isolated tier-consistent liquidation reconstruction, reduce-only post-fill action interface and transactional reservation+ENTRY intent are implemented. Execution market models now include sequence-consistent L2, consumed-depth replay, strict IOC caps and gates, partial sweep previews, and labelled preliminary OHLC proxies. Confirmed-fill protection lifecycle and transactional evidence/state/action-intent persistence now exist. Execution adapter, integrated account reconciliation and backtest remain unimplemented. Exchange liquidation validation is still absent; actual post-fill collateral must come from the adapter, not a hypothetical newly opened smaller position.
 - Data: none acquired; OHLCV/Mark/funding/historical rules/security-master/L2 coverage remains unassessed. No backtest evidence, PRELIMINARY or VERIFIED.
 - PAPER: NOT READY. LIVE: DISABLED. No orders sent.
@@ -47,3 +49,5 @@ Milestone 8A: fill/fee/funding ledger with explicit position ownership, actual r
 Mark freshness has no invented numerical default. A source-specific maximum age must be frozen and recorded in the future run manifest before any acceptance replay. Non-USDT fee ingestion must supply a documented causal USDT conversion in the adapter; current Fill.fee is explicitly USDT. Production entry gating must combine this risk overlay with freshness/reconciliation/protection; these pieces are not yet an operational paper system.
 
 Milestone 8B: AccountCoordinator now journals each confirmed fill, ledger update, protective action intent and account-entry reconciliation pause in one transaction. Funding also invalidates prior account-risk reconciliation. All pending reservations remain locked until actual outcomes are known. A flat account releases reservations only when cash matches, every owned entry is proven terminal and quantities are zero. Reconciliation cannot be backdated; safety pauses remain latched. New Reservations calls fail closed while this account gate is unresolved. Open-position collateral/risk reconciliation is the immediate remaining integration gate; flat reconciliation cannot bypass it.
+
+Milestone 8C: liquidation-only repair now evaluates residual positions using actual isolated collateral after fees/settled funding, original entry VWAP and fixed initial stop. Each hypothetical reduction must provide a causal execution/fee/collateral-release projection. No added collateral or fresh-entry margin is assumed. Unknown/unverified economics request a full reduce-only close; otherwise descending step search returns the largest quantity restoring 3R. Tests demonstrate that proportional collateral release can make size reduction unable to repair the buffer. This helper does not yet enforce every portfolio post-fill constraint or establish VERIFIED exchange behavior.
