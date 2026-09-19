@@ -1,4 +1,4 @@
-# Handoff — Milestone 9D (preliminary synthetic venue)
+# Handoff — Milestone 9E (preliminary collateral and adverse bar execution)
 
 - Repository: novacorestudios/Pvp-24; branch build/pvb24-v1.
 - Exact current HEAD: read the Git branch ref; main remains initialization only.
@@ -6,7 +6,7 @@
 - Milestone 0 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35422954155 — SUCCESS.
 - Public-disclosure authorization: user explicitly approved publishing these files and will change visibility later. Do not request this approval again.
 - Milestone 1: official Freqtrade 2026.8 / 9f10e357a93c1dcf10c2a2b367659214d89c073e installed; repeat locked install and offline dry-run config smoke passed.
-- Local tests: 240 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
+- Local tests: 246 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
 - Milestone 1 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423197873 — SUCCESS.
 - Milestone 2 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423500106 — SUCCESS.
 - Milestone 3 final CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423929247 — SUCCESS.
@@ -30,7 +30,8 @@
 - Milestone 9A: e69dc6cb1ea2913fdde327570520dfdc42cc0e63; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35453952616 — SUCCESS.
 - Milestone 9B: fa09a79a50d4ac8ec84ff280172cace4f949c04f; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35454387409 — SUCCESS.
 - Milestone 9C: 822a208c3ac6e5b88fac6a8ae3643520b8f93c98; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35454708288 — SUCCESS.
-- Next: verify Milestone 9D CI; complete stop/liquidation execution and account observation adapters, then full reference runner and Freqtrade parity.
+- Milestone 9D: f50003585ca9fbcdecdb6f4b9ada205884e2b053; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35455066973 — SUCCESS.
+- Next: verify Milestone 9E CI; implement reproducible reference replay orchestration/CLI and source-policy manifests, then Freqtrade parity.
 - Code: immutable Fill/Side types, precision-34 Decimal helpers, canonical IDs, SQLite WAL events/snapshots/write-ahead intents, fail-closed paper guard. Causal Timing/Candle/Mark/rule/security models, as-of revision selection, 30-day gap warmup, deterministic historical Top-20 and stale-universe grace implemented. Streaming Wilder ATR, channel/RVOL, exact long/short transitions, restartable indicator checkpoints, cooldown/status gates and timed simultaneous batch ranking implemented. Risk foundations now include rounded protective-stop costs, separate arrival shortfall gate, causal funding reserve with explicit coverage, immutable open/pending portfolio reservations and proportional confirmed-exit release. Descending quantity-step sizing, 1..5x minimum feasible leverage, isolated tier-consistent liquidation reconstruction, reduce-only post-fill action interface and transactional reservation+ENTRY intent are implemented. Execution market models now include sequence-consistent L2, consumed-depth replay, strict IOC caps and gates, partial sweep previews, and labelled preliminary OHLC proxies. Confirmed-fill protection lifecycle and transactional evidence/state/action-intent persistence now exist. Open-position reconciliation is now implemented; execution adapter and integrated backtest remain unimplemented. Exchange liquidation validation is still absent; actual post-fill collateral must come from the adapter, not a hypothetical newly opened smaller position.
 - Data: none acquired; OHLCV/Mark/funding/historical rules/security-master/L2 coverage remains unassessed. No backtest evidence, PRELIMINARY or VERIFIED.
 - PAPER: NOT READY. LIVE: DISABLED. No orders sent.
@@ -101,3 +102,12 @@ PreliminaryVenue now freezes entry proxy inputs before execution, consumes the f
 Requested market exits use a causal executable minute-open reference and adverse proxy slippage, bounded by confirmed remaining quantity. Receipt replay after restart preserves the original outcome. All synthetic venue effects commit atomically because this adapter has no network side effects; this transaction pattern must not be used to claim external PAPER dispatch before its write-ahead commit. Tests now exercise the complete shared-core signal → reservation → modeled entry → protection acknowledgement → restart → 72h exit → ledger cash identity path.
 
 This adapter deliberately supports PRELIMINARY only and declares book age/spread/depth/partial-fill fidelity UNVERIFIED. It is not a full historical runner: automatic protective-stop/liquidation bar resolution, account/collateral observations, complete source ingestion, quality/coverage manifests and Freqtrade sole PAPER authority remain integration work. Synthetic successful cycles are not historical performance evidence.
+
+
+## Preliminary collateral and adverse bar execution (Milestone 9E)
+
+SyntheticCollateral requires an explicitly selected BASE_MARGIN_RELEASE_ONLY policy and manifest identity before cashflows. For an open position, remaining cost-basis margin is released proportionally on partial exits; realized PnL, actual fees and settled funding remain in its collateral until full closure. Mark coverage is validated separately. This is a declared preliminary assumption, not exchange collateral evidence, and it cannot satisfy VERIFIED acceptance. It feeds the existing OpenReconciler using actual modeled fills and unchanged original risk.
+
+The bar execution adapter requires separate completed LAST/Mark candles, pre-bar execution/liquidation inputs and already-acknowledged full protection. Gaps use the adverse executable open plus stop slippage with doubled impact once. Unresolved stop/liquidation overlap chooses liquidation, records its explicit all-in fee and adverse Mark reference, and increments the persistent ambiguity count once. Bar-end fill timestamps are explicitly assumptions; exact intrabar time is not claimed. Intrabar entry, quantity or protection changes require finer data. A failed/unsupported bar is not a successful zero-liquidation result.
+
+Historical funding coverage, actual exchange tiers/fees/collateral validation, latency-path coverage and full historical replay remain outstanding. The explicit fee-rate/manifest arguments are not permission to mark guessed exchange history VERIFIED. No historical performance or paper trading has run.

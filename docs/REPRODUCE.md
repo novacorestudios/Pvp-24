@@ -48,3 +48,5 @@ Milestone 9B: 224 tests passed. Integrated tests cover account restart receipts,
 Milestone 9C: 234 tests passed. Added ranked sequential slot/risk allocation, atomic ownership rollback, restart-identical planning, deadline/current-risk/future-input rejection, preliminary price-bound enforcement, shared signal parity, pending ownership blocking, missing-batch deadline and quality isolation.
 
 Milestone 9D: 240 tests passed. Added full synthetic lifecycle with restart and exact cash identity, adverse tick rounding, unknown-dispatch nonresubmission, gap rejection without fee/cooldown, account-gate cancellation, atomic synthetic commit failure and immutable proxy inputs.
+
+Milestone 9E: 246 tests passed. Added preliminary account observation into open reconciliation, partial-exit collateral accounting, immutable model policy, adverse gap-stop execution, visible liquidation loss/fees/ambiguity with deduplication, and refusal to infer an intrabar protection path.
