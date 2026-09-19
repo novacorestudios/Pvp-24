@@ -78,32 +78,36 @@ class Journal:
         return (row["version"], json.loads(row["payload"])) if row else (0, None)
 
     def prepare_intent(self, scope: str, signal_id: str, purpose: str, payload, sequence=0):
+        with self.transaction() as db:
+            return self.prepare_intent_tx(db, scope, signal_id, purpose, payload, sequence)
+
+    @staticmethod
+    def prepare_intent_tx(db, scope: str, signal_id: str, purpose: str, payload, sequence=0):
         identity, full_digest, client_id = client_identity(scope, signal_id, purpose, sequence)
         encoded = canonical(payload)
-        with self.transaction() as db:
-            row = db.execute("SELECT * FROM intents WHERE client_id=?", (client_id,)).fetchone()
-            if row:
-                if row["identity"] != identity or row["payload"] != encoded:
-                    raise Conflict("Client ID collision or changed intent")
-                return client_id, False
-            try:
-                db.execute(
-                    "INSERT INTO intents VALUES(?,?,?,?,?,?,?,?)",
-                    (
-                        client_id,
-                        full_digest,
-                        identity,
-                        scope,
-                        signal_id,
-                        purpose,
-                        encoded,
-                        "PREPARED",
-                    ),
-                )
-            except sqlite3.IntegrityError as exc:
-                raise Conflict("Signal consumed or identity collision") from exc
-            self.append_tx(db, "intent:" + full_digest, {"identity": identity, "payload": payload})
-            return client_id, True
+        row = db.execute("SELECT * FROM intents WHERE client_id=?", (client_id,)).fetchone()
+        if row:
+            if row["identity"] != identity or row["payload"] != encoded:
+                raise Conflict("Client ID collision or changed intent")
+            return client_id, False
+        try:
+            db.execute(
+                "INSERT INTO intents VALUES(?,?,?,?,?,?,?,?)",
+                (
+                    client_id,
+                    full_digest,
+                    identity,
+                    scope,
+                    signal_id,
+                    purpose,
+                    encoded,
+                    "PREPARED",
+                ),
+            )
+        except sqlite3.IntegrityError as exc:
+            raise Conflict("Signal consumed or identity collision") from exc
+        Journal.append_tx(db, "intent:" + full_digest, {"identity": identity, "payload": payload})
+        return client_id, True
 
     def claim_dispatch(self, client_id: str) -> bool:
         # Must commit UNKNOWN before invoking an external order authority.
