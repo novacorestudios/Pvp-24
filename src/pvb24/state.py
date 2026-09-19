@@ -16,6 +16,7 @@ class Journal:
     def __init__(self, path: str | Path):
         self.db = sqlite3.connect(path, isolation_level=None, timeout=30)
         self.db.row_factory = sqlite3.Row
+        self._savepoint_counter = 0
         self.db.execute("PRAGMA journal_mode=WAL")
         self.db.execute("PRAGMA synchronous=FULL")
         self.db.executescript("""
@@ -35,12 +36,21 @@ class Journal:
 
     @contextmanager
     def transaction(self):
-        self.db.execute("BEGIN IMMEDIATE")
+        # Nested local reducers share one outer commit. Never perform network I/O
+        # inside these transactions; savepoints do not establish dispatch evidence.
+        nested = self.db.in_transaction
+        self._savepoint_counter += 1
+        name = "pvb24_sp_" + str(self._savepoint_counter)
+        self.db.execute("SAVEPOINT " + name if nested else "BEGIN IMMEDIATE")
         try:
             yield self.db
-            self.db.execute("COMMIT")
+            self.db.execute("RELEASE " + name if nested else "COMMIT")
         except BaseException:
-            self.db.execute("ROLLBACK")
+            if nested:
+                self.db.execute("ROLLBACK TO " + name)
+                self.db.execute("RELEASE " + name)
+            elif self.db.in_transaction:
+                self.db.execute("ROLLBACK")
             raise
 
     @staticmethod

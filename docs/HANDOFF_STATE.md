@@ -1,4 +1,4 @@
-# Handoff — Milestone 9A (causal replay and preliminary execution)
+# Handoff — Milestone 9B (atomic account replay integration)
 
 - Repository: novacorestudios/Pvp-24; branch build/pvb24-v1.
 - Exact current HEAD: read the Git branch ref; main remains initialization only.
@@ -6,7 +6,7 @@
 - Milestone 0 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35422954155 — SUCCESS.
 - Public-disclosure authorization: user explicitly approved publishing these files and will change visibility later. Do not request this approval again.
 - Milestone 1: official Freqtrade 2026.8 / 9f10e357a93c1dcf10c2a2b367659214d89c073e installed; repeat locked install and offline dry-run config smoke passed.
-- Local tests: 212 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
+- Local tests: 224 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
 - Milestone 1 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423197873 — SUCCESS.
 - Milestone 2 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423500106 — SUCCESS.
 - Milestone 3 final CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423929247 — SUCCESS.
@@ -27,7 +27,8 @@
 - Milestone 8C CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35439587777 — SUCCESS.
 - Milestone 8D CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35439896937 — SUCCESS.
 - Milestone 8E: 2791d54dddc336385081c3bd360b90c1df118825; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35453636123 — SUCCESS.
-- Next: verify Milestone 9A CI, then wire replay deliveries into persistent account/protection, shared indicators/exits and simulated order outcomes.
+- Milestone 9A: e69dc6cb1ea2913fdde327570520dfdc42cc0e63; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35453952616 — SUCCESS.
+- Next: verify Milestone 9B CI; implement reference entry/batch orchestration and simulated intent execution, then Freqtrade parity.
 - Code: immutable Fill/Side types, precision-34 Decimal helpers, canonical IDs, SQLite WAL events/snapshots/write-ahead intents, fail-closed paper guard. Causal Timing/Candle/Mark/rule/security models, as-of revision selection, 30-day gap warmup, deterministic historical Top-20 and stale-universe grace implemented. Streaming Wilder ATR, channel/RVOL, exact long/short transitions, restartable indicator checkpoints, cooldown/status gates and timed simultaneous batch ranking implemented. Risk foundations now include rounded protective-stop costs, separate arrival shortfall gate, causal funding reserve with explicit coverage, immutable open/pending portfolio reservations and proportional confirmed-exit release. Descending quantity-step sizing, 1..5x minimum feasible leverage, isolated tier-consistent liquidation reconstruction, reduce-only post-fill action interface and transactional reservation+ENTRY intent are implemented. Execution market models now include sequence-consistent L2, consumed-depth replay, strict IOC caps and gates, partial sweep previews, and labelled preliminary OHLC proxies. Confirmed-fill protection lifecycle and transactional evidence/state/action-intent persistence now exist. Open-position reconciliation is now implemented; execution adapter and integrated backtest remain unimplemented. Exchange liquidation validation is still absent; actual post-fill collateral must come from the adapter, not a hypothetical newly opened smaller position.
 - Data: none acquired; OHLCV/Mark/funding/historical rules/security-master/L2 coverage remains unassessed. No backtest evidence, PRELIMINARY or VERIFIED.
 - PAPER: NOT READY. LIVE: DISABLED. No orders sent.
@@ -71,3 +72,12 @@ Actual isolated collateral feeds liquidation repair. Portfolio/cost breaches req
 Replay seals complete availability-time batches. Event time sorts only inside a batch already available to the engine. A complete comparable venue sequence overrides conservative same-time priority; incomplete or different-domain sequences do not. Unresolved liquidation/protective-fill order increments an explicit ambiguity counter. Duplicate identities are inert, changed identities and unseen backdated input are rejected, and a failed callback requires checkpoint recovery. This in-memory scheduler is not itself an atomic persistent account adapter.
 
 The preliminary entry model freezes decision quantity and completed-input volatility/volume, then uses a separate minute-open observation without future OHLC extrema or volume. Only the first minute strictly after decision is eligible. The 90-second deadline, price bounds, IOC cap and participation still apply; book age, spread, depth and partial fills stay UNVERIFIED. No limit-touch fill model is provided. Aligned completed LAST/Mark bars use adverse liquidation-before-stop ambiguity; stop gaps use the worse opening price, and partially owned/partially protected bars require finer data. Synthetic liquidation references use adverse Mark extrema for sensitivity, not a claim of executable LAST or verified venue fills. These components are not yet a complete portfolio backtest and no historical performance has been computed.
+
+
+## Atomic shared-core account replay (Milestone 9B)
+
+AccountReplay applies each delivery, its ledger/protection/risk effects and a deterministic output receipt within one SQLite transaction. Journal reducers now nest through savepoints so an outer failure cannot commit only part of a fill. A failure persists a separate entry pause. Receipts return the same output after restart, preserving replay trace identity without duplicating cashflows or actions. No network I/O belongs inside these transactions.
+
+Explicit deliveries now route confirmed fills/liquidations/funding, separate Mark observations, minute risk sampling, hourly LAST indicators, owned order outcomes, close-based exits and trailing requests into shared cores. Original signal channels are frozen before fills. Terminal/full outcomes require confirmed quantities; stop acknowledgements require dispatched owned intents and matching protection evidence. A partial terminal close may issue only its uncovered remainder; pending unknown exits prevent duplicate requests from risk or hold-time decisions. Late entry economics that differ from the frozen exit basis require reconciliation. Trailing requests remain separate from acknowledgements.
+
+This is an integration layer for explicit normalized input events, not a historical performance result. Reference signal-batch/entry orchestration, automatic simulated order authority, full data adapter and operational Freqtrade integration remain unfinished. Replay labels alone do not certify VERIFIED source coverage or exchange liquidation behavior. The scheduler remains in-memory; a restart reloads source events and uses durable account receipts rather than fabricating a partial in-memory state.
