@@ -54,6 +54,7 @@ def test_each_partial_fill_protected_and_replacement_confirmed_before_cancel(sid
     (first,) = p.fill(fill(side=side))
     assert first.quantity == 2 and first.stop == D(stop) and first.reduce_only
     assert not p.protected  # a request is not proof of protection
+    assert p.state is SymbolState.ENTRY_PENDING
     assert ack(p, first) == () and p.protected
     (second,) = p.fill(fill("f2", "3", side=side, seconds=1))
     assert second.quantity == 5 and not p.protected
@@ -78,7 +79,7 @@ def test_cancel_fill_race_retains_late_fill_and_does_not_chase_remainder():
     p = position()
     p.entry_terminal()
     actions = p.fill(fill())
-    assert p.terminal and p.state is SymbolState.OPEN
+    assert p.terminal and p.state is SymbolState.ENTRY_PENDING
     assert p.entry_quantity == 2 and actions[0].purpose == "PROTECT"
     assert all(a.purpose != "ENTRY" for a in actions)
     assert p.fill(fill()) == ()
@@ -109,7 +110,7 @@ def test_protection_failure_requests_reduce_only_full_close_and_pause():
     )
     assert close.purpose == "EXIT_MARKET" and close.quantity == 2 and close.reduce_only
     assert p.safety_paused and p.remaining == 2
-    assert p.state is SymbolState.OPEN  # global pause does not erase position
+    assert p.state is SymbolState.EXIT_PENDING  # pause does not erase the position
     assert p.close(D(100))[0].quantity == 2
 
 
@@ -133,7 +134,7 @@ def test_full_exit_actual_timestamp_starts_cooldown_and_late_entry_closes_safely
     assert p.cooldown_finished(NOW + timedelta(hours=6, seconds=10))
     (close,) = p.fill(fill("late", "1", seconds=1))
     assert p.remaining == 1 and p.safety_paused and close.quantity == 1
-    assert p.state is SymbolState.OPEN
+    assert p.state is SymbolState.EXIT_PENDING
 
 
 def test_overfill_anomaly_preserves_evidence_and_requires_reconciliation():

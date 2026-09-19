@@ -89,7 +89,13 @@ class Protection:
         if self.full_exit_time is not None and self.remaining == 0:
             return SymbolState.COOLDOWN
         if self.remaining > 0:
-            return SymbolState.OPEN
+            if any(a.purpose == "EXIT_MARKET" for a in self.actions.values()):
+                return SymbolState.EXIT_PENDING
+            covered = any(
+                self.actions[i].quantity >= self.remaining
+                for i in self.confirmed_stops - self.canceled_stops
+            )
+            return SymbolState.OPEN if covered else SymbolState.ENTRY_PENDING
         return SymbolState.READY if self.terminal else SymbolState.ENTRY_PENDING
 
     @property
