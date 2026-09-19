@@ -38,9 +38,23 @@ class Reservations:
         self.stream = "portfolio:" + scope
 
     def initialize(self, portfolio: Portfolio):
-        return self.journal.checkpoint(
-            self.stream, 0, asdict(portfolio), "initialize:" + self.scope
-        )
+        with self.journal.transaction() as db:
+            if db.execute("SELECT 1 FROM snapshots WHERE stream=?", (self.stream,)).fetchone():
+                raise Conflict("Portfolio already initialized")
+            Journal.append_tx(db, "initialize:" + self.scope, asdict(portfolio))
+            db.execute(
+                "INSERT INTO snapshots VALUES(?,1,?)", (self.stream, canonical(asdict(portfolio)))
+            )
+            gate = {
+                "ready": not portfolio.exposures,
+                "reason": "INITIAL_ACCOUNT",
+                "safety_paused": False,
+            }
+            db.execute(
+                "INSERT INTO snapshots VALUES(?,1,?)",
+                ("account-gate:" + self.scope, canonical(gate)),
+            )
+            return 1
 
     def read(self):
         version, payload = self.journal.snapshot(self.stream)
@@ -64,6 +78,11 @@ class Reservations:
         if entry.symbol != symbol or entry.side is not side:
             raise ValueError("Sizing identity does not match reservation")
         with self.journal.transaction() as db, localcontext(CONTEXT):
+            gate = db.execute(
+                "SELECT payload FROM snapshots WHERE stream=?", ("account-gate:" + self.scope,)
+            ).fetchone()
+            if gate is None or json.loads(gate["payload"]).get("ready") is not True:
+                raise Conflict("Account reconciliation required before reserving a new entry")
             row = db.execute("SELECT * FROM snapshots WHERE stream=?", (self.stream,)).fetchone()
             if row is None or row["version"] != expected_version:
                 raise Conflict("Portfolio changed: recompute sizing before acceptance")

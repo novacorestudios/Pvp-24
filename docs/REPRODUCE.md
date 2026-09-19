@@ -32,3 +32,5 @@ Milestones 5A/5B/6A/6B: the same lint/test commands passed with 85/103/116/129 t
 Milestone 7: 146 tests passed with the same commands, including symmetrical long/short exit boundaries, close-only MFE, late/proposed stop timing, no widening, gaps, exact 72-hour hold time and exit-state checkpoint replay.
 
 Milestone 8A: 164 tests passed, including long/short fill accounting, partial emergency exit allocation, fee/funding deduplication, late-fill reconciliation, Mark freshness/as-of invariance, liquidation visibility, durable ledger recovery and exact daily/drawdown boundaries. No historical performance or exchange fixture validation has run.
+
+Milestone 8B: 172 tests passed with the same commands. Added atomic account/protection rollback, entry blocking after fill/funding, terminal zero-fill release, late-fill reblocking, cash/flatness proof, no backdated reconciliation and preservation of safety pauses after full exit.
