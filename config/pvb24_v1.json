@@ -1,0 +1,356 @@
+{
+  "strategy": "PVB-24",
+  "strategy_version": "1.0",
+  "implementation_profile": "IMP-2026-09-19-A",
+  "schema_version": "1.0.0",
+  "live_enabled": false,
+  "mode": "PAPER",
+  "timezone": "UTC",
+  "decimal_precision": 34,
+  "signal": {
+    "timeframe_seconds": 3600,
+    "channel_bars": 24,
+    "atr_period": 24,
+    "warmup_hours": 720,
+    "rvol_bars": 48,
+    "rvol_threshold": "1.5",
+    "breakout_buffer_atr": "0.10",
+    "data_deadline_seconds": 30,
+    "order_deadline_seconds": 90,
+    "cooldown_seconds": 21600
+  },
+  "universe": {
+    "size": 20,
+    "lookback_days": 30,
+    "listing_age_days": 90,
+    "min_median_quote_volume": "50000000",
+    "refresh_utc": "00:05",
+    "stale_grace_end_utc": "01:05"
+  },
+  "exit": {
+    "initial_stop_atr": "2.0",
+    "trailing_activation_r": "2.0",
+    "trailing_atr": "3.0",
+    "early_failure_closes": 3,
+    "weak_followthrough_close": 6,
+    "weak_followthrough_r": "0.5",
+    "maximum_hold_seconds": 259200,
+    "stop_reference": "CONTRACT_PRICE",
+    "fixed_take_profit": null,
+    "partial_take_profit": false
+  },
+  "risk": {
+    "normal_fraction": "0.01",
+    "reduced_fraction": "0.005",
+    "minimum_fraction": "0.0025",
+    "portfolio_fraction": "0.03",
+    "direction_fraction": "0.02",
+    "max_positions": 3,
+    "position_notional_equity": "1",
+    "gross_notional_equity": "3",
+    "position_margin_fraction": "0.20",
+    "portfolio_margin_fraction": "0.60",
+    "leverage": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "cost_to_price_risk_max": "0.25",
+    "liquidation_buffer_r": "3",
+    "outer_iterations": 5,
+    "daily_pause": "0.04",
+    "reduce_dd": "0.10",
+    "hard_pause_dd": "0.15"
+  },
+  "execution": {
+    "entry_type": "LIMIT",
+    "entry_tif": "IOC",
+    "margin_mode": "ISOLATED",
+    "position_mode": "ONE_WAY",
+    "max_book_age_ms": 500,
+    "max_spread": "0.0005",
+    "max_depth_impact": "0.001",
+    "max_participation": "0.001",
+    "participation_minutes": 15,
+    "channel_distance_atr": "1",
+    "close_deviation_atr": "0.25",
+    "preliminary_availability_seconds": 2,
+    "preliminary_fee_per_side": "0.0005",
+    "preliminary_spread_proxy": "0.00025",
+    "preliminary_impact_floor": "0.00025",
+    "stop_impact_multiplier": "2",
+    "funding_reserve_hours": 72,
+    "funding_lookback_days": 30,
+    "missing_funding": "REJECT",
+    "missing_mark": "PAUSE_ENTRIES",
+    "verified_missing_required_data": "REJECT"
+  },
+  "research": {
+    "reference_equity": "1000",
+    "capacity_equities": [
+      "200",
+      "10000"
+    ],
+    "development": [
+      "2020-01-01T00:00:00Z",
+      "2024-01-01T00:00:00Z"
+    ],
+    "validation": [
+      "2024-01-01T00:00:00Z",
+      "2025-07-01T00:00:00Z"
+    ],
+    "final": [
+      "2025-07-01T00:00:00Z",
+      "2026-09-01T00:00:00Z"
+    ],
+    "final_access": "LOCKED",
+    "bootstrap_block_days": 7,
+    "bootstrap_sensitivity_days": [
+      3,
+      14
+    ],
+    "resamples": 5000,
+    "confidence": "0.95",
+    "seed_derivation": "int(sha256(canonical_config).hexdigest()[:16],16); derived seed excluded from hash input",
+    "minimum_oos_trades": 300,
+    "minimum_each_direction": 100,
+    "minimum_full_weeks": 52,
+    "pf_min": "1.15",
+    "max_drawdown": "0.20",
+    "walkforward_train_months": 18,
+    "walkforward_eval_months": 3,
+    "label_purge_hours": 72
+  },
+  "decisions": [
+    {
+      "decision_id": "UD-01",
+      "title": "Statistical definitions",
+      "decision": "- even-count median = arithmetic mean of the two middle sorted values.\n- standard deviation for descriptive rolling volatility = population std, ddof=0.\n- 1m return used by preliminary sigma = log(close_t / close_t-1).\n- quantiles used in strategy/risk rules = nearest-rank.\n- percentile_95 = nearest-rank.\n- Sortino downside deviation = sqrt(mean(min(daily_return, 0)^2)) over ALL\n  valid daily observations, including zero contribution from non-negative days.\n- Bootstrap confidence interval = percentile CI.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-01",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "Statistical definitions",
+      "alpha_semantics_changed": false
+    },
+    {
+      "decision_id": "UD-02",
+      "title": "ATR origin and gaps",
+      "decision": "- Wilder ATR(24) is seeded from the earliest 24 VALID true ranges in the causal\n  history available before the tested interval.\n- Persist ATR checkpoints so restart does not re-seed differently.\n- A missing required 1h candle is a data gap, not a zero-volume candle.\n- After a required 1h data gap, that symbol cannot create new signals until it\n  again has a complete 30-day warmup window.\n- A zero-volume candle is valid only if the upstream venue/archive explicitly\n  contains it as a legitimate candle.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-02",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "ATR origin and gaps",
+      "alpha_semantics_changed": false
+    },
+    {
+      "decision_id": "UD-03",
+      "title": "Universe security master / stale list",
+      "decision": "- Universe refresh is scheduled at 00:05 UTC.\n- stale-universe grace ends at 01:05 UTC.\n- Historical eligibility must come from a versioned security-master source.\n- Prefer official Binance historical metadata/archives when available.\n- Store symbol changes, listing start, delisting, contract-size changes, and\n  source revision IDs.\n- If exact historical metadata is unavailable, label that period PRELIMINARY\n  and disclose survivorship/metadata uncertainty. Do not fabricate.\n- No new entry is allowed after stale grace expires without a valid universe.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-03",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "Universe security master / stale list",
+      "alpha_semantics_changed": false
+    },
+    {
+      "decision_id": "UD-04",
+      "title": "Temporal availability / batch",
+      "decision": "- For each hourly signal batch, wait until all required inputs for a symbol are\n  available OR the 30-second signal-data deadline is reached.\n- At the deadline, reject only symbols whose required inputs remain unavailable.\n- Rank all complete simultaneous signals deterministically.\n- Data is timely when available_at <= signal_time + 30s.\n- An entry may be sent only when order_sent_at <= signal_time + 90s.\n- A signal after the deadline is expired.\n- Live/Paper latency uses measured timestamps.\n- Preliminary historical mode uses the specification's fixed +2s availability.\n- Store exchange event time, local receive time, and monotonic processing time.\n- Never backdate decision_time.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-04",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "Temporal availability / batch",
+      "alpha_semantics_changed": false
+    },
+    {
+      "decision_id": "UD-05",
+      "title": "IOC cap / L2",
+      "decision": "- Require sequence-consistent L2 when operating in VERIFIED execution mode.\n- Use both event-time and receive-time age; the book is stale if EITHER exceeds\n  the configured 500ms gate after clock normalization.\n- Haircut stress removes visible quantity proportionally from each level.\n- In replay, consumed visible depth is not reusable until a later book update\n  replenishes it.\n- The marketable IOC limit price may never permit a fill outside the strictest\n  of the configured channel-distance, signal-close-deviation, and depth-impact\n  constraints.\n- LONG limit rounding must never widen the worst acceptable price: round the\n  final cap DOWN to tick.\n- SHORT limit rounding must never widen the worst acceptable price: round the\n  final floor UP to tick.\n- If a valid marketable price cannot be expressed after rounding, reject.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-05",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "IOC cap / L2",
+      "alpha_semantics_changed": false
+    },
+    {
+      "decision_id": "UD-06",
+      "title": "IDs / durable state",
+      "decision": "- Canonical identity strings are UTF-8 with stable field order.\n- SHA-256 is the canonical digest algorithm.\n- Store the full canonical identity and full digest.\n- Exchange client_order_id uses a deterministic shortened representation that\n  obeys the pinned exchange limit; the full mapping is persisted.\n- Use a transactional event journal with write-ahead order intent.\n- SQLite WAL is acceptable for local research/paper unless the implementation\n  proves a stronger store is necessary.\n- Never retry an unknown order outcome until querying by client_order_id.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-06",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "IDs / durable state",
+      "alpha_semantics_changed": false
+    },
+    {
+      "decision_id": "UD-07",
+      "title": "SPEC_CONFLICT-02 / IOC unfilled cooldown",
+      "decision": "- An IOC with ZERO fill consumes that signal_id.\n- It returns the symbol to READY, NOT the six-hour post-position cooldown.\n- A new trade still requires a new false-to-true breakout transition.\n- The six-hour cooldown starts only after a real position reaches full_exit_time.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-07",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "SPEC_CONFLICT-02 / IOC unfilled cooldown",
+      "alpha_semantics_changed": false
+    },
+    {
+      "decision_id": "UD-08",
+      "title": "Protection / exits / rounding",
+      "decision": "- Every confirmed fill must become protected as soon as operationally possible.\n- Use idempotent retries and reconciliation for stop placement.\n- If protection cannot be confirmed promptly, reduce-only close the affected\n  quantity and enter a safety pause.\n- Local mandatory exits use reduce-only market behavior in the reference model,\n  with taker fees and adverse execution modeled.\n- Trailing stop tightening:\n  LONG -> round UP to tick if that tightens protection and remains a valid trigger.\n  SHORT -> round DOWN to tick if that tightens protection and remains valid.\n- Never widen an effective stop.\n- For entry partial fills, protect the confirmed cumulative quantity.\n- After IOC reaches terminal state, freeze final entry_vwap, final initial_stop,\n  and initial_price_risk.\n- During cancel/fill races, exchange-confirmed fills are authoritative.\n- Reduce-only semantics must prevent position reversal.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-08",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "Protection / exits / rounding",
+      "alpha_semantics_changed": false
+    },
+    {
+      "decision_id": "UD-09",
+      "title": "Risk solver / post-fill breach",
+      "decision": "- Use deterministic monotonic search over quantity-step units.\n- Recompute expected execution price, costs, margin, and liquidation in each\n  sizing iteration.\n- Maximum outer sizing iterations = 5, as required by the source spec.\n- Converged = same rounded quantity on two consecutive iterations.\n- Pending notional is valued at expected entry.\n- Open-position gross notional is valued at current Mark.\n- Never round quantity upward to satisfy minimums.\n- If a post-fill breach can be corrected by a reduce-only reduction, reduce to\n  the largest compliant quantity.\n- If a compliant quantity cannot be determined safely, close the position.\n- After an actually confirmed partial exit, reserved initial risk may scale\n  proportionally to remaining quantity; tighter stop alone never releases risk.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-09",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "Risk solver / post-fill breach",
+      "alpha_semantics_changed": false
+    },
+    {
+      "decision_id": "UD-10",
+      "title": "Liquidation / gap",
+      "decision": "- LIVE is prohibited, but the model must still be implemented.\n- Use exchange-provided liquidation information where available.\n- Implement a Binance USD-M liquidation adapter based on the pinned official\n  rules and maintenance tiers.\n- Validate the calculator against exchange-provided values in safe/non-live\n  contexts before calling it VERIFIED.\n- For historical periods lacking historical maintenance tiers, label liquidation\n  reconstruction UNVERIFIED; never use today's tiers as exact history.\n- The 3R liquidation buffer is mandatory.\n- If an open position's verified liquidation buffer deteriorates below 3R,\n  reduce position size to restore the buffer if possible; otherwise close.\n- Gap 1R and 2R scenarios are STRESS REPORTS, not extra Alpha entry filters.\n- Any actual modeled liquidation remains visible in reports.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-10",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "Liquidation / gap",
+      "alpha_semantics_changed": false
+    },
+    {
+      "decision_id": "UD-11",
+      "title": "SPEC_CONFLICT-03 / costs / funding",
+      "decision": "- For sizing, do NOT double-count entry price impact that is already embedded in\n  expected_entry.\n- For the cost-to-risk gate, define an explicit arrival-price execution shortfall:\n  LONG reference = best_ask at decision.\n  SHORT reference = best_bid at decision.\n- estimated_total_cost for the gate includes:\n  entry execution shortfall vs arrival side price\n  + entry fee\n  + expected stop-exit fee\n  + stop-exit slippage reserve\n  + adverse funding reserve.\n- entry execution shortfall is a REPORT/GATE component only and is NOT deducted\n  a second time from realized PnL.\n- Realized PnL uses actual fills, actual fees, and actual funding exactly once.\n- If an account-specific historical fee schedule is unavailable, preliminary\n  research may use 0.0005 taker fee per side, explicitly labeled as an assumption.\n- Missing funding history is never replaced by zero.\n- VERIFIED acceptance requires adequate funding coverage for held positions.\n- Non-USDT fee assets, if ever encountered, are converted using a causal price\n  available at the fee event time and the conversion source is logged.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-11",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "SPEC_CONFLICT-03 / costs / funding",
+      "alpha_semantics_changed": false
+    },
+    {
+      "decision_id": "UD-12",
+      "title": "Equal-time ordering",
+      "decision": "- Use exchange sequence numbers when available.\n- Otherwise use a deterministic conservative order for same-timestamp ambiguity:\n  1) confirmed liquidation / forced venue event;\n  2) confirmed fills of already-live protective orders;\n  3) confirmed fills of other already-live reduce-only exits;\n  4) funding settlement for a position proven eligible at that boundary;\n  5) account/equity risk-state update;\n  6) candle-close early-failure / weak-followthrough / time decisions;\n  7) trailing-stop recalculation and replacement;\n  8) new entry decisions.\n- A candle with interval_end == first_fill_time is NOT an eligible post-entry close.\n- Do not use high/low movement that occurred before first_fill_time.\n- If data are insufficient to order a liquidation vs stop, apply the adverse\n  assumption and increment ambiguous_event_count.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-12",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "Equal-time ordering",
+      "alpha_semantics_changed": false
+    },
+    {
+      "decision_id": "UD-13",
+      "title": "Historical coverage / delisting",
+      "decision": "- Prefer official Binance archives and versioned exchange metadata.\n- Build an explicit coverage report by symbol/date/source.\n- Do not silently drop periods with missing rules.\n- When a delisting announcement timestamp is causally available, block new entries\n  from that symbol immediately.\n- Existing positions are managed normally until an orderly close is possible;\n  the exact close event and reason are logged.\n- If only forced settlement is known historically, record the forced settlement\n  rather than inventing an earlier announcement.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-13",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "Historical coverage / delisting",
+      "alpha_semantics_changed": false
+    },
+    {
+      "decision_id": "UD-14",
+      "title": "SPEC_CONFLICT-01 / preliminary execution",
+      "decision": "- Two execution-quality modes exist:\n  PRELIMINARY and VERIFIED.\n- PRELIMINARY may use 1m OHLCV plus the frozen proxy/slippage model.\n- PRELIMINARY MUST label book-age/spread/depth/partial-fill fidelity UNVERIFIED\n  rather than silently passing those gates.\n- VERIFIED requires the necessary Quotes/L2/Mark/contract-rule data.\n- A PRELIMINARY run may reject the hypothesis, but it cannot by itself establish\n  production execution fidelity.\n- In OHLC-only intrabar ambiguity, use the adverse/conservative event order.\n- If both protective stop and liquidation are possible in the same unresolved\n  bar, count liquidation first for sensitivity and record the ambiguity.\n- Gap-through-stop exits use the first causally available executable price, not\n  the stop trigger price.\n- PRELIMINARY does not claim queue position or realistic partial fills.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-14",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "SPEC_CONFLICT-01 / preliminary execution",
+      "alpha_semantics_changed": false
+    },
+    {
+      "decision_id": "UD-15",
+      "title": "Physical schemas / precision",
+      "decision": "- Internal arithmetic: Python Decimal, context precision 34.\n- Never use binary float for exchange price, quantity, fees, cash, margin, or PnL.\n- CSV:\n  UTF-8, comma delimiter, RFC-compatible quoting, ISO-8601 UTC timestamps,\n  Decimal values serialized as exact strings, literal NULL for missing values.\n- Parquet:\n  ZSTD compression, timestamp[us, UTC], DECIMAL(38,18) where compatible.\n- schema_version = \"1.0.0\".\n- Canonical JSON for hashes: UTF-8, sorted keys, no insignificant whitespace,\n  explicit nulls, Decimal serialized as canonical decimal string.\n- Hash = SHA-256.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-15",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "Physical schemas / precision",
+      "alpha_semantics_changed": false
+    },
+    {
+      "decision_id": "UD-16",
+      "title": "Environment / reproducibility",
+      "decision": "- Repository = pvp-24.\n- Working branch = build/pvb24-v1.\n- Architecture = external event-driven reference engine + Freqtrade execution adapter.\n- Freqtrade = official latest stable non-prerelease at bootstrap, then exact tag/SHA pin.\n- Python = a version explicitly supported by the pinned Freqtrade release.\n- Hashes = SHA-256 over canonical manifests.\n- Single order authority in PAPER = Freqtrade adapter/executor.\n- Reference engine never sends exchange orders directly.\n- Exact CLI commands are created only after they have been successfully executed.\n- Failed commands are recorded during development but not presented as successful\n  reproduction steps.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-16",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "Environment / reproducibility",
+      "alpha_semantics_changed": false
+    },
+    {
+      "decision_id": "UD-17",
+      "title": "Equity / drawdown / resume",
+      "decision": "- Backtest and paper use a dedicated strategy virtual ledger.\n- Research runs have no external deposits/withdrawals after start.\n- Future shared-account LIVE allocation is outside current scope.\n- Equity sample grid = minute boundaries using latest causally available Mark.\n- If Mark is stale or missing, pause new entries; never silently substitute Last\n  for official equity/liquidation accounting.\n- Reduced-risk state remembers the pre-drawdown peak that caused reduction.\n- Return to 1% new-entry risk only after equity recovers that peak.\n- 15% hard drawdown pause requires explicit operational review; daily reset cannot clear it.\n- Global PAUSED is an overlay; symbol OPEN/TRAILING states remain active and protected.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-17",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "Equity / drawdown / resume",
+      "alpha_semantics_changed": false
+    },
+    {
+      "decision_id": "UD-18",
+      "title": "Validation governance",
+      "decision": "- Before any Final Test run, commit:\n  docs/FINAL_TEST_FREEZE.md\n  containing code SHA, config hash, data manifest hash, and a declaration that\n  Development/Validation work is frozen.\n- Reference-account acceptance run = 1000 USDT initial equity.\n- Capacity/sensitivity runs = 200 USDT and 10000 USDT using identical Alpha rules.\n- Do not choose the best account size after results.\n- Final Test sample gates (300 OOS trades, >=100 each direction, >=52 full weeks)\n  apply to the reference acceptance run.\n- Walk-forward uses continuous account state; no quarterly reset.\n- Positions may carry across evaluation-window boundaries.\n- If Final Test data were previously used to choose PVB-24 rules, mark it\n  RETROSPECTIVE and create a future holdout plan; do not call it untouched.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-18",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "Validation governance",
+      "alpha_semantics_changed": false
+    },
+    {
+      "decision_id": "UD-19",
+      "title": "Statistical / stress protocol",
+      "decision": "- Portfolio-level moving-block bootstrap.\n- Base block length = 7 days.\n- Sensitivity block lengths = 3 and 14 days.\n- Resamples = 5000.\n- CI = 95% percentile interval.\n- Bootstrap/random stress seed is derived deterministically from config_hash,\n  not selected after observing returns.\n- Fees-only stress = 2x fee rates, other execution assumptions unchanged.\n- Outage stress schedules are generated from the precommitted deterministic seed\n  before evaluating PnL.\n- Report both:\n  a) arithmetic removal of the best five closed trades for contribution sensitivity;\n  b) optional full replay with those signal_ids disabled, explicitly noting that\n     portfolio allocation can change.\n- Concentration and \"system stopped most of the period\" are diagnostic flags unless\n  a numeric rejection threshold was already frozen before Final Test.\n- Never invent a late threshold after seeing Final Test.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-19",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "Statistical / stress protocol",
+      "alpha_semantics_changed": false
+    },
+    {
+      "decision_id": "UD-20",
+      "title": "Diagnostic sampling",
+      "decision": "- BTC regime reference = BTCUSDT.\n- Snapshot frequency = daily at 00:00 UTC using the latest completed data available then.\n- 30-day BTC return uses causal completed daily boundary values.\n- Realized volatility uses 1h log returns:\n  annualized_volatility = std(log_returns_1h, ddof=0) * sqrt(24 * 365)\n- Volatility percentile reference = previous 365 completed days, current day excluded.\n- When 365 days are unavailable, regime volatility label = UNCLASSIFIED.\n- Liquidity diagnostics use causal prior 30-day median quote volume.\n- Cost diagnostics use realized execution-shortfall buckets only for reporting,\n  never for signal generation.",
+      "rationale": "Pre-authorized before performance observation; do not select by PnL.",
+      "source_option": "Master section 6; frozen source section 110 UD-20",
+      "owner": "Project implementation directive",
+      "date": "2026-09-19",
+      "impact": "Diagnostic sampling",
+      "alpha_semantics_changed": false
+    }
+  ],
+  "freqtrade": {
+    "version": "2026.8",
+    "tag": "2026.8",
+    "commit": "9f10e357a93c1dcf10c2a2b367659214d89c073e",
+    "release_url": "https://github.com/freqtrade/freqtrade/releases/tag/2026.8",
+    "python": "3.12",
+    "requires_python": ">=3.11"
+  }
+}

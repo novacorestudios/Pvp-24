@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "config_hash",
+    "source_sha256",
+    "freqtrade",
+    "live_enabled"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "config_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "source_sha256": {
+      "const": "098a3ca390bce81d506bdec011fc3a936ecbb793f46c2f117f337998bfc1c5d8"
+    },
+    "live_enabled": {
+      "const": false
+    },
+    "freqtrade": {
+      "type": "object",
+      "required": [
+        "version",
+        "tag",
+        "commit",
+        "python"
+      ],
+      "properties": {
+        "commit": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        }
+      }
+    }
+  }
+}

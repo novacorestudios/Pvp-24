@@ -1,0 +1,20 @@
+name: PVB-24 CI
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  governance:
+    runs-on: ubuntu-latest
+    env:
+      FREQTRADE_TAG: "2026.8"
+      FREQTRADE_SHA: "9f10e357a93c1dcf10c2a2b367659214d89c073e"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e '.[dev]'
+      - run: python -m ruff format --check .
+      - run: python -m ruff check .
+      - run: python -m pytest -q
+      - run: python scripts/verify_provenance.py

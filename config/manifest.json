@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0.0",
+  "repository_requested": "pvp-24",
+  "repository_actual": "novacorestudios/Pvp-24",
+  "repository_visibility": "public (pre-existing)",
+  "repository_name_case_deviation": "GitHub resolves names case-insensitively; display name retained, rename tool unavailable",
+  "branch": "build/pvb24-v1",
+  "starting_head": null,
+  "bootstrap_head": "1e8a8566327e4be789bb71e93e941b760a6e9d6a",
+  "source_sha256": "098a3ca390bce81d506bdec011fc3a936ecbb793f46c2f117f337998bfc1c5d8",
+  "master_sha256": "e8fc8e729aa43da571e3c3daff0a90911594394ca9f0ff7c165d40c08eab1191",
+  "config_hash": "6d267edbcde56081012bc7b93d46f2c7f345aceb0e3bc769095ba53ef00b5be7",
+  "seed": 7865113281766449281,
+  "freqtrade": {
+    "version": "2026.8",
+    "tag": "2026.8",
+    "commit": "9f10e357a93c1dcf10c2a2b367659214d89c073e",
+    "release_url": "https://github.com/freqtrade/freqtrade/releases/tag/2026.8",
+    "python": "3.12",
+    "requires_python": ">=3.11"
+  },
+  "python_observed": "3.12.14",
+  "freeze_status": "FROZEN_BEFORE_PERFORMANCE",
+  "performance_runs": 0,
+  "paper_ready": false,
+  "live_enabled": false
+}
