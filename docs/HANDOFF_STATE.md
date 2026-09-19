@@ -1,4 +1,4 @@
-# Handoff — Milestone 9E (preliminary collateral and adverse bar execution)
+# Handoff — Milestone 9F (reproducible reference integration runner)
 
 - Repository: novacorestudios/Pvp-24; branch build/pvb24-v1.
 - Exact current HEAD: read the Git branch ref; main remains initialization only.
@@ -6,7 +6,7 @@
 - Milestone 0 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35422954155 — SUCCESS.
 - Public-disclosure authorization: user explicitly approved publishing these files and will change visibility later. Do not request this approval again.
 - Milestone 1: official Freqtrade 2026.8 / 9f10e357a93c1dcf10c2a2b367659214d89c073e installed; repeat locked install and offline dry-run config smoke passed.
-- Local tests: 246 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
+- Local tests: 248 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
 - Milestone 1 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423197873 — SUCCESS.
 - Milestone 2 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423500106 — SUCCESS.
 - Milestone 3 final CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423929247 — SUCCESS.
@@ -31,7 +31,8 @@
 - Milestone 9B: fa09a79a50d4ac8ec84ff280172cace4f949c04f; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35454387409 — SUCCESS.
 - Milestone 9C: 822a208c3ac6e5b88fac6a8ae3643520b8f93c98; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35454708288 — SUCCESS.
 - Milestone 9D: f50003585ca9fbcdecdb6f4b9ada205884e2b053; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35455066973 — SUCCESS.
-- Next: verify Milestone 9E CI; implement reproducible reference replay orchestration/CLI and source-policy manifests, then Freqtrade parity.
+- Milestone 9E: 6f3ae916f2f53bfdc4fc8b93fdde8a9f5442a2c1; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35469054180 — SUCCESS.
+- Next: verify Milestone 9F CI; wire the Freqtrade shared-core strategy/intent boundary and parity checks. Historical source ingestion and a general historical replay driver remain incomplete; the new CLI is explicitly synthetic only.
 - Code: immutable Fill/Side types, precision-34 Decimal helpers, canonical IDs, SQLite WAL events/snapshots/write-ahead intents, fail-closed paper guard. Causal Timing/Candle/Mark/rule/security models, as-of revision selection, 30-day gap warmup, deterministic historical Top-20 and stale-universe grace implemented. Streaming Wilder ATR, channel/RVOL, exact long/short transitions, restartable indicator checkpoints, cooldown/status gates and timed simultaneous batch ranking implemented. Risk foundations now include rounded protective-stop costs, separate arrival shortfall gate, causal funding reserve with explicit coverage, immutable open/pending portfolio reservations and proportional confirmed-exit release. Descending quantity-step sizing, 1..5x minimum feasible leverage, isolated tier-consistent liquidation reconstruction, reduce-only post-fill action interface and transactional reservation+ENTRY intent are implemented. Execution market models now include sequence-consistent L2, consumed-depth replay, strict IOC caps and gates, partial sweep previews, and labelled preliminary OHLC proxies. Confirmed-fill protection lifecycle and transactional evidence/state/action-intent persistence now exist. Open-position reconciliation is now implemented; execution adapter and integrated backtest remain unimplemented. Exchange liquidation validation is still absent; actual post-fill collateral must come from the adapter, not a hypothetical newly opened smaller position.
 - Data: none acquired; OHLCV/Mark/funding/historical rules/security-master/L2 coverage remains unassessed. No backtest evidence, PRELIMINARY or VERIFIED.
 - PAPER: NOT READY. LIVE: DISABLED. No orders sent.
@@ -111,3 +112,10 @@ SyntheticCollateral requires an explicitly selected BASE_MARGIN_RELEASE_ONLY pol
 The bar execution adapter requires separate completed LAST/Mark candles, pre-bar execution/liquidation inputs and already-acknowledged full protection. Gaps use the adverse executable open plus stop slippage with doubled impact once. Unresolved stop/liquidation overlap chooses liquidation, records its explicit all-in fee and adverse Mark reference, and increments the persistent ambiguity count once. Bar-end fill timestamps are explicitly assumptions; exact intrabar time is not claimed. Intrabar entry, quantity or protection changes require finer data. A failed/unsupported bar is not a successful zero-liquidation result.
 
 Historical funding coverage, actual exchange tiers/fees/collateral validation, latency-path coverage and full historical replay remain outstanding. The explicit fee-rate/manifest arguments are not permission to mark guessed exchange history VERIFIED. No historical performance or paper trading has run.
+
+
+## Reproducible reference integration runner (Milestone 9F)
+
+scripts/smoke_reference.py now runs a deterministic synthetic reference lifecycle with 720-hour indicator warmup, ranked signal/entry planning, dense minute risk samples, explicit modeled entry/protection, causal account proof, adverse bar checks, a mid-run SQLite reopen, early-failure exit and final cash identity. The run processes 964 delivered events. Inputs and a manifest are written before account execution; the manifest records frozen policy, baseline config hash, Git SHA, dirty-worktree status, source-tree hash and exact synthetic data SHA-256. Existing output directories are never overwritten.
+
+The run records a trace, ledger-backed summary and account journal under the requested output directory. It reports ENGINE_INTEGRATION_SMOKE, historical_performance=false, acceptance_status=NOT_EVALUATED, paper_ready=false and zero exchange orders. Future-appended fixture data change the source manifest but leave the historical trace, entry, exit and ledger identical. CI invokes this actual command after governance checks. This is not a six-year backtest, general historical file loader, VERIFIED execution run or evidence of profitability. Historical source/coverage integration remains pending.

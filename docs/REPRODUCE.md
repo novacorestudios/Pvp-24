@@ -50,3 +50,11 @@ Milestone 9C: 234 tests passed. Added ranked sequential slot/risk allocation, at
 Milestone 9D: 240 tests passed. Added full synthetic lifecycle with restart and exact cash identity, adverse tick rounding, unknown-dispatch nonresubmission, gap rejection without fee/cooldown, account-gate cancellation, atomic synthetic commit failure and immutable proxy inputs.
 
 Milestone 9E: 246 tests passed. Added preliminary account observation into open reconciliation, partial-exit collateral accounting, immutable model policy, adverse gap-stop execution, visible liquidation loss/fees/ambiguity with deduplication, and refusal to infer an intrabar protection path.
+
+Milestone 9F: 248 tests passed, including full-run future-append invariance and protection of prior output evidence. The following command was executed successfully (use a new output directory on repeat):
+
+```bash
+.venv/bin/python scripts/smoke_reference.py --output artifacts/reference-smoke-9f-final
+```
+
+It delivered 964 synthetic events, verified account restart and sent zero exchange orders. Trace hash: `14d443af600ab971927ef90121ba9acf49ca62645c73c21cb44dbdd1fdb5f6f0`. Files: manifest.json, synthetic-events.jsonl, trace.jsonl, summary.json, account.sqlite. The successful local implementation run accurately reports worktree_dirty=true; clean CI runs record their exact committed source. These artifacts are reproducible integration evidence, not historical performance reports.
