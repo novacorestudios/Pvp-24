@@ -5,12 +5,12 @@ The historical adapter may expose an archived candle's open at interval_start,
 provided that this modelling assumption is recorded in the run manifest.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from decimal import Decimal, localcontext
 
 from pvb24.data.schemas import Candle
-from pvb24.decimal_math import CONTEXT, D, require_decimal
+from pvb24.decimal_math import CONTEXT, D, quantize_step, require_decimal
 from pvb24.execution.market import EntryBounds, Proxy, preliminary_proxy
 from pvb24.types import Quality, Side, utc
 
@@ -75,6 +75,10 @@ def entry_at_open(order: FrozenEntry, observed: MinuteOpen, now: datetime) -> En
         return EntryOutcome("ORDER_DEADLINE")
     proxy = preliminary_proxy(
         observed.price, order.quantity, order.bounds.side, order.sigma, order.recent_quote_volume
+    )
+    proxy = replace(
+        proxy,
+        price=quantize_step(proxy.price, order.bounds.tick, up=order.bounds.side is Side.LONG),
     )
     if not order.bounds.valid_price(observed.price) or not order.bounds.valid_price(proxy.price):
         return EntryOutcome("BREAKOUT_OR_CHASING")

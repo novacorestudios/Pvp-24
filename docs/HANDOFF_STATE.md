@@ -1,4 +1,4 @@
-# Handoff — Milestone 9C (ranked signal and entry planning)
+# Handoff — Milestone 9D (preliminary synthetic venue)
 
 - Repository: novacorestudios/Pvp-24; branch build/pvb24-v1.
 - Exact current HEAD: read the Git branch ref; main remains initialization only.
@@ -6,7 +6,7 @@
 - Milestone 0 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35422954155 — SUCCESS.
 - Public-disclosure authorization: user explicitly approved publishing these files and will change visibility later. Do not request this approval again.
 - Milestone 1: official Freqtrade 2026.8 / 9f10e357a93c1dcf10c2a2b367659214d89c073e installed; repeat locked install and offline dry-run config smoke passed.
-- Local tests: 234 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
+- Local tests: 240 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
 - Milestone 1 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423197873 — SUCCESS.
 - Milestone 2 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423500106 — SUCCESS.
 - Milestone 3 final CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423929247 — SUCCESS.
@@ -29,7 +29,8 @@
 - Milestone 8E: 2791d54dddc336385081c3bd360b90c1df118825; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35453636123 — SUCCESS.
 - Milestone 9A: e69dc6cb1ea2913fdde327570520dfdc42cc0e63; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35453952616 — SUCCESS.
 - Milestone 9B: fa09a79a50d4ac8ec84ff280172cace4f949c04f; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35454387409 — SUCCESS.
-- Next: verify Milestone 9C CI; implement simulated intent execution and reference replay runner, then Freqtrade adapter/parity.
+- Milestone 9C: 822a208c3ac6e5b88fac6a8ae3643520b8f93c98; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35454708288 — SUCCESS.
+- Next: verify Milestone 9D CI; complete stop/liquidation execution and account observation adapters, then full reference runner and Freqtrade parity.
 - Code: immutable Fill/Side types, precision-34 Decimal helpers, canonical IDs, SQLite WAL events/snapshots/write-ahead intents, fail-closed paper guard. Causal Timing/Candle/Mark/rule/security models, as-of revision selection, 30-day gap warmup, deterministic historical Top-20 and stale-universe grace implemented. Streaming Wilder ATR, channel/RVOL, exact long/short transitions, restartable indicator checkpoints, cooldown/status gates and timed simultaneous batch ranking implemented. Risk foundations now include rounded protective-stop costs, separate arrival shortfall gate, causal funding reserve with explicit coverage, immutable open/pending portfolio reservations and proportional confirmed-exit release. Descending quantity-step sizing, 1..5x minimum feasible leverage, isolated tier-consistent liquidation reconstruction, reduce-only post-fill action interface and transactional reservation+ENTRY intent are implemented. Execution market models now include sequence-consistent L2, consumed-depth replay, strict IOC caps and gates, partial sweep previews, and labelled preliminary OHLC proxies. Confirmed-fill protection lifecycle and transactional evidence/state/action-intent persistence now exist. Open-position reconciliation is now implemented; execution adapter and integrated backtest remain unimplemented. Exchange liquidation validation is still absent; actual post-fill collateral must come from the adapter, not a hypothetical newly opened smaller position.
 - Data: none acquired; OHLCV/Mark/funding/historical rules/security-master/L2 coverage remains unassessed. No backtest evidence, PRELIMINARY or VERIFIED.
 - PAPER: NOT READY. LIVE: DISABLED. No orders sent.
@@ -91,3 +92,12 @@ SignalService reads the same persisted Indicators, historical Universe, owned pe
 EntryPlanner consumes the ranked batch once, sizes each candidate against the portfolio updated by earlier accepted signals, and atomically records its reservation, ENTRY intent, protection ownership, original channels and dispatch deadline. Risk samples must be current; unresolved account gates, future inputs, price bounds, IOC caps, participation, quality and all existing sizing constraints remain enforced. The immutable source snapshot identity binds quantity-sensitive quote/margin callbacks; adapters must supply genuinely causal market-feasibility models, including VERIFIED book gates. The planner does not infer book coverage from a quality flag.
 
 Receipts preserve identical output after restart and reject changed attempts to consume the same hourly batch. Failure while registering ownership rolls back the entire batch. Full signal decisions, input provenance and rejection/sizing outcomes are retained for later logs. No orders are sent by planning; dispatch must revalidate current market/account state and the deadline. Automatic reference execution, the complete replay runner and operational paper authority remain pending.
+
+
+## Preliminary synthetic venue (Milestone 9D)
+
+PreliminaryVenue now freezes entry proxy inputs before execution, consumes the first permitted minute open, applies adverse price-tick rounding, books explicit synthetic fills/fees and terminal IOC outcomes through AccountReplay, and separately acknowledges owned protective intents. Current account/risk gates are checked at dispatch. Unsent rejected entries are canceled with no fee or cooldown. UNKNOWN intents without an existing matching synthetic receipt require reconciliation and are never resent.
+
+Requested market exits use a causal executable minute-open reference and adverse proxy slippage, bounded by confirmed remaining quantity. Receipt replay after restart preserves the original outcome. All synthetic venue effects commit atomically because this adapter has no network side effects; this transaction pattern must not be used to claim external PAPER dispatch before its write-ahead commit. Tests now exercise the complete shared-core signal → reservation → modeled entry → protection acknowledgement → restart → 72h exit → ledger cash identity path.
+
+This adapter deliberately supports PRELIMINARY only and declares book age/spread/depth/partial-fill fidelity UNVERIFIED. It is not a full historical runner: automatic protective-stop/liquidation bar resolution, account/collateral observations, complete source ingestion, quality/coverage manifests and Freqtrade sole PAPER authority remain integration work. Synthetic successful cycles are not historical performance evidence.
