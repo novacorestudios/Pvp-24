@@ -39,12 +39,23 @@ class ContractRules:
     tiers: tuple[MaintenanceTier, ...]
     historical_verified: bool
     liquidation_validated: bool
-    supports_ioc: bool = True
-    supports_last_stop: bool = True
+    supports_ioc: bool = False
+    supports_last_stop: bool = False
+    effective_to: datetime | None = None
 
     def __post_init__(self):
         utc(self.effective_from)
         utc(self.available_at)
+        if self.effective_to is not None and utc(self.effective_to) <= self.effective_from:
+            raise ValueError("Invalid rule validity interval")
+        for flag in (
+            self.historical_verified,
+            self.liquidation_validated,
+            self.supports_ioc,
+            self.supports_last_stop,
+        ):
+            if type(flag) is not bool:
+                raise TypeError("Explicit boolean rule evidence required")
         if not self.symbol or not self.source or not self.revision_id:
             raise ValueError("Rule provenance required")
         for value in (
@@ -71,7 +82,10 @@ def rules_at(rows: list[ContractRules], symbol: str, decision: datetime) -> Cont
     candidates = [
         x
         for x in rows
-        if x.symbol == symbol and x.effective_from <= utc(decision) and x.available_at <= decision
+        if x.symbol == symbol
+        and x.effective_from <= utc(decision)
+        and x.available_at <= decision
+        and (x.effective_to is None or decision < x.effective_to)
     ]
     if not candidates:
         return None

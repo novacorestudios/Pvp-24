@@ -157,6 +157,15 @@ def test_contract_rules_are_point_in_time():
     assert rules_at([r], "BTCUSDT", NOW - timedelta(seconds=1)) is None
 
 
+def test_unknown_capabilities_and_expired_contract_rules_fail_closed():
+    r = rules()
+    assert not r.supports_ioc and not r.supports_last_stop
+    expired = replace(r, effective_to=NOW + timedelta(seconds=1))
+    assert rules_at([expired], "BTCUSDT", NOW + timedelta(seconds=1)) is None
+    with pytest.raises(TypeError):
+        replace(r, historical_verified="true")
+
+
 def test_universe_is_historical_and_future_metadata_cannot_leak():
     decision = NOW + timedelta(minutes=5)
     base = build_universe([security()], daily(), decision, security_history_complete=True)
