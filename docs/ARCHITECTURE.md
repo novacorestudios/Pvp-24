@@ -38,3 +38,13 @@ References inspected on 2026-09-19:
 - The Binance FAQ linked by Freqtrade could not be retrieved; no successful FAQ verification is claimed.
 
 `Reservations.reserve` compares the journal portfolio revision, rechecks capacity, and atomically writes both pending reservation and ENTRY intent. Any concurrent revision or write failure rolls back the whole transaction. Dispatch remains the separately durable UNKNOWN transition. Subsequent execution reconciliation must update/release reservations with actual fills. Post-fill compliance has a fail-closed action interface: reduction may only decrease quantity; unknown compliance requests full close. Its caller must model the real residual collateral and exit costs, never assume a freshly opened replacement position.
+
+## Execution market models (Milestone 6A)
+
+USD-M snapshots remain unusable until a websocket event bridges the snapshot update ID; subsequent updates require previous-final sequence continuity. Levels are absolute quantities, zero removes a level, and removing an unknown level is valid. Invalid sequences or crossed books require a new snapshot. Both event and receipt age must be within 500ms.
+
+IOC limits use the strictest channel, signal-close and per-level impact cap, with long rounding down and short rounding up. Previews enforce breakout validity, spread and requested-notional participation. Partial sweeps are explicit; no inaccessible remainder is filled. Replay consumption remains unavailable until the affected level receives a later absolute update; unrelated updates and duplicate sequence messages cannot replenish it. Haircut stress applies proportionally.
+
+PRELIMINARY minute inputs require sixteen contiguous completed closes for fifteen log returns and only the last fifteen quote volumes. The latest completed minute must be causally available. The proxy retains UNVERIFIED labels for book age/spread/depth/partial fills; it does not manufacture L2. Entry/stop proxy prices embed slippage once. The event-loop integration must supply the first minute open strictly after decision, rather than a future candle close.
+
+[Official Binance local-book procedure](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/How-to-manage-a-local-order-book-correctly) inspected 2026-09-19. This module does not connect a websocket or send any order.
