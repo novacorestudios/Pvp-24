@@ -40,3 +40,5 @@ Milestone 8C: 181 tests passed. Residual-position tests cover exact largest-step
 Milestone 8D: 187 tests passed. Added durable risk-policy initialization, entry-vs-protection dispatch gating, atomic drawdown close/cancel intents, no unknown-close resubmission, additional closure of late confirmed quantity, pre-dispatch cancellation and risk-service restart recovery.
 
 Milestone 8E: 199 tests passed with the same commands. Coverage includes owned open-account cash/quantity proof, stale and future evidence rejection, current-minute risk gating, actual-fill risk freezing, confirmed partial-exit risk release, unchanged initial risk after acknowledged trailing, pending close deduplication, quality labels and post-fill compliance failure.
+
+Milestone 9A: 212 tests passed. New tests cover availability-first replay, sequence domains, conservative ambiguity counting, deterministic reordered/future-appended input, fail-closed callback errors, explicit quality rejection, first post-decision minute opens, deadline/participation bounds, LAST/Mark separation, adverse intrabar ambiguity, gap stops and exclusion of pre-fill/pre-ack extrema.
