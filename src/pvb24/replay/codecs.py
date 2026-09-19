@@ -45,3 +45,17 @@ def funding(raw):
     for key in ("settlement_time", "available_at"):
         values[key] = datetime.fromisoformat(values[key])
     return FundingPayment(**values)
+
+
+def universe(raw):
+    from pvb24.data.universe import Universe
+    from pvb24.types import Quality
+
+    values = dict(raw)
+    for key in ("decision_time", "valid_until"):
+        values[key] = datetime.fromisoformat(values[key])
+    values["symbols"] = tuple(values["symbols"])
+    values["medians"] = tuple((s, D(v)) for s, v in values["medians"])
+    values["excluded"] = tuple((s, tuple(r)) for s, r in values["excluded"])
+    values["quality"] = Quality(values["quality"])
+    return Universe(**values)

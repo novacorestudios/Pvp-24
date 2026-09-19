@@ -18,6 +18,7 @@ from pvb24.replay import codecs
 from pvb24.replay.events import Delivery, Kind
 from pvb24.state import Conflict, Journal
 from pvb24.strategy.exits import Entry, Exits
+from pvb24.strategy.service import SignalService
 from pvb24.strategy.signals import Indicators
 from pvb24.types import Quality
 
@@ -182,7 +183,13 @@ class AccountReplay:
             return self._outcome(db, event)
         if event.kind in (Kind.EXIT_DECISION, Kind.TRAILING):
             return self._exit(db, event)
-        raise ValueError("Unsupported account replay event; entry decisions require signal adapter")
+        if event.kind is Kind.ENTRY_DECISION:
+            return {
+                "batch": SignalService(self.journal, self.scope, self.quality).evaluate(
+                    codecs.universe(payload["universe"]), event.event_time, now
+                )
+            }
+        raise ValueError("Unsupported account replay event")
 
     def _outcome(self, db, event):
         raw, now = event.payload, event.available_at
