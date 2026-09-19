@@ -22,3 +22,5 @@ No backtest or operational paper-start command has run. No static type checker i
 Development failures, resolved: smoke attempted before install finished; missing smoke user-data directory; disabled Telegram object still required token fields. The final smoke creates its isolated directory and omits optional Telegram/API-server objects. No credentials were supplied.
 
 Milestone 2: same lint/test commands passed with 35 tests, including a subprocess crash recovery test and concurrent order-dispatch claiming.
+
+Milestone 3: 53 tests passed, including future-append invariance for candles and historical universe, missing-day rejection, zero/missing distinction, Last/Mark separation, 30-day gap recovery, and inclusive 30/90-second deadlines. Data fixtures are explicitly synthetic. No historical performance run.
