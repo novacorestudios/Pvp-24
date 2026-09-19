@@ -83,6 +83,15 @@ class Reservations:
             ).fetchone()
             if gate is None or json.loads(gate["payload"]).get("ready") is not True:
                 raise Conflict("Account reconciliation required before reserving a new entry")
+            control = db.execute(
+                "SELECT payload FROM snapshots WHERE stream=?", ("equity-control:" + self.scope,)
+            ).fetchone()
+            if control is not None:
+                status = json.loads(control["payload"]).get("last_status")
+                if status is None or status.get("entries_allowed") is not True:
+                    raise Conflict("Equity risk overlay blocks new entries")
+                if (D(status["risk_fraction"]) == D("0.005")) != reduced:
+                    raise Conflict("Sizing risk fraction differs from the durable equity overlay")
             row = db.execute("SELECT * FROM snapshots WHERE stream=?", (self.stream,)).fetchone()
             if row is None or row["version"] != expected_version:
                 raise Conflict("Portfolio changed: recompute sizing before acceptance")

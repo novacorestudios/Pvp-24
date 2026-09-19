@@ -113,6 +113,24 @@ class Journal:
         # Must commit UNKNOWN before invoking an external order authority.
         # A second caller/restart cannot dispatch UNKNOWN; it must query first.
         with self.transaction() as db:
+            intent = db.execute(
+                "SELECT scope,purpose FROM intents WHERE client_id=?", (client_id,)
+            ).fetchone()
+            if intent is not None and intent["purpose"] == "ENTRY":
+                gate = db.execute(
+                    "SELECT payload FROM snapshots WHERE stream=?",
+                    ("account-gate:" + intent["scope"],),
+                ).fetchone()
+                if gate is not None and json.loads(gate["payload"]).get("ready") is not True:
+                    return False
+                control = db.execute(
+                    "SELECT payload FROM snapshots WHERE stream=?",
+                    ("equity-control:" + intent["scope"],),
+                ).fetchone()
+                if control is not None:
+                    status = json.loads(control["payload"]).get("last_status")
+                    if status is None or status.get("entries_allowed") is not True:
+                        return False
             result = db.execute(
                 "UPDATE intents SET state='UNKNOWN' WHERE client_id=? AND state='PREPARED'",
                 (client_id,),
