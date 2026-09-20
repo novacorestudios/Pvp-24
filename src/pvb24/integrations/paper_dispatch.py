@@ -15,7 +15,7 @@ from datetime import datetime
 from decimal import Decimal, localcontext
 from typing import Protocol
 
-from pvb24.accounting.coordinator import read_tx, save_tx
+from pvb24.accounting.coordinator import AccountCoordinator, read_tx, save_tx
 from pvb24.decimal_math import CONTEXT, D
 from pvb24.execution.book import Book
 from pvb24.execution.market import EntryBounds, preview_ioc
@@ -172,6 +172,13 @@ class PaperDispatch:
         return row
 
     def _ready(self, db, metadata, now):
+        if db.execute(
+            "SELECT 1 FROM intents WHERE scope=? "
+            "AND (state='UNKNOWN' OR (state='ACKNOWLEDGED' "
+            "AND purpose IN ('ENTRY','EXIT_MARKET'))) LIMIT 1",
+            (self.scope,),
+        ).fetchone():
+            raise Conflict("Unresolved execution evidence blocks new entry dispatch")
         if not (
             datetime.fromisoformat(metadata["accepted_at"])
             <= now
@@ -374,6 +381,9 @@ class PaperDispatch:
             Journal.append_tx(db, "paper-ticket:" + client_id, ticket)
             if not self.journal.claim_dispatch(client_id):
                 raise Conflict("Entry dispatch claim denied")
+            AccountCoordinator(self.journal, self.scope)._pause(
+                db, "PAPER_ENTRY_OUTCOME_PENDING", ticket.prepared_at
+            )
         # UNKNOWN and ticket are committed here, even if submit raises or the
         # process crashes before/after the call. No external call in SQLite tx.
         self._guard()

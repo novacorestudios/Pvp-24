@@ -269,16 +269,18 @@ class L2PaperVenue:
         )
         Journal.append_tx(db, "model-evidence:" + event.event_id, event)
 
-    def events_after(self, cursor=0):
+    def events_after(self, cursor=0, *, limit=None):
         """Durable source cursor; consumer advances it only after account commit."""
         self._now()
         if type(cursor) is not int or cursor < 0:
             raise ValueError("Nonnegative durable event cursor required")
+        if limit is not None and (type(limit) is not int or limit <= 0):
+            raise ValueError("Positive event page size required")
         result = []
         rows = self.journal.db.execute(
             "SELECT seq,payload FROM events WHERE seq>? "
-            "AND event_id LIKE 'model-evidence:%' ORDER BY seq",
-            (cursor,),
+            "AND event_id LIKE 'model-evidence:%' ORDER BY seq LIMIT ?",
+            (cursor, -1 if limit is None else limit),
         ).fetchall()
         for row in rows:
             raw = json.loads(row["payload"])

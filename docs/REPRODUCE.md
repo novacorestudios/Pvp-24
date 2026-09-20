@@ -84,3 +84,6 @@ Milestone 10F: 318 local pytest tests passed with Ruff format/lint and provenanc
 
 
 Milestone 10G: 322 local pytest tests passed with Ruff format/lint and provenance checks. Focused command: `.venv/bin/python -m pytest -q tests/test_reconcile_pending_batch.py` (4 tests). `.venv/bin/python scripts/smoke_reference.py --output artifacts/reference-smoke-10g` also passed; use a new output directory on repeat. It still delivers 964 events with trace hash `14d443af600ab971927ef90121ba9acf49ca62645c73c21cb44dbdd1fdb5f6f0`, restart verified and zero external orders. Outputs remain synthetic integration evidence, not historical performance.
+
+
+Milestone 10H: 333 local pytest tests passed with Ruff format/lint and provenance checks. Focused command: `.venv/bin/python -m pytest -q tests/test_paper_session.py` (11 cases). Recovery fault injection covers both independent commit boundaries, durable source anchors, absent lookups and bounded pages. Tests explicitly use a socket-free PRELIMINARY model; no operational PAPER, historical performance or exchange order is claimed.

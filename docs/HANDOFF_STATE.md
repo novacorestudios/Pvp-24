@@ -1,4 +1,4 @@
-# Handoff — Milestone 10G (preserve ranked-batch reservations)
+# Handoff — Milestone 10H (durable PAPER evidence recovery)
 
 - Repository: novacorestudios/Pvp-24; branch build/pvb24-v1.
 - Exact current HEAD: read the Git branch ref; main remains initialization only.
@@ -6,7 +6,7 @@
 - Milestone 0 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35422954155 — SUCCESS.
 - Public-disclosure authorization: user explicitly approved publishing these files and will change visibility later. Do not request this approval again.
 - Milestone 1: official Freqtrade 2026.8 / 9f10e357a93c1dcf10c2a2b367659214d89c073e installed; repeat locked install and offline dry-run config smoke passed.
-- Local tests: 322 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
+- Local tests: 333 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
 - Milestone 1 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423197873 — SUCCESS.
 - Milestone 2 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423500106 — SUCCESS.
 - Milestone 3 final CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423929247 — SUCCESS.
@@ -39,7 +39,8 @@
 - Milestone 10D: 2b270a8bc9f96e31cdb943aabf8e0069aef072ff; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35490438954 — SUCCESS.
 - Milestone 10E: f4330f7a704b6ec0e1afb9e177b8f8b86bb31cf0; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35490911580 — SUCCESS.
 - Milestone 10F: 71afee0716bb3b2f06a1db5f9c4864995baeb5ca; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35503322520 — SUCCESS.
-- Next: publish/verify Milestone 10G CI; implement durable source-cursor ingestion/dispatch orchestration and bind the sole PVB24Executor process. Explicitly retire stale unsent actions and reconcile UNKNOWN via lookup without resend. Then finish source/account/model qualification. Keep operational_ready=false. Historical ingestion/general historical driver, stress/acceptance and paper readiness remain incomplete.
+- Milestone 10G: 731162abd255aaada44b6f0d9b2330c41d496447; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35503650811 — SUCCESS.
+- Next: publish/verify Milestone 10H CI; implement explicit retirement of stale unsent actions and bounded action pumping, then bind the sole PVB24Executor process. Keep operational_ready=false. Source/account/model qualification, historical ingestion/driver, stress/acceptance and paper readiness remain incomplete.
 - Code: immutable Fill/Side types, precision-34 Decimal helpers, canonical IDs, SQLite WAL events/snapshots/write-ahead intents, fail-closed paper guard. Causal Timing/Candle/Mark/rule/security models, as-of revision selection, 30-day gap warmup, deterministic historical Top-20 and stale-universe grace implemented. Streaming Wilder ATR, channel/RVOL, exact long/short transitions, restartable indicator checkpoints, cooldown/status gates and timed simultaneous batch ranking implemented. Risk foundations now include rounded protective-stop costs, separate arrival shortfall gate, causal funding reserve with explicit coverage, immutable open/pending portfolio reservations and proportional confirmed-exit release. Descending quantity-step sizing, 1..5x minimum feasible leverage, isolated tier-consistent liquidation reconstruction, reduce-only post-fill action interface and transactional reservation+ENTRY intent are implemented. Execution market models now include sequence-consistent L2, consumed-depth replay, strict IOC caps and gates, partial sweep previews, and labelled preliminary OHLC proxies. Confirmed-fill protection lifecycle and transactional evidence/state/action-intent persistence now exist. Open-position reconciliation is now implemented; execution adapter and integrated backtest remain unimplemented. Exchange liquidation validation is still absent; actual post-fill collateral must come from the adapter, not a hypothetical newly opened smaller position.
 - Data: none acquired; OHLCV/Mark/funding/historical rules/security-master/L2 coverage remains unassessed. No backtest evidence, PRELIMINARY or VERIFIED.
 - PAPER: NOT READY. LIVE: DISABLED. No orders sent.
@@ -197,3 +198,14 @@ Executor integration exposed an existing reconciliation defect: confirming the f
 AccountObservation.free_collateral is explicitly the venue-spendable balance before local strategy reserves. Reconciliation subtracts remaining open-position exit/slippage/funding reserves and all kept pending entry margin/cost commitments exactly once. Realized entry fees are already in cash and are not reserved again. Repeating an observation does not cumulatively deduct reserves. This aligns reconciliation with the existing reservation/dispatch free-collateral contract without changing Alpha or thresholds.
 
 Four regression tests exercise two ranked symbols through the first actual fill/stop confirmation, preservation of the second reservation, exact commitment accounting/repeat invariance, expiry without fees/cooldown, loss of current collateral capacity and unresolved second-order retention. The full local suite has 322 passing tests. The actual reference smoke command still processes 964 events with unchanged trace hash 14d443af600ab971927ef90121ba9acf49ca62645c73c21cb44dbdd1fdb5f6f0, restart verified and zero external orders. Cursor/dispatch orchestration and Freqtrade process integration are the next tasks; no operational or historical performance readiness is claimed.
+
+
+## Durable PAPER evidence recovery (Milestone 10H)
+
+PaperSession binds the concrete PRELIMINARY L2 model's policy and account scope to a durable consumer checkpoint. Account evidence and its ledger/protection/action effects commit before the source cursor advances in a separate transaction. A crash between these commits replays the immutable account receipt without duplicating fills or action identities. Every cursor stores the last source event's identity/hash and requires its matching account receipt; a replaced, truncated or changed source fails closed. Bounded pages preserve ordering and retain backlog instead of silently skipping events.
+
+Missing transport receipts are recovered by owned client-ID lookup only. An absent lookup preserves UNKNOWN and all reservations. Known acceptance still requires explicit active/terminal execution evidence. Recovery leaves account pauses intact; it cannot substitute for cash, collateral, protection and minute-risk reconciliation. A confirmed active stop is not treated as an unresolved entry, while pending exit residuals remain unresolved and reserve their quantity. Valid protective/safety requests remain dispatchable after available evidence is drained.
+
+PaperDispatch now commits an account entry pause with the entry ticket/UNKNOWN claim, before backend I/O. It also refuses new entries while any unknown execution or nonterminal entry/exit acknowledgement remains, even if a stale gate still says ready. This closes the lost-response interval before the first fill is delivered.
+
+Eleven regression cases cover bounded pages, two-database reopen after a lost reply, interruption after account commit but before cursor commit, atomic account failure, absent lookup, changed/truncated source anchors, missing account receipt, pending-exit protection and unresolved-entry dispatch blocking. All 333 local tests pass with formatting/lint and provenance checks. Automatic action retirement/pumping and sole Freqtrade process binding remain next; operational_ready=false, LIVE disabled, no historical data/performance or external order execution.
