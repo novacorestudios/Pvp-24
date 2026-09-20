@@ -14,6 +14,7 @@ from verify_provenance import verify  # noqa: E402
 
 from pvb24.data.acquisition import acquire, object_write  # noqa: E402
 from pvb24.data.archive import FINAL_START, ArchiveRequest  # noqa: E402
+from pvb24.data.dataset import dataset_hash  # noqa: E402
 from pvb24.ids import canonical, digest  # noqa: E402
 
 
@@ -82,22 +83,7 @@ def main():
     report["completed_at"] = datetime.now(UTC)
     report["requested_archives"] = len(requests)
     report["acquired_archives"] = sum(a["status"] == "ACQUIRED" for a in report["archives"])
-    report["dataset_hash"] = digest(
-        [
-            {
-                key: a.get(key)
-                for key in (
-                    "request",
-                    "url",
-                    "status",
-                    "actual_sha256",
-                    "decoder_sha256",
-                    "coverage",
-                )
-            }
-            for a in report["archives"]
-        ]
-    )
+    report["dataset_hash"] = dataset_hash(report["archives"])
     report["report_hash"] = digest(report)
     name = object_write(args.output / "reports", canonical(report).encode(), ".json")
     print(

@@ -29,3 +29,7 @@ The 93 funding rows contain 28 differences of 1–3 milliseconds (signed) betwee
 | Performance / operational PAPER / LIVE | Not evaluated / not ready / disabled |
 
 The committed manifest records the acquisition base commit and worktree_dirty=true, with exact decoder/acquirer file hashes. Reproduce using REPRODUCE.md; a changed official object must become a separately recorded revision, never an automatic replacement of this dataset.
+
+## Causal normalization (11B)
+
+The pinned sample was reread through ArchiveDataset at 2024-02-01 00:00:02 UTC: 744 LAST hours, 744 Mark hours and 31 complete daily LAST observations. No interval was filled synthetically. The daily volume source is the sum of 24 available LAST hourly observations; Mark volume is excluded. Derived identity and availability are tied to the exact constituent rows. See data/11b-normalization-summary.json. This supplies only volume inputs for a future universe reconstruction, not evidence that a symbol was historically eligible.

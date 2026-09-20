@@ -109,3 +109,21 @@ Milestone 10K: `.deps/freqtrade/.venv/bin/python scripts/smoke_freqtrade_parity.
 All five archives were acquired and reconsumption integrity checks passed. Exact source URLs, checksums, coverage, decoder/acquirer hashes, base commit, dirty-worktree flag and dataset hash are in docs/data/11a-source-manifest.json. The CLI prints the immutable report path. Existing identical ZIPs are cached; checksum retrieval remains fresh, and changed revisions are retained separately. Failed attempts remain auditable. Raw data is ignored by Git; no network acquisition runs in CI.
 
 The first ingestion attempt deliberately remains recorded locally as 4/5: raw funding timestamp jitter invalidated the initial continuous-interval interpretation. The corrected decoder retains the raw declared interval and actual timestamp, records 28 discrepancies and refuses to attest continuous funding coverage. Final successful reports contain 5/5 files; this is not strategy performance. No historical universe/rules or L2 has been acquired. Final Test months are rejected before any download.
+
+
+## Milestone 11B causal normalization
+
+386 tests passed with Ruff format/lint and provenance checks. The exact committed 11A dataset can be audited after acquiring its pinned source objects:
+
+```bash
+.venv/bin/python scripts/audit_archive_dataset.py \
+  --root data/acquisition-11a-final \
+  --manifest docs/data/11a-source-manifest.json \
+  --dataset-hash 985453a92d0283cd4fd6fc60b55296bfe65110b7c8f07baa99ffda3d280bb0a6 \
+  --symbol BTCUSDT --month 2024-01 \
+  --output artifacts/normalization-11b
+```
+
+This command completed successfully: 744 LAST hours, 744 Mark hours, 31 derived UTC daily LAST observations and no missing intervals in the sample. The normalization hash is `a7af2112f560a461015b016fe3d80d7ad1efae761efb1f94765a4f65ccd5c60a`. See docs/data/11b-normalization-summary.json for implementation hashes and the honestly dirty local source state. Different retrieval attempt timestamps create new attempt IDs; the committed manifest deliberately refers to its original attempts, so preserve those attempt records or explicitly review a newly acquired manifest with matching dataset identity. Do not silently substitute an attempt or source revision.
+
+Twelve additional tests cover explicit hash pins, metadata/object tampering, duplicate or failed revisions, locked Final and missing months, availability boundaries, complete-day requirements, LAST/Mark separation, late corrections, future-append invariance and ambiguous/off-grid inputs. No strategy backtest or operational PAPER process was run.

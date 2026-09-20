@@ -265,3 +265,10 @@ This proves full offline framework lifecycle integration, not a public Binance f
 ## Official archive boundary (Milestone 11A)
 
 ArchiveRequest restricts monthly USD-M source identity and refuses Final Test months before I/O. The acquisition layer validates official filename-bound checksums and writes immutable content-addressed ZIPs, checksums and attempt records. load_acquired rechecks hashes, decoder identity and normalized coverage before consumption. The strict decoder emits separate LAST/Mark candles with modelled +2s availability and exact decimals. FundingArchiveRow is raw settlement evidence, intentionally distinct from a contiguous FundingSettlement index. Acquisition metadata and dataset hashes do not certify historical publication timing, security eligibility, trading rules or executable liquidity. See DATA_PROVENANCE.md and DATA_COVERAGE.md.
+
+
+## Frozen causal dataset (Milestone 11B)
+
+ArchiveDataset accepts an explicit expected dataset/config hash and validates the acquisition report, unique source selection and owned immutable attempt evidence. Window requests require every named source month, block Final Test and verify raw objects before returning data. Missing/not-yet-available intervals are explicit. No automatic latest-revision selection, forward-fill, funding conversion or metadata inference occurs.
+
+daily_last selects causal LAST 1h revisions and requires all 24 aligned UTC hours per day. Aggregated availability is the latest constituent availability; exact Decimal quote volume is summed under the shared 34-digit context. The derived revision hash binds only selected constituents, preserving future-append invariance. Mark cannot contribute trading volume. Both raw windows and derived daily windows remain PRELIMINARY; existing build_universe still requires independent historical Security inputs.
