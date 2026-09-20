@@ -1,3 +1,9 @@
 # Paper readiness
 
-NOT READY. Freqtrade installation, deterministic core, adapter, protection, reconciliation, tests and data remain incomplete. Do not start an operational trading process. LIVE remains disabled. No keys are needed for current governance checks.
+NOT READY. LIVE remains disabled. No operational trading process or external order has been started.
+
+The pinned Freqtrade strategy loads, shared-core signal/intent parity passes, and the PAPER dispatch boundary has synthetic tests for write-ahead recovery, owned protection/exit/cancel tickets and a single journal authority. The current bridge still refuses operational dispatch.
+
+Remaining gates include a concrete durable PAPER execution backend, normalized owned fill/cancellation evidence, full process integration, source-backed market/funding/rules coverage and execution-model qualification. Native Freqtrade dry-run does not preserve the required IOC/reduce-only semantics and is not used as a substitute.
+
+Current safe reproduction commands are in REPRODUCE.md. They run offline configuration/parity and synthetic integration checks without API keys. These results are not historical backtest performance or the required 90-day paper record.

@@ -152,10 +152,10 @@ class PaperDispatch:
     def __exit__(self, *args):
         self.close()
 
-    def _intent(self, db, client_id):
+    def _intent(self, db, client_id, purposes=("ENTRY",)):
         row = db.execute("SELECT * FROM intents WHERE client_id=?", (client_id,)).fetchone()
-        if row is None or row["scope"] != self.scope or row["purpose"] != "ENTRY":
-            raise Conflict("Owned ENTRY intent required")
+        if row is None or row["scope"] != self.scope or row["purpose"] not in purposes:
+            raise Conflict("Owned supported intent required")
         return row
 
     def _ready(self, db, metadata, now):
@@ -369,6 +369,8 @@ class PaperDispatch:
         return response
 
     def _acknowledge(self, ticket, response):
+        from pvb24.integrations.paper_actions import PURPOSES
+
         self._guard()
         now = utc(self.clock())
         if (
@@ -377,11 +379,13 @@ class PaperDispatch:
             or not isinstance(response.order_id, str)
             or not response.order_id
             or response.ticket_digest != digest(ticket)
-            or not ticket.prepared_at <= utc(response.accepted_at) <= min(now, ticket.deadline)
+            or not ticket.prepared_at
+            <= utc(response.accepted_at)
+            <= (min(now, ticket.deadline) if ticket.deadline is not None else now)
         ):
             raise Conflict("Invalid PAPER acknowledgement; outcome remains unresolved")
         with self.journal.transaction() as db:
-            row = self._intent(db, ticket.client_id)
+            row = self._intent(db, ticket.client_id, purposes=("ENTRY",) + PURPOSES)
             # Enforce one venue order per client and one client per venue order.
             Journal.append_tx(db, "paper-accepted:" + ticket.client_id, response)
             Journal.append_tx(
@@ -389,12 +393,21 @@ class PaperDispatch:
                 "paper-order:" + self.scope + ":" + digest(response.order_id),
                 {"client_id": ticket.client_id, "order_id": response.order_id},
             )
-            if row["state"] in ("UNKNOWN", "ACKNOWLEDGED"):
+            # Protective/cancel acceptance does not prove an active/canceled
+            # stop. Their shared-core outcome carries separate evidence.
+            if row["purpose"] == "ENTRY" and row["state"] in ("UNKNOWN", "ACKNOWLEDGED"):
                 self.journal.reconcile_intent(ticket.client_id, "ACKNOWLEDGED", response)
 
+    def dispatch_action(self, client_id: str):
+        from pvb24.integrations.paper_actions import dispatch_action
+
+        return dispatch_action(self, client_id)
+
     def lookup(self, client_id: str):
+        from pvb24.integrations.paper_actions import PURPOSES, ActionTicket, guard_actions
+
         self._guard()
-        row = self._intent(self.journal.db, client_id)
+        row = self._intent(self.journal.db, client_id, purposes=("ENTRY",) + PURPOSES)
         if row["state"] == "PREPARED":
             raise Conflict("No committed dispatch to query")
         raw = self.journal.db.execute(
@@ -403,12 +416,18 @@ class PaperDispatch:
         if raw is None:
             raise Conflict("No owned PAPER transport ticket")
         t = json.loads(raw["payload"])
-        for key in ("quantity", "limit_price"):
-            t[key] = D(t[key])
+        for key in ("quantity", "limit_price", "stop_price"):
+            if key in t and t[key] is not None:
+                t[key] = D(t[key])
         for key in ("prepared_at", "deadline"):
-            t[key] = datetime.fromisoformat(t[key])
+            if t[key] is not None:
+                t[key] = datetime.fromisoformat(t[key])
         t["side"] = Side(t["side"])
-        ticket = EntryTicket(**t)
+        if row["purpose"] == "ENTRY":
+            ticket = EntryTicket(**t)
+        else:
+            guard_actions(self)
+            ticket = ActionTicket(**t)
         response = self.backend.lookup(client_id)
         if response is not None:
             self._acknowledge(ticket, response)

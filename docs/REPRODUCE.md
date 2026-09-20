@@ -69,3 +69,6 @@ It loaded PVB24Executor and confirmed event/signal/intent parity with zero submi
 
 
 Milestone 10B: 280 local pytest tests passed with Ruff format/lint and provenance checks. The focused command is `.venv/bin/python -m pytest -q tests/test_paper_dispatch.py` (22 tests). These are synthetic PAPER transport-contract tests: write-ahead visibility is checked through a separate SQLite connection, and lost response/restart cases never resend or release reservations. No concrete operational backend or native Freqtrade order path is enabled.
+
+
+Milestone 10C: 288 local pytest tests passed with Ruff format/lint and provenance checks. Focused command: `.venv/bin/python -m pytest -q tests/test_paper_actions.py tests/test_paper_dispatch.py` (30 tests). The action fixtures feed confirmed entries and stop acknowledgements through AccountReplay while the backend remains explicitly synthetic. No operational PAPER start or external order submission is claimed.

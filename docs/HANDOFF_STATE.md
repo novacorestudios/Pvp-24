@@ -1,4 +1,4 @@
-# Handoff — Milestone 10B (PAPER entry write-ahead boundary)
+# Handoff — Milestone 10C (PAPER protection/exit/cancel tickets)
 
 - Repository: novacorestudios/Pvp-24; branch build/pvb24-v1.
 - Exact current HEAD: read the Git branch ref; main remains initialization only.
@@ -6,7 +6,7 @@
 - Milestone 0 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35422954155 — SUCCESS.
 - Public-disclosure authorization: user explicitly approved publishing these files and will change visibility later. Do not request this approval again.
 - Milestone 1: official Freqtrade 2026.8 / 9f10e357a93c1dcf10c2a2b367659214d89c073e installed; repeat locked install and offline dry-run config smoke passed.
-- Local tests: 280 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
+- Local tests: 288 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
 - Milestone 1 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423197873 — SUCCESS.
 - Milestone 2 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423500106 — SUCCESS.
 - Milestone 3 final CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423929247 — SUCCESS.
@@ -34,7 +34,8 @@
 - Milestone 9E: 6f3ae916f2f53bfdc4fc8b93fdde8a9f5442a2c1; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35469054180 — SUCCESS.
 - Milestone 9F: af65c2cf2d79a4acf747ed9d159e17fd3f34f2e8; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35469509614 — SUCCESS.
 - Milestone 10A: f93c4e52002878f1fc9c53d5d00ebb15438ffbd1; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35469989993 — SUCCESS.
-- Next: publish/verify Milestone 10B CI, then add protective-stop/reduce-only/cancel transport and a concrete durable PAPER backend hosted by PVB24Executor. Keep operational_ready=false until the process and execution model pass qualification. Historical ingestion/general historical driver, stress/acceptance and paper readiness remain incomplete.
+- Milestone 10B: 0f0785c74abe84c87bf14191329d0c5e38244b6b; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35489760438 — SUCCESS.
+- Next: publish/verify Milestone 10C CI; implement normalized owned fill/terminal/cancellation evidence ingestion and a concrete durable PAPER backend hosted by PVB24Executor. Keep operational_ready=false until the process and execution model pass qualification. Historical ingestion/general historical driver, stress/acceptance and paper readiness remain incomplete.
 - Code: immutable Fill/Side types, precision-34 Decimal helpers, canonical IDs, SQLite WAL events/snapshots/write-ahead intents, fail-closed paper guard. Causal Timing/Candle/Mark/rule/security models, as-of revision selection, 30-day gap warmup, deterministic historical Top-20 and stale-universe grace implemented. Streaming Wilder ATR, channel/RVOL, exact long/short transitions, restartable indicator checkpoints, cooldown/status gates and timed simultaneous batch ranking implemented. Risk foundations now include rounded protective-stop costs, separate arrival shortfall gate, causal funding reserve with explicit coverage, immutable open/pending portfolio reservations and proportional confirmed-exit release. Descending quantity-step sizing, 1..5x minimum feasible leverage, isolated tier-consistent liquidation reconstruction, reduce-only post-fill action interface and transactional reservation+ENTRY intent are implemented. Execution market models now include sequence-consistent L2, consumed-depth replay, strict IOC caps and gates, partial sweep previews, and labelled preliminary OHLC proxies. Confirmed-fill protection lifecycle and transactional evidence/state/action-intent persistence now exist. Open-position reconciliation is now implemented; execution adapter and integrated backtest remain unimplemented. Exchange liquidation validation is still absent; actual post-fill collateral must come from the adapter, not a hypothetical newly opened smaller position.
 - Data: none acquired; OHLCV/Mark/funding/historical rules/security-master/L2 coverage remains unassessed. No backtest evidence, PRELIMINARY or VERIFIED.
 - PAPER: NOT READY. LIVE: DISABLED. No orders sent.
@@ -139,3 +140,14 @@ PaperDispatch validates owned entry intents against required account and current
 An exclusive Linux flock on the journal inode prevents multiple cooperating PAPER hosts, including path aliases. Backend instance identity/quality are frozen across restart. Before backend I/O, the complete validation evidence, exact Decimal LIMIT/IOC ticket and UNKNOWN dispatch claim commit in one transaction. External calls inside an existing transaction are refused. A lost response, process interruption or missing lookup leaves the outcome unresolved and never authorizes another submission. Valid acknowledgement binds unique client/venue order identities but creates no fills, terminal outcome or risk release.
 
 22 new tests cover a separate-connection view of the committed ticket before I/O, timeout-after-acceptance/restart/absent lookup, competing authorities, mandatory gates, changed economics, validation latency, malformed acknowledgements, precommit rollback and interruption before backend I/O. These tests use an explicit synthetic backend. The backend protocol is a trusted implementation contract, not evidence that a real model is qualified. The operational bridge remains blocked. Protective-stop/reduce-only/cancel transport, a concrete durable PAPER backend, process integration and source-backed execution fidelity remain pending. No exchange orders or historical performance runs occurred.
+
+
+## PAPER protection, exit and cancellation tickets (Milestone 10C)
+
+The same exclusive PaperDispatch authority now translates owned PROTECT, EXIT_MARKET, CANCEL_PROTECTION and CANCEL_ENTRY intents. A separate explicit backend contract requires reduce-only STOP_MARKET with CONTRACT_PRICE/LAST, reduce-only MARKET and owned-ID cancellation. These paths remain available while entry risk/account gates are paused. They reject backdated account evidence, changed/stale action payloads, changed stop proposals and quantities exceeding the actual remaining position. Already-dispatched unresolved exits reserve their not-yet-filled quantities, so different client IDs cannot duplicate closure of the same quantity.
+
+Cancel requests require a proven target venue ID. An unknown entry with no mapped venue ID must first be queried. Old protective orders can be canceled only when a different acknowledged stop covers the remaining quantity at the desired stop, or the owned position is flat. Ticket/UNKNOWN writes precede I/O just as for entries; a timeout/restart never permits resubmission.
+
+Action request acceptance only records immutable transport/venue identity. It intentionally leaves the action unresolved until explicit active-stop, fill or cancellation evidence reaches the shared account core. This prevents acceptance from masquerading as stop activation/cancel completion, and prevents transport ACK records from conflicting with richer core STOP_ACK evidence. Lookup of a stop after core confirmation is idempotent. No reservation or actual position quantity changes on transport acceptance.
+
+Eight added tests exercise shared-core entry fills and STOP_ACK integration, paused-entry emergency action dispatch, replacement-before-cancel, cancellation of the only stop being refused, duplicate exit quantities, stale protection after partial reduction, lost action replies/restart, unknown entry cancellation lookup and contract/clock rejection. A concrete durable PAPER backend and normalized cancellation/fill evidence ingestion are the next work; operational_ready remains false. No historical performance or exchange-model qualification is inferred from these synthetic tests.
