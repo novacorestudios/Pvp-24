@@ -33,3 +33,4 @@ jobs:
       - run: python scripts/bootstrap_freqtrade.py --install
       - run: .deps/freqtrade/.venv/bin/python scripts/smoke_freqtrade.py
       - run: .deps/freqtrade/.venv/bin/python scripts/smoke_freqtrade_parity.py
+      - run: .deps/freqtrade/.venv/bin/python scripts/smoke_freqtrade_parity.py --framework

@@ -1,9 +1,11 @@
 """Load the pinned Freqtrade strategy and compare shared signal/intent output offline."""
 
+import argparse
 import copy
 import json
 import sys
 import tempfile
+from contextlib import ExitStack
 from datetime import timedelta
 from pathlib import Path
 
@@ -46,7 +48,7 @@ def initialize(path):
     return journal
 
 
-def execution_parity(strategy, refdb, paperdb, decision, inputs, cid, folder):
+def execution_parity(strategy, refdb, paperdb, decision, inputs, cid, folder, framework=None):
     now = [decision]
     venues, host = [], None
     try:
@@ -120,11 +122,18 @@ def execution_parity(strategy, refdb, paperdb, decision, inputs, cid, folder):
                 raise
         else:
             raise AssertionError("Expected framework cleanup failure was hidden")
+        old_strategy = strategy
         strategy = type(strategy)(strategy.config)
+        if framework is not None:
+            strategy.dp, strategy.wallets = old_strategy.dp, old_strategy.wallets
+            framework.strategy = strategy
         strategy.bot_start()
         strategy.bind_shared_account(paperdb, "parity")
         strategy.bind_local_paper_model(venues[1], lambda: now[0], **protection_policy)
-        strategy.bot_loop_start(now[0])
+        if framework is None:
+            strategy.bot_loop_start(now[0])
+        else:
+            framework.process()
         assert_equal("strategy restart with active stop")
         for stage in ("replacement", "exit"):
             now[0] += timedelta(milliseconds=1)
@@ -139,7 +148,10 @@ def execution_parity(strategy, refdb, paperdb, decision, inputs, cid, folder):
                     now[0],
                 )
             session.pump_actions()
-            strategy.bot_loop_start(now[0])
+            if framework is None:
+                strategy.bot_loop_start(now[0])
+            else:
+                framework.process()
             assert_equal(stage)
         p = Protection.restore(paperdb.snapshot("protection:parity:" + sid)[1])
         if p.remaining != 0 or p.confirmed_stops - p.canceled_stops:
@@ -170,11 +182,17 @@ def main():
     from freqtrade.enums import RunMode
     from freqtrade.resolvers import StrategyResolver
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--framework", action="store_true", help="Run full bot with offline exchange fixture"
+    )
+    args = parser.parse_args()
+
     verify(ROOT)
     pin = json.loads((ROOT / "config/manifest.json").read_text())["freqtrade"]
     if freqtrade.__version__ != pin["version"]:
         raise RuntimeError("Unexpected Freqtrade version")
-    with tempfile.TemporaryDirectory(prefix="pvb24-parity-") as folder:
+    with tempfile.TemporaryDirectory(prefix="pvb24-parity-") as folder, ExitStack() as stack:
         folder = Path(folder)
         userdir = folder / "user_data"
         userdir.mkdir()
@@ -188,7 +206,40 @@ def main():
         ).get_config()
         # Fixed synthetic evidence cannot be silently promoted to VERIFIED.
         cfg["pvb24"]["quality_mode"] = "PRELIMINARY"
-        strategy = StrategyResolver.load_strategy(cfg)
+        framework = exchange = None
+        network_attempts = []
+        if args.framework:
+            import socket
+            from unittest.mock import patch
+
+            from freqtrade.enums import State
+            from freqtrade.freqtradebot import FreqtradeBot
+            from freqtrade.persistence import Trade
+            from freqtrade_offline_fixture import OfflineExchange
+
+            def forbid_network(*args, **kwargs):
+                network_attempts.append(True)
+                raise AssertionError("Network forbidden in offline framework smoke")
+
+            for owner, name in (
+                (socket.socket, "connect"),
+                (socket.socket, "connect_ex"),
+                (socket, "getaddrinfo"),
+            ):
+                stack.enter_context(patch.object(owner, name, side_effect=forbid_network))
+            exchange = OfflineExchange()
+            stack.enter_context(
+                patch("freqtrade.resolvers.ExchangeResolver.load_exchange", return_value=exchange)
+            )
+            cfg["db_url"] = "sqlite:///" + str(folder / "native-freqtrade.sqlite")
+            cfg.pop("telegram", None)
+            cfg.pop("api_server", None)
+            framework = FreqtradeBot(cfg)
+            framework.state = State.RUNNING
+            framework.startup()
+            strategy = framework.strategy
+        else:
+            strategy = StrategyResolver.load_strategy(cfg)
         validate_config_consistency(cfg)
         strategy.bot_start()
         refdb, paperdb = (
@@ -298,7 +349,16 @@ def main():
                 inputs[SYMBOL],
                 paper_plan[0]["client_id"],
                 folder,
+                framework,
             )
+            if framework is not None:
+                if exchange.native_order_attempts or network_attempts or Trade.get_open_trades():
+                    raise AssertionError("Offline framework created an unintended order path")
+                if exchange.refreshes < 3 or framework.last_process is None:
+                    raise AssertionError("Full framework process loop was not exercised")
+                framework.cleanup()
+                if not exchange.closed:
+                    raise AssertionError("Framework did not close its exchange fixture")
             print(
                 json.dumps(
                     {
@@ -312,12 +372,16 @@ def main():
                         "external_orders_submitted": 0,
                         "operational_paper_ready": False,
                         "native_dry_run_transport_qualified": False,
+                        "full_framework_offline_lifecycle": args.framework,
+                        "public_market_feed_connected": False,
                         **execution,
                     },
                     indent=2,
                 )
             )
         finally:
+            if framework is not None and not exchange.closed:
+                framework.cleanup()
             refdb.close()
             paperdb.close()
 
