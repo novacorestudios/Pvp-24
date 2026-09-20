@@ -1,4 +1,4 @@
-# Handoff — Milestone 11B (frozen causal dataset and daily aggregation)
+# Handoff — Milestone 11C (official directory inventory and source gaps)
 
 - Repository: novacorestudios/Pvp-24; branch build/pvb24-v1.
 - Exact current HEAD: read the Git branch ref; main remains initialization only.
@@ -6,7 +6,7 @@
 - Milestone 0 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35422954155 — SUCCESS.
 - Public-disclosure authorization: user explicitly approved publishing these files and will change visibility later. Do not request this approval again.
 - Milestone 1: official Freqtrade 2026.8 / 9f10e357a93c1dcf10c2a2b367659214d89c073e installed; repeat locked install and offline dry-run config smoke passed.
-- Local tests: 386 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
+- Local tests: 400 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
 - Milestone 1 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423197873 — SUCCESS.
 - Milestone 2 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423500106 — SUCCESS.
 - Milestone 3 final CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423929247 — SUCCESS.
@@ -45,7 +45,8 @@
 - Milestone 10J: b382b70089585f1f6eec806fa723c0970b613e64; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35518785512 — SUCCESS.
 - Milestone 10K: 56ec5a22344802ad7cba82a4e2c1c853657333ea; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35519333976 — SUCCESS.
 - Milestone 11A: cd889fbb2fe01ac45aa0606f777f428681487c90; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35520448889 — SUCCESS.
-- Next: publish/verify Milestone 11B CI, then extend historical source inventory and causal source integration. Archive acquisition is implemented; historical universe/rules, funding schedule/settlement pricing, public feed/account/collateral/liquidation qualification and historical evaluation remain incomplete. Final Test stays locked and operational_ready=false.
+- Milestone 11B: 3e8121ee2f18ae25b428bc2a6e565f0e527de1d2; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35520817197 — SUCCESS.
+- Next: publish/verify Milestone 11C CI, then historical metadata evidence integration and pre-Final coverage planning. Archive acquisition is implemented; historical universe/rules, funding schedule/settlement pricing, public feed/account/collateral/liquidation qualification and historical evaluation remain incomplete. Final Test stays locked and operational_ready=false.
 - Code: immutable Fill/Side types, precision-34 Decimal helpers, canonical IDs, SQLite WAL events/snapshots/write-ahead intents, fail-closed paper guard. Causal Timing/Candle/Mark/rule/security models, as-of revision selection, 30-day gap warmup, deterministic historical Top-20 and stale-universe grace implemented. Streaming Wilder ATR, channel/RVOL, exact long/short transitions, restartable indicator checkpoints, cooldown/status gates and timed simultaneous batch ranking implemented. Risk foundations now include rounded protective-stop costs, separate arrival shortfall gate, causal funding reserve with explicit coverage, immutable open/pending portfolio reservations and proportional confirmed-exit release. Descending quantity-step sizing, 1..5x minimum feasible leverage, isolated tier-consistent liquidation reconstruction, reduce-only post-fill action interface and transactional reservation+ENTRY intent are implemented. Execution market models now include sequence-consistent L2, consumed-depth replay, strict IOC caps and gates, partial sweep previews, and labelled preliminary OHLC proxies. Confirmed-fill protection lifecycle and transactional evidence/state/action-intent persistence now exist. Open-position reconciliation is now implemented; execution adapter and integrated backtest remain unimplemented. Exchange liquidation validation is still absent; actual post-fill collateral must come from the adapter, not a hypothetical newly opened smaller position.
 - Data: five official BTCUSDT January 2024 archives acquired and SHA-256/CSV verified: LAST/Mark 1m (44640 rows each), LAST/Mark 1h (744 each), raw funding (93). Candle grids complete for this sample only; funding has 28 millisecond interval discrepancies and no schedule attestation. PRELIMINARY availability model; no historical rules/security master/L2. See DATA_COVERAGE.md and data/11a-source-manifest.json. No backtest evidence.
 - PAPER: NOT READY. LIVE: DISABLED. No orders sent.
@@ -261,3 +262,10 @@ The bounded downloader and strict decoder retain immutable official bytes, sidec
 ArchiveDataset requires an explicitly reviewed dataset hash and the frozen config hash, verifies the complete report/attempt selection and rechecks source bytes before consumption. Duplicate/failed/foreign revisions, undeclared months and Final Test windows are rejected. LAST and Mark remain separate; the selected availability model gates every returned candle and exposes missing/not-yet-available intervals. Daily LAST aggregation requires all 24 UTC hours, sums exact Decimal quote volume, propagates the latest constituent availability and hashes only causal constituents. Missing hours cannot become complete daily observations.
 
 The actual 11A sample produced 744 LAST hours, 744 Mark hours and 31 daily LAST observations with no gaps; exact hashes and implementation identity are in data/11b-normalization-summary.json. Quality remains PRELIMINARY and no historical eligibility, funding schedule, strategy performance or operational readiness is inferred. The next source task is historical candidate/security-master and rules coverage; the immutable baseline remains unchanged.
+
+
+## Official directory inventory (Milestone 11C)
+
+Three reviewed directory roots were enumerated completely: 8 monthly data kinds, 9 daily data kinds and 1018 monthly kline symbol directories across two pages. The four original XML pages and observed metadata are committed under data/11c-catalog-pages and data/11c-source-inventory.json. No price/funding archive objects were read by this inventory and Final Test remains locked. The directory listing is observed now; it is not an as-of historical security master and its names cannot be passed as historical universe membership.
+
+Neither inventoried data-kind root exposes an exchangeInfo/security-master/rule-snapshot directory. This is a scoped source finding, not proof that no other source exists. Current exchangeInfo documents current rules and cannot fill historical gaps. BookTicker/bookDepth names do not establish continuous sequence-consistent executable L2 coverage. Historical metadata, causal funding coverage and six-year evaluation remain outstanding.

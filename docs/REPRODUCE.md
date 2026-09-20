@@ -127,3 +127,14 @@ The first ingestion attempt deliberately remains recorded locally as 4/5: raw fu
 This command completed successfully: 744 LAST hours, 744 Mark hours, 31 derived UTC daily LAST observations and no missing intervals in the sample. The normalization hash is `a7af2112f560a461015b016fe3d80d7ad1efae761efb1f94765a4f65ccd5c60a`. See docs/data/11b-normalization-summary.json for implementation hashes and the honestly dirty local source state. Different retrieval attempt timestamps create new attempt IDs; the committed manifest deliberately refers to its original attempts, so preserve those attempt records or explicitly review a newly acquired manifest with matching dataset identity. Do not silently substitute an attempt or source revision.
 
 Twelve additional tests cover explicit hash pins, metadata/object tampering, duplicate or failed revisions, locked Final and missing months, availability boundaries, complete-day requirements, LAST/Mark separation, late corrections, future-append invariance and ambiguous/off-grid inputs. No strategy backtest or operational PAPER process was run.
+
+
+## Milestone 11C official source inventory
+
+400 tests passed with Ruff format/lint and provenance verification. This read-only metadata command completed successfully:
+
+```bash
+.venv/bin/python scripts/inventory_binance_archives.py --output data/catalog-11c
+```
+
+It enumerated 8 monthly kinds, 9 daily kinds and 1018 monthly kline symbol directories (two pages), fetching four XML directory pages and zero archive objects. Raw evidence and exact implementation hashes are committed in docs/data/11c-catalog-pages and docs/data/11c-source-inventory.json. Reruns may observe a changed directory inventory; preserve the existing checkpoint rather than overwriting historical observations. Fourteen new tests verify complete pagination, token encoding/identity, failed/truncated/repeated pages, resource boundaries, response identity, refusal of leaf/date paths and retention of prior evidence.

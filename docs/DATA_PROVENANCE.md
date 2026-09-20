@@ -22,3 +22,12 @@ Decoding checks the sole CSV member, schema, exact decimal values, UTC bar bound
 Funding rows preserve original calc_time and separately declared interval hours. The sample contains millisecond discrepancies between consecutive actual timestamps and declared durations. No rounding, inferred contiguous schedule, fabricated Mark settlement price, or automatic FundingCoverage attestation is applied. Raw funding evidence cannot yet be passed to the causal funding-reserve or cashflow path.
 
 Reconsumption rechecks attempt and object hashes, decoder identity and decoded coverage. It never silently selects a newer archive revision. Raw objects are reproducible ignored research inputs; the committed source manifest preserves their identities and measured coverage, not a claim that a fresh download will always return the same revision.
+
+
+## Directory evidence (11C)
+
+The official https://data.binance.vision/ index declares `https://s3-ap-northeast-1.amazonaws.com/data.binance.vision` as its public directory bucket. The inventory uses bounded ListObjectsV2 requests with a delimiter and only three reviewed roots: monthly types, daily types and monthly kline symbol directories. It refuses leaf objects and deeper symbol/date prefixes. It records every raw XML page and retrieval time, requires consistent prefix/bucket/count/token metadata and a completed terminal page, and labels interrupted/truncated/repeated pagination INCOMPLETE.
+
+The observed complete inventory contains 8 monthly kinds, 9 daily kinds and 1018 kline symbol directories. This evidence concerns current directory enumeration only, including names regardless of present trading status; no current active-pairs endpoint is used to restrict candidates. No historical listing/classification/delisting/rule record is inferred from a directory name or archive boundary. Neither enumerated type root contains a security-master or rule-history dataset. Other source acquisition remains open. `bookTicker` or `bookDepth` directories alone do not certify executable depth, completeness or event sequencing. See the exact committed XML and metadata in data/11c-catalog-pages and data/11c-source-inventory.json.
+
+The official Exchange Information documentation describes current rules and symbol information: https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Exchange-Information . It has not been used to backfill historical contract rules. Source review date: 2026-09-20.

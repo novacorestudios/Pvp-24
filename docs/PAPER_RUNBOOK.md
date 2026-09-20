@@ -19,3 +19,5 @@ An optional acknowledgement watchdog now freezes an explicit timeout/policy befo
 The `--framework` parity smoke now initializes/starts/processes/cleans up the actual FreqtradeBot offline, with an isolated native database, a strict synthetic exchange fixture and blocked network access. It verifies zero native trades/orders, three full process cycles and shared execution parity. Connecting public feeds and qualifying execution/account economics remain outstanding; this is not a running operational PAPER service.
 
 Milestone 11B verifies explicit source selection, causal candle windows and complete-day volume aggregation. These offline data preparation checks do not provide the missing historical security master, funding eligibility, exchange rules or executable liquidity; all readiness gates remain unchanged.
+
+Milestone 11C inventories current public archive directories with complete pagination and retained raw evidence. Directory presence does not establish a historical security master, trading rules or valid execution depth, and cannot enable PAPER or Final Test.

@@ -33,3 +33,7 @@ The committed manifest records the acquisition base commit and worktree_dirty=tr
 ## Causal normalization (11B)
 
 The pinned sample was reread through ArchiveDataset at 2024-02-01 00:00:02 UTC: 744 LAST hours, 744 Mark hours and 31 complete daily LAST observations. No interval was filled synthetically. The daily volume source is the sum of 24 available LAST hourly observations; Mark volume is excluded. Derived identity and availability are tied to the exact constituent rows. See data/11b-normalization-summary.json. This supplies only volume inputs for a future universe reconstruction, not evidence that a symbol was historically eligible.
+
+## Source inventory (11C)
+
+Complete enumeration observed 8 monthly source kinds, 9 daily kinds and 1018 monthly kline symbol directories. The four original XML pages are retained. These are source-discovery names, not 1018 historically eligible contracts. No archive content or Final-period market values were downloaded by the inventory. Historical metadata/rules remain unacquired; neither enumerated root exposes those datasets. The discovery of bookTicker/bookDepth directories does not yet qualify order-book coverage.

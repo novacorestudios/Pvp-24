@@ -272,3 +272,8 @@ ArchiveRequest restricts monthly USD-M source identity and refuses Final Test mo
 ArchiveDataset accepts an explicit expected dataset/config hash and validates the acquisition report, unique source selection and owned immutable attempt evidence. Window requests require every named source month, block Final Test and verify raw objects before returning data. Missing/not-yet-available intervals are explicit. No automatic latest-revision selection, forward-fill, funding conversion or metadata inference occurs.
 
 daily_last selects causal LAST 1h revisions and requires all 24 aligned UTC hours per day. Aggregated availability is the latest constituent availability; exact Decimal quote volume is summed under the shared 34-digit context. The derived revision hash binds only selected constituents, preserving future-append invariance. Mark cannot contribute trading volume. Both raw windows and derived daily windows remain PRELIMINARY; existing build_universe still requires independent historical Security inputs.
+
+
+## Directory inventory boundary (Milestone 11C)
+
+The catalog adapter performs bounded, strict, paginated enumeration of three fixed public directory roots. Source identity/count/token checks and duplicate detection prevent a partial or mismatched listing from being marked complete. Raw pages and failed attempts are retained. Leaf archive objects and deeper date paths are outside this interface, keeping Final data inaccessible. Its output is current source-discovery metadata, never a Security or ContractRules object and never a tradable-universe list.
