@@ -12,13 +12,19 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from verify_provenance import verify  # noqa: E402
 
+from pvb24.accounting.coordinator import AccountCoordinator  # noqa: E402
 from pvb24.accounting.ledger import Ledger, LedgerStore  # noqa: E402
 from pvb24.accounting.risk_service import AccountRiskService  # noqa: E402
 from pvb24.data.contract_rules import ContractRules, MaintenanceTier  # noqa: E402
 from pvb24.data.universe import Universe  # noqa: E402
 from pvb24.decimal_math import D  # noqa: E402
+from pvb24.execution.book import Book  # noqa: E402
 from pvb24.execution.planner import EntryInputs, EntryPlanner  # noqa: E402
+from pvb24.execution.protection import Protection  # noqa: E402
 from pvb24.ids import canonical, digest  # noqa: E402
+from pvb24.integrations.paper_dispatch import PaperDispatch  # noqa: E402
+from pvb24.integrations.paper_session import PaperSession  # noqa: E402
+from pvb24.integrations.paper_venue import L2PaperVenue  # noqa: E402
 from pvb24.replay.account import AccountReplay  # noqa: E402
 from pvb24.replay.events import Replay  # noqa: E402
 from pvb24.replay.smoke import END, SIGNAL_TIME, START, SYMBOL, fixture  # noqa: E402
@@ -38,6 +44,95 @@ def initialize(path):
         START, max_mark_age=timedelta(seconds=1), policy_id="SYNTHETIC_PARITY"
     )
     return journal
+
+
+def execution_parity(strategy, refdb, paperdb, decision, inputs, cid, folder):
+    now = [decision]
+    venues, host = [], None
+    try:
+        books = []
+        for name in ("reference", "freqtrade"):
+            book = Book(SYMBOL)
+            book.snapshot(10, [(D("101.20"), D(100))], [(D("101.21"), D(100))], now[0], now[0])
+            book.update(10, 11, 9, [], [], now[0], now[0])
+            books.append(book)
+            venue = L2PaperVenue(
+                folder / (name + "-model.sqlite"),
+                instance_id="SYNTHETIC_PARITY_ONLY",
+                scope="parity",
+                manifest_id="SYNTHETIC_L2_PARITY",
+                clock=lambda: now[0],
+                max_last_age=timedelta(seconds=1),
+            )
+            venues.append(venue)
+            venue.install_book(book, source_event_id="book")
+            venue.set_terms(
+                inputs.rules,
+                entry_fee_rate=D("0.0005"),
+                exit_fee_rate=D("0.0005"),
+                available_at=now[0],
+                source_revision="synthetic-fees",
+            )
+            venue.publish_last(
+                SYMBOL, D("101.21"), event_time=now[0], available_at=now[0], source_event_id="last"
+            )
+        host = PaperDispatch(refdb, "parity", Quality.PRELIMINARY, venues[0], lambda: now[0])
+        session = PaperSession(host)
+        strategy.config["pvb24"]["execution_transport"] = "LOCAL_PRELIMINARY_L2"
+        strategy.bind_local_paper_model(venues[1], lambda: now[0])
+        session.dispatch_entry(cid, inputs, books[0])
+        session.pump_actions()
+        strategy.dispatch_local_entry(cid, inputs, books[1])
+        sid = refdb.db.execute(
+            "SELECT signal_id FROM intents WHERE client_id=?", (cid,)
+        ).fetchone()[0]
+
+        def assert_equal(stage):
+            for prefix in ("ledger:parity", "protection:parity:" + sid, "paper-session:parity"):
+                if refdb.snapshot(prefix) != paperdb.snapshot(prefix):
+                    raise AssertionError(stage + " snapshot parity failed: " + prefix)
+            intents = [
+                [dict(row) for row in db.db.execute("SELECT * FROM intents ORDER BY rowid")]
+                for db in (refdb, paperdb)
+            ]
+            if intents[0] != intents[1] or canonical(venues[0].events_after()) != canonical(
+                venues[1].events_after()
+            ):
+                raise AssertionError(stage + " order/fill/fee/terminal parity failed")
+
+        assert_equal("entry/protect")
+        for stage in ("replacement", "exit"):
+            now[0] += timedelta(milliseconds=1)
+            for db in (refdb, paperdb):
+                AccountCoordinator(db, "parity").protection_event(
+                    sid,
+                    "parity-" + stage,
+                    {"fixture": stage},
+                    (lambda p: p.tighten_stop(p.effective_stop + D("0.01"), D("101.21")))
+                    if stage == "replacement"
+                    else (lambda p: p.close()),
+                    now[0],
+                )
+            session.pump_actions()
+            strategy.bot_loop_start(now[0])
+            assert_equal(stage)
+        p = Protection.restore(paperdb.snapshot("protection:parity:" + sid)[1])
+        if p.remaining != 0 or p.confirmed_stops - p.canceled_stops:
+            raise AssertionError("Shared exit did not reach flat quantity and terminal stops")
+        return {
+            "local_execution_parity": True,
+            "execution_evidence_hash": digest(venues[0].events_after()),
+            "modeled_order_requests_per_path": refdb.db.execute(
+                "SELECT COUNT(*) FROM events WHERE event_id LIKE 'paper-ticket:%'"
+            ).fetchone()[0],
+            "modeled_fills_per_path": len(LedgerStore(refdb, "parity").read()[1].fills),
+        }
+    finally:
+        strategy.close_local_paper()
+        if host is not None:
+            host.close()
+        for venue in venues:
+            venue.close()
 
 
 def main():
@@ -107,7 +202,7 @@ def main():
                 START - timedelta(days=100),
                 "synthetic",
                 "v1",
-                D("0.1"),
+                D("0.01"),
                 D("0.1"),
                 D("0.1"),
                 D(5),
@@ -168,6 +263,15 @@ def main():
                 pass
             else:
                 raise AssertionError("LIVE configuration accepted")
+            execution = execution_parity(
+                strategy,
+                refdb,
+                paperdb,
+                decision,
+                inputs[SYMBOL],
+                paper_plan[0]["client_id"],
+                folder,
+            )
             print(
                 json.dumps(
                     {
@@ -178,9 +282,10 @@ def main():
                         "trace_hash": traces[0],
                         "signal_hash": digest(reference_batch),
                         "intent_hash": digest(reference_plan),
-                        "orders_submitted": 0,
+                        "external_orders_submitted": 0,
                         "operational_paper_ready": False,
                         "native_dry_run_transport_qualified": False,
+                        **execution,
                     },
                     indent=2,
                 )

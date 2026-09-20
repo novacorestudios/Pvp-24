@@ -6,6 +6,7 @@ This coordinator never clears an account pause or infers a missing outcome.
 """
 
 import json
+import os
 from dataclasses import dataclass
 
 from pvb24.accounting.coordinator import AccountCoordinator, read_tx, save_tx
@@ -39,8 +40,6 @@ class PaperSession:
             raise Conflict("Session account and model scopes differ")
         account_path = host.journal.db.execute("PRAGMA database_list").fetchone()["file"]
         model_path = host.backend.journal.db.execute("PRAGMA database_list").fetchone()["file"]
-        import os
-
         if os.path.samefile(account_path, model_path):
             raise Conflict("Account and model require separate durable journals")
         self.host, self.journal = host, host.journal
@@ -170,3 +169,8 @@ class PaperSession:
         response = self.host.dispatch_action(client_id)
         self.recover(max_events=max_events)
         return response
+
+    def pump_actions(self, *, max_actions=100, max_events=100):
+        from pvb24.integrations.paper_pump import pump_actions
+
+        return pump_actions(self, max_actions=max_actions, max_events=max_events)

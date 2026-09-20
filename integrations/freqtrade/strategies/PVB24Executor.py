@@ -32,6 +32,22 @@ class PVB24Executor(IStrategy):
 
     def bot_loop_start(self, current_time, **kwargs):
         require_executor_config(self.config)
+        if self.shared is not None and self.shared.local_session is not None:
+            return self.shared.pump_local()
+
+    def bind_local_paper_model(self, backend, clock):
+        if self.shared is None:
+            raise RuntimeError("Shared account must be initialized first")
+        self.shared.bind_local_model(backend, clock)
+
+    def dispatch_local_entry(self, client_id, inputs, book):
+        if self.shared is None:
+            raise RuntimeError("Shared account must be initialized first")
+        return self.shared.dispatch_local_entry(client_id, inputs, book)
+
+    def close_local_paper(self):
+        if self.shared is not None:
+            self.shared.close_local()
 
     def bind_shared_account(self, journal, scope):
         if self.shared is not None:
