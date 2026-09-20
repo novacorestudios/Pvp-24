@@ -51,7 +51,9 @@ class SharedPaperBridge:
         ):
             raise ValueError("Bound local PAPER transport configuration changed")
 
-    def bind_local_model(self, backend, clock):
+    def bind_local_model(
+        self, backend, clock, *, max_protection_ack_age=None, protection_policy_id=None
+    ):
         self._guard()
         if self.local_session is not None:
             raise ValueError("Local PAPER authority already bound")
@@ -59,7 +61,11 @@ class SharedPaperBridge:
             raise ValueError("Explicit LOCAL_PRELIMINARY_L2 research transport required")
         host = PaperDispatch(self.journal, self.scope, self.quality, backend, clock)
         try:
-            session = PaperSession(host)
+            session = PaperSession(
+                host,
+                max_protection_ack_age=max_protection_ack_age,
+                protection_policy_id=protection_policy_id,
+            )
             session.recover()
         except BaseException:
             host.close()

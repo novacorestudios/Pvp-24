@@ -77,9 +77,13 @@ def execution_parity(strategy, refdb, paperdb, decision, inputs, cid, folder):
                 SYMBOL, D("101.21"), event_time=now[0], available_at=now[0], source_event_id="last"
             )
         host = PaperDispatch(refdb, "parity", Quality.PRELIMINARY, venues[0], lambda: now[0])
-        session = PaperSession(host)
+        protection_policy = {
+            "max_protection_ack_age": timedelta(seconds=1),
+            "protection_policy_id": "SYNTHETIC_PARITY_ACK_1S",
+        }
+        session = PaperSession(host, **protection_policy)
         strategy.config["pvb24"]["execution_transport"] = "LOCAL_PRELIMINARY_L2"
-        strategy.bind_local_paper_model(venues[1], lambda: now[0])
+        strategy.bind_local_paper_model(venues[1], lambda: now[0], **protection_policy)
         session.dispatch_entry(cid, inputs, books[0])
         session.pump_actions()
         strategy.dispatch_local_entry(cid, inputs, books[1])
@@ -101,6 +105,27 @@ def execution_parity(strategy, refdb, paperdb, decision, inputs, cid, folder):
                 raise AssertionError(stage + " order/fill/fee/terminal parity failed")
 
         assert_equal("entry/protect")
+        # Exercise the pinned framework cleanup hook with an active modeled
+        # stop. Even a failure in framework cleanup must release our authority.
+        from types import SimpleNamespace
+
+        def cleanup_error():
+            raise RuntimeError("Synthetic framework cleanup failure")
+
+        strategy.freqai = SimpleNamespace(shutdown=cleanup_error)
+        try:
+            strategy.ft_bot_cleanup()
+        except RuntimeError as exc:
+            if str(exc) != "Synthetic framework cleanup failure":
+                raise
+        else:
+            raise AssertionError("Expected framework cleanup failure was hidden")
+        strategy = type(strategy)(strategy.config)
+        strategy.bot_start()
+        strategy.bind_shared_account(paperdb, "parity")
+        strategy.bind_local_paper_model(venues[1], lambda: now[0], **protection_policy)
+        strategy.bot_loop_start(now[0])
+        assert_equal("strategy restart with active stop")
         for stage in ("replacement", "exit"):
             now[0] += timedelta(milliseconds=1)
             for db in (refdb, paperdb):
@@ -121,6 +146,8 @@ def execution_parity(strategy, refdb, paperdb, decision, inputs, cid, folder):
             raise AssertionError("Shared exit did not reach flat quantity and terminal stops")
         return {
             "local_execution_parity": True,
+            "strategy_restart_with_active_stop": True,
+            "cleanup_released_authority": True,
             "execution_evidence_hash": digest(venues[0].events_after()),
             "modeled_order_requests_per_path": refdb.db.execute(
                 "SELECT COUNT(*) FROM events WHERE event_id LIKE 'paper-ticket:%'"

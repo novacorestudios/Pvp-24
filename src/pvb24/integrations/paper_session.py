@@ -32,7 +32,7 @@ class PaperSession:
     bound work per call; they do not drop events or authorize entry on backlog.
     """
 
-    def __init__(self, host):
+    def __init__(self, host, *, max_protection_ack_age=None, protection_policy_id=None):
         host._guard()
         if not isinstance(host.backend, L2PaperVenue) or host.quality is not Quality.PRELIMINARY:
             raise ValueError("Local PRELIMINARY L2 model required")
@@ -52,6 +52,11 @@ class PaperSession:
             "consumer": "ACCOUNT_RECEIPT_BEFORE_CURSOR_V1",
         }
         self.evidence = PaperEvidence(host)
+        from pvb24.integrations.paper_watchdog import ProtectionWatchdog
+
+        self.watchdog = ProtectionWatchdog(
+            host, max_ack_age=max_protection_ack_age, policy_id=protection_policy_id
+        )
         with self.journal.transaction() as db:
             _, previous = self.journal.snapshot(self.stream)
             if previous is None:
@@ -67,6 +72,7 @@ class PaperSession:
 
     def _state(self):
         self.host._guard()
+        self.watchdog.guard()
         if digest(self.host.backend.policy) != self.binding["policy_hash"]:
             raise Conflict("PAPER session source policy changed")
         _, state = self.journal.snapshot(self.stream)

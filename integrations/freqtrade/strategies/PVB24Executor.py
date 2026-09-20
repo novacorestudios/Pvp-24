@@ -35,10 +35,17 @@ class PVB24Executor(IStrategy):
         if self.shared is not None and self.shared.local_session is not None:
             return self.shared.pump_local()
 
-    def bind_local_paper_model(self, backend, clock):
+    def bind_local_paper_model(
+        self, backend, clock, *, max_protection_ack_age=None, protection_policy_id=None
+    ):
         if self.shared is None:
             raise RuntimeError("Shared account must be initialized first")
-        self.shared.bind_local_model(backend, clock)
+        self.shared.bind_local_model(
+            backend,
+            clock,
+            max_protection_ack_age=max_protection_ack_age,
+            protection_policy_id=protection_policy_id,
+        )
 
     def dispatch_local_entry(self, client_id, inputs, book):
         if self.shared is None:
@@ -48,6 +55,12 @@ class PVB24Executor(IStrategy):
     def close_local_paper(self):
         if self.shared is not None:
             self.shared.close_local()
+
+    def ft_bot_cleanup(self):
+        try:
+            super().ft_bot_cleanup()
+        finally:
+            self.close_local_paper()
 
     def bind_shared_account(self, journal, scope):
         if self.shared is not None:

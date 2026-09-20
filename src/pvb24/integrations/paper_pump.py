@@ -21,6 +21,7 @@ class PumpResult:
     retired: tuple[str, ...]
     deferred: tuple[str, ...]
     pending: tuple[str, ...]
+    timed_out: tuple[str, ...]
     recovery: Recovery
 
 
@@ -165,6 +166,7 @@ def pump_actions(session, *, max_actions=100, max_events=100):
         raise ValueError("Positive action work budget required")
     dispatched, retired, deferred = [], [], []
     recovery = session.recover(max_events=max_events)
+    timed_out = session.watchdog.check() if recovery.caught_up else ()
     for _ in range(max_actions):
         if not recovery.caught_up:
             break
@@ -196,4 +198,6 @@ def pump_actions(session, *, max_actions=100, max_events=100):
         dispatched.append(cid)
         recovery = session.recover(max_events=max_events)
     pending = tuple(row["client_id"] for row in _pending(session.journal.db, session.host.scope))
-    return PumpResult(tuple(dispatched), tuple(retired), tuple(deferred), pending, recovery)
+    return PumpResult(
+        tuple(dispatched), tuple(retired), tuple(deferred), pending, timed_out, recovery
+    )
