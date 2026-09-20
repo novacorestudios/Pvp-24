@@ -386,6 +386,11 @@ class PaperDispatch:
             raise Conflict("Invalid PAPER acknowledgement; outcome remains unresolved")
         with self.journal.transaction() as db:
             row = self._intent(db, ticket.client_id, purposes=("ENTRY",) + PURPOSES)
+            if db.execute(
+                "SELECT 1 FROM events WHERE event_id=?",
+                ("paper-forced-order:" + self.scope + ":" + digest(response.order_id),),
+            ).fetchone():
+                raise Conflict("Venue order ID already belongs to a forced liquidation")
             # Enforce one venue order per client and one client per venue order.
             Journal.append_tx(db, "paper-accepted:" + ticket.client_id, response)
             Journal.append_tx(

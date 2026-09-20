@@ -209,6 +209,10 @@ class AccountReplay:
                 )
             if operation == "EXIT_TERMINAL":
                 return ()
+            if operation == "STOP_TERMINAL":
+                # Filled, canceled or rejected stops no longer provide coverage.
+                # Losing the last protection requests a bounded safety close.
+                return position.confirm_cancel(raw["sequence"])
             raise ValueError("Unsupported order outcome")
 
         if operation == "ENTRY_TERMINAL":
@@ -217,8 +221,9 @@ class AccountReplay:
                 raise ValueError("Terminal entry outcome required")
         elif operation == "STOP_ACK":
             purpose, sequence, outcome = "PROTECT", raw["sequence"], "ACKNOWLEDGED"
-        elif operation == "EXIT_TERMINAL":
-            purpose, sequence, outcome = "EXIT_MARKET", raw["sequence"], raw["outcome"]
+        elif operation in ("EXIT_TERMINAL", "STOP_TERMINAL"):
+            purpose = "EXIT_MARKET" if operation == "EXIT_TERMINAL" else "PROTECT"
+            sequence, outcome = raw["sequence"], raw["outcome"]
             if outcome not in ("FILLED", "CANCELED", "REJECTED"):
                 raise ValueError("Terminal exit outcome required")
         else:
@@ -229,9 +234,9 @@ class AccountReplay:
         if operation == "ENTRY_TERMINAL" and outcome == "FILLED":
             if owned.entry_quantity != owned.requested_quantity:
                 raise ReconciliationRequired("Full entry outcome requires all confirmed fills")
-        if operation == "EXIT_TERMINAL":
+        if operation in ("EXIT_TERMINAL", "STOP_TERMINAL"):
             action = owned.actions.get(sequence)
-            if action is None or action.purpose != "EXIT_MARKET":
+            if action is None or action.purpose != purpose:
                 raise Conflict("Unknown owned exit sequence")
             from decimal import localcontext
 

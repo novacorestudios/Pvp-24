@@ -1,4 +1,4 @@
-# Handoff — Milestone 10C (PAPER protection/exit/cancel tickets)
+# Handoff — Milestone 10D (owned PAPER execution evidence)
 
 - Repository: novacorestudios/Pvp-24; branch build/pvb24-v1.
 - Exact current HEAD: read the Git branch ref; main remains initialization only.
@@ -6,7 +6,7 @@
 - Milestone 0 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35422954155 — SUCCESS.
 - Public-disclosure authorization: user explicitly approved publishing these files and will change visibility later. Do not request this approval again.
 - Milestone 1: official Freqtrade 2026.8 / 9f10e357a93c1dcf10c2a2b367659214d89c073e installed; repeat locked install and offline dry-run config smoke passed.
-- Local tests: 288 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
+- Local tests: 301 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
 - Milestone 1 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423197873 — SUCCESS.
 - Milestone 2 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423500106 — SUCCESS.
 - Milestone 3 final CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423929247 — SUCCESS.
@@ -35,7 +35,8 @@
 - Milestone 9F: af65c2cf2d79a4acf747ed9d159e17fd3f34f2e8; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35469509614 — SUCCESS.
 - Milestone 10A: f93c4e52002878f1fc9c53d5d00ebb15438ffbd1; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35469989993 — SUCCESS.
 - Milestone 10B: 0f0785c74abe84c87bf14191329d0c5e38244b6b; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35489760438 — SUCCESS.
-- Next: publish/verify Milestone 10C CI; implement normalized owned fill/terminal/cancellation evidence ingestion and a concrete durable PAPER backend hosted by PVB24Executor. Keep operational_ready=false until the process and execution model pass qualification. Historical ingestion/general historical driver, stress/acceptance and paper readiness remain incomplete.
+- Milestone 10C: 965c4bd3ec2ce87844f6fa365c33f5b33b20c19d; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35490066066 — SUCCESS.
+- Next: publish/verify Milestone 10D CI; build a concrete durable PAPER backend that honors Decimal IOC/reduce-only/LAST, stores orders and execution evidence before returning, and is hosted solely by PVB24Executor. Wire feed/event processing and validate actual process parity. Keep operational_ready=false until qualification. Historical ingestion/general historical driver, stress/acceptance and paper readiness remain incomplete.
 - Code: immutable Fill/Side types, precision-34 Decimal helpers, canonical IDs, SQLite WAL events/snapshots/write-ahead intents, fail-closed paper guard. Causal Timing/Candle/Mark/rule/security models, as-of revision selection, 30-day gap warmup, deterministic historical Top-20 and stale-universe grace implemented. Streaming Wilder ATR, channel/RVOL, exact long/short transitions, restartable indicator checkpoints, cooldown/status gates and timed simultaneous batch ranking implemented. Risk foundations now include rounded protective-stop costs, separate arrival shortfall gate, causal funding reserve with explicit coverage, immutable open/pending portfolio reservations and proportional confirmed-exit release. Descending quantity-step sizing, 1..5x minimum feasible leverage, isolated tier-consistent liquidation reconstruction, reduce-only post-fill action interface and transactional reservation+ENTRY intent are implemented. Execution market models now include sequence-consistent L2, consumed-depth replay, strict IOC caps and gates, partial sweep previews, and labelled preliminary OHLC proxies. Confirmed-fill protection lifecycle and transactional evidence/state/action-intent persistence now exist. Open-position reconciliation is now implemented; execution adapter and integrated backtest remain unimplemented. Exchange liquidation validation is still absent; actual post-fill collateral must come from the adapter, not a hypothetical newly opened smaller position.
 - Data: none acquired; OHLCV/Mark/funding/historical rules/security-master/L2 coverage remains unassessed. No backtest evidence, PRELIMINARY or VERIFIED.
 - PAPER: NOT READY. LIVE: DISABLED. No orders sent.
@@ -151,3 +152,14 @@ Cancel requests require a proven target venue ID. An unknown entry with no mappe
 Action request acceptance only records immutable transport/venue identity. It intentionally leaves the action unresolved until explicit active-stop, fill or cancellation evidence reaches the shared account core. This prevents acceptance from masquerading as stop activation/cancel completion, and prevents transport ACK records from conflicting with richer core STOP_ACK evidence. Lookup of a stop after core confirmation is idempotent. No reservation or actual position quantity changes on transport acceptance.
 
 Eight added tests exercise shared-core entry fills and STOP_ACK integration, paused-entry emergency action dispatch, replacement-before-cancel, cancellation of the only stop being refused, duplicate exit quantities, stale protection after partial reduction, lost action replies/restart, unknown entry cancellation lookup and contract/clock rejection. A concrete durable PAPER backend and normalized cancellation/fill evidence ingestion are the next work; operational_ready remains false. No historical performance or exchange-model qualification is inferred from these synthetic tests.
+
+
+## Owned PAPER execution evidence (Milestone 10D)
+
+PaperEvidence ingests immutable events from the bound PAPER backend only, with explicit source identity, quality, event/available times and canonical Decimal records. Submitted-order fills require the exact committed client ticket, mapped venue order, owned position/symbol and matching execution side/reduce-only flags. Transport acceptance never supplies an inferred fill. Event receipts and all nested ledger/protection/order effects commit atomically; duplicate evidence survives restart, changed economics conflict, and failures preserve a separate entry-reconciliation pause after rollback.
+
+Terminal outcomes require cumulative venue fills to equal the already-ingested actual fills for that exact order; a FILLED outcome requires its complete submitted quantity. Cancel confirmation first settles the proven target terminal outcome, then acknowledges the cancel request in the same transaction. A cancel/fill race cannot erase a partial position or release its original risk reserve. The shared AccountReplay now handles STOP_TERMINAL: rejected, canceled or filled stops cease to supply coverage, and losing the last protection requests a bounded safety close. Repeated query/cancel evidence preserves an already-proven terminal outcome.
+
+Authoritative overfills are retained in cash/quantity evidence and force safety reconciliation/closure rather than being discarded. Explicit forced-liquidation evidence is anchored to the owned entry position and a separate unique forced order ID; it enters the shared liquidation/fee ledger visibly. It is not inferred from a price bar or asserted to validate an exchange liquidation model. Unrequested foreign orders remain blocked.
+
+Thirteen new tests cover a full entry/active-stop/replacement/cancel/exit/flat-cash proof, cancel/fill races with missing-fill rejection, identity/side/time/source validation, rejected-stop emergency close, restart deduplication, atomic rollback after nested fill effects, overfill retention and explicit liquidation loss/fee visibility. The full local suite has 301 passing tests. A concrete durable PAPER backend, market/account feed policy, model qualification and live Freqtrade process integration remain pending; operational_ready=false and LIVE disabled.

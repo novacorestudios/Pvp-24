@@ -72,3 +72,6 @@ Milestone 10B: 280 local pytest tests passed with Ruff format/lint and provenanc
 
 
 Milestone 10C: 288 local pytest tests passed with Ruff format/lint and provenance checks. Focused command: `.venv/bin/python -m pytest -q tests/test_paper_actions.py tests/test_paper_dispatch.py` (30 tests). The action fixtures feed confirmed entries and stop acknowledgements through AccountReplay while the backend remains explicitly synthetic. No operational PAPER start or external order submission is claimed.
+
+
+Milestone 10D: 301 local pytest tests passed with Ruff format/lint and provenance checks. Focused command: `.venv/bin/python -m pytest -q tests/test_paper_evidence.py` (13 tests). A first lifecycle fixture accidentally assigned entry and exit the same event time without comparable venue sequences; the ledger correctly rejected that ambiguous reduction-before-entry case. The fixture was corrected to record exit later, preserving the core ordering policy. Test helper lint and a liquidation-count assertion name were corrected before the final full pass. No historical performance, real exchange fixture validation or operational PAPER run is claimed.
