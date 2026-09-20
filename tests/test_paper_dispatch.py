@@ -19,6 +19,7 @@ class Backend:
     paper_only = True
     contract = CONTRACT
     instance_id = "SYNTHETIC_TEST_ONLY"
+    quality = Quality.PRELIMINARY
 
     def __init__(self, path):
         self.path, self.calls, self.queries, self.orders = path, [], [], {}

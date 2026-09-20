@@ -49,7 +49,8 @@ def guard_actions(host):
 
 def accepted_order(db, client_id):
     row = db.execute(
-        "SELECT payload FROM events WHERE event_id=?", ("paper-accepted:" + client_id,)
+        "SELECT payload FROM events WHERE event_id IN (?,?)",
+        ("paper-accepted:" + client_id, "paper-rejected:" + client_id),
     ).fetchone()
     if row is None:
         raise Conflict("Target order identity is unresolved; query before cancellation")

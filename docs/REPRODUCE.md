@@ -75,3 +75,6 @@ Milestone 10C: 288 local pytest tests passed with Ruff format/lint and provenanc
 
 
 Milestone 10D: 301 local pytest tests passed with Ruff format/lint and provenance checks. Focused command: `.venv/bin/python -m pytest -q tests/test_paper_evidence.py` (13 tests). A first lifecycle fixture accidentally assigned entry and exit the same event time without comparable venue sequences; the ledger correctly rejected that ambiguous reduction-before-entry case. The fixture was corrected to record exit later, preserving the core ordering policy. Test helper lint and a liquidation-count assertion name were corrected before the final full pass. No historical performance, real exchange fixture validation or operational PAPER run is claimed.
+
+
+Milestone 10E: 309 local pytest tests passed with Ruff format/lint and provenance checks. Focused command: `.venv/bin/python -m pytest -q tests/test_paper_venue.py` (8 tests). A concrete socket-free PRELIMINARY L2 model uses a separate durable SQLite database, explicit fixture book/fee/rule inputs and journaled order/fill evidence. It models entry only at this checkpoint. No historical dataset, native exchange order or operational Freqtrade trading run is claimed.

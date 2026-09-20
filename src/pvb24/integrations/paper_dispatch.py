@@ -55,15 +55,27 @@ class OrderAccepted:
     accepted_at: datetime
 
 
+@dataclass(frozen=True)
+class OrderRejected:
+    """Durable backend refusal record; order_id identifies the refused request."""
+
+    client_id: str
+    order_id: str
+    ticket_digest: str
+    rejected_at: datetime
+    reason: str
+
+
 class PaperBackend(Protocol):
     # Explicit contract declarations, not proof of exchange-model fidelity.
     paper_only: bool
     contract: str
     instance_id: str
+    quality: Quality
 
-    def submit_entry(self, ticket: EntryTicket) -> OrderAccepted: ...
+    def submit_entry(self, ticket: EntryTicket) -> OrderAccepted | OrderRejected: ...
 
-    def lookup(self, client_id: str) -> OrderAccepted | None: ...
+    def lookup(self, client_id: str) -> OrderAccepted | OrderRejected | None: ...
 
 
 CONTRACT = "PVB24_PAPER_DECIMAL_IOC_DURABLE_LOOKUP_V1"
@@ -126,6 +138,7 @@ class PaperDispatch:
         if (
             self.backend.paper_only is not True
             or self.backend.contract != CONTRACT
+            or getattr(self.backend, "quality", None) is not self.quality
             or not isinstance(self.backend.instance_id, str)
             or not self.backend.instance_id
         ):
@@ -373,15 +386,19 @@ class PaperDispatch:
 
         self._guard()
         now = utc(self.clock())
+        rejected = isinstance(response, OrderRejected)
+        if not isinstance(response, (OrderAccepted, OrderRejected)):
+            raise Conflict("Invalid PAPER acknowledgement; outcome remains unresolved")
+        response_time = response.rejected_at if rejected else response.accepted_at
         if (
-            not isinstance(response, OrderAccepted)
-            or response.client_id != ticket.client_id
+            response.client_id != ticket.client_id
             or not isinstance(response.order_id, str)
             or not response.order_id
             or response.ticket_digest != digest(ticket)
+            or (rejected and not response.reason)
             or not ticket.prepared_at
-            <= utc(response.accepted_at)
-            <= (min(now, ticket.deadline) if ticket.deadline is not None else now)
+            <= utc(response_time)
+            <= (min(now, ticket.deadline) if ticket.deadline is not None and not rejected else now)
         ):
             raise Conflict("Invalid PAPER acknowledgement; outcome remains unresolved")
         with self.journal.transaction() as db:
@@ -392,7 +409,13 @@ class PaperDispatch:
             ).fetchone():
                 raise Conflict("Venue order ID already belongs to a forced liquidation")
             # Enforce one venue order per client and one client per venue order.
-            Journal.append_tx(db, "paper-accepted:" + ticket.client_id, response)
+            response_key = "paper-rejected:" if rejected else "paper-accepted:"
+            contradictory = "paper-accepted:" if rejected else "paper-rejected:"
+            if db.execute(
+                "SELECT 1 FROM events WHERE event_id=?", (contradictory + ticket.client_id,)
+            ).fetchone():
+                raise Conflict("Contradictory PAPER request receipt")
+            Journal.append_tx(db, response_key + ticket.client_id, response)
             Journal.append_tx(
                 db,
                 "paper-order:" + self.scope + ":" + digest(response.order_id),
@@ -400,7 +423,11 @@ class PaperDispatch:
             )
             # Protective/cancel acceptance does not prove an active/canceled
             # stop. Their shared-core outcome carries separate evidence.
-            if row["purpose"] == "ENTRY" and row["state"] in ("UNKNOWN", "ACKNOWLEDGED"):
+            if (
+                not rejected
+                and row["purpose"] == "ENTRY"
+                and row["state"] in ("UNKNOWN", "ACKNOWLEDGED")
+            ):
                 self.journal.reconcile_intent(ticket.client_id, "ACKNOWLEDGED", response)
 
     def dispatch_action(self, client_id: str):
