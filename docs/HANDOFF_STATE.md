@@ -1,4 +1,4 @@
-# Handoff — Milestone 10A (Freqtrade shared-core loading and parity)
+# Handoff — Milestone 10B (PAPER entry write-ahead boundary)
 
 - Repository: novacorestudios/Pvp-24; branch build/pvb24-v1.
 - Exact current HEAD: read the Git branch ref; main remains initialization only.
@@ -6,7 +6,7 @@
 - Milestone 0 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35422954155 — SUCCESS.
 - Public-disclosure authorization: user explicitly approved publishing these files and will change visibility later. Do not request this approval again.
 - Milestone 1: official Freqtrade 2026.8 / 9f10e357a93c1dcf10c2a2b367659214d89c073e installed; repeat locked install and offline dry-run config smoke passed.
-- Local tests: 258 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
+- Local tests: 280 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
 - Milestone 1 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423197873 — SUCCESS.
 - Milestone 2 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423500106 — SUCCESS.
 - Milestone 3 final CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423929247 — SUCCESS.
@@ -33,7 +33,8 @@
 - Milestone 9D: f50003585ca9fbcdecdb6f4b9ada205884e2b053; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35455066973 — SUCCESS.
 - Milestone 9E: 6f3ae916f2f53bfdc4fc8b93fdde8a9f5442a2c1; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35469054180 — SUCCESS.
 - Milestone 9F: af65c2cf2d79a4acf747ed9d159e17fd3f34f2e8; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35469509614 — SUCCESS.
-- Next: verify Milestone 10A CI; implement the separately qualified Freqtrade PAPER intent transport. Native dry-run is incompatible with required IOC/reduce-only semantics. Historical ingestion/general historical driver, stress/acceptance and paper readiness remain incomplete.
+- Milestone 10A: f93c4e52002878f1fc9c53d5d00ebb15438ffbd1; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35469989993 — SUCCESS.
+- Next: publish/verify Milestone 10B CI, then add protective-stop/reduce-only/cancel transport and a concrete durable PAPER backend hosted by PVB24Executor. Keep operational_ready=false until the process and execution model pass qualification. Historical ingestion/general historical driver, stress/acceptance and paper readiness remain incomplete.
 - Code: immutable Fill/Side types, precision-34 Decimal helpers, canonical IDs, SQLite WAL events/snapshots/write-ahead intents, fail-closed paper guard. Causal Timing/Candle/Mark/rule/security models, as-of revision selection, 30-day gap warmup, deterministic historical Top-20 and stale-universe grace implemented. Streaming Wilder ATR, channel/RVOL, exact long/short transitions, restartable indicator checkpoints, cooldown/status gates and timed simultaneous batch ranking implemented. Risk foundations now include rounded protective-stop costs, separate arrival shortfall gate, causal funding reserve with explicit coverage, immutable open/pending portfolio reservations and proportional confirmed-exit release. Descending quantity-step sizing, 1..5x minimum feasible leverage, isolated tier-consistent liquidation reconstruction, reduce-only post-fill action interface and transactional reservation+ENTRY intent are implemented. Execution market models now include sequence-consistent L2, consumed-depth replay, strict IOC caps and gates, partial sweep previews, and labelled preliminary OHLC proxies. Confirmed-fill protection lifecycle and transactional evidence/state/action-intent persistence now exist. Open-position reconciliation is now implemented; execution adapter and integrated backtest remain unimplemented. Exchange liquidation validation is still absent; actual post-fill collateral must come from the adapter, not a hypothetical newly opened smaller position.
 - Data: none acquired; OHLCV/Mark/funding/historical rules/security-master/L2 coverage remains unassessed. No backtest evidence, PRELIMINARY or VERIFIED.
 - PAPER: NOT READY. LIVE: DISABLED. No orders sent.
@@ -129,3 +130,12 @@ PVB24Executor now loads through the actual pinned Freqtrade StrategyResolver. Sh
 The pinned Freqtrade create_order dry-run branch calls create_dry_run_order without forwarding time_in_force or reduceOnly. Its native dry-run fill model also uses its own price-crossing/full-fill assumptions. Therefore native dry-run cannot silently substitute for PVB24 execution. A separately qualified PAPER transport remains necessary; setting operational_ready=true is rejected by the current bridge. This milestone proves strategy loading and signal/intent parity, not operating PAPER or order/venue parity.
 
 The actual Freqtrade 2026.8 loader, configuration validation, startup callback, fixed-fixture event/signal/intent parity, native-order blocking and LIVE rejection were executed successfully offline. CI now repeats the parity script. Source Freqtrade remains pinned and unmodified. During this session its copied virtualenv had a broken circular interpreter symlink; the generated link was repaired and the locked bootstrap reinstalled successfully. No historical source, alpha threshold or dependency pin changed.
+
+
+## PAPER entry write-ahead boundary (Milestone 10B)
+
+PaperDispatch validates owned entry intents against required account and current-minute equity streams, the original 90-second deadline, causal unchanged contract rules, synchronized fresh L2, spread/price/IOC/participation limits and a quote matching the book. It recalculates risk, margin and liquidation feasibility while excluding only its own pending reservation; original quantity/leverage and committed fee/funding/risk capacity cannot be increased. A second clock/book check rejects validation that itself becomes late. Failed validation leaves the unsent intent PREPARED and its reservation held for reconciliation.
+
+An exclusive Linux flock on the journal inode prevents multiple cooperating PAPER hosts, including path aliases. Backend instance identity/quality are frozen across restart. Before backend I/O, the complete validation evidence, exact Decimal LIMIT/IOC ticket and UNKNOWN dispatch claim commit in one transaction. External calls inside an existing transaction are refused. A lost response, process interruption or missing lookup leaves the outcome unresolved and never authorizes another submission. Valid acknowledgement binds unique client/venue order identities but creates no fills, terminal outcome or risk release.
+
+22 new tests cover a separate-connection view of the committed ticket before I/O, timeout-after-acceptance/restart/absent lookup, competing authorities, mandatory gates, changed economics, validation latency, malformed acknowledgements, precommit rollback and interruption before backend I/O. These tests use an explicit synthetic backend. The backend protocol is a trusted implementation contract, not evidence that a real model is qualified. The operational bridge remains blocked. Protective-stop/reduce-only/cancel transport, a concrete durable PAPER backend, process integration and source-backed execution fidelity remain pending. No exchange orders or historical performance runs occurred.

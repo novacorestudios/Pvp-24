@@ -66,3 +66,6 @@ Milestone 10A: 258 local pytest tests passed. The actual pinned Freqtrade enviro
 ```
 
 It loaded PVB24Executor and confirmed event/signal/intent parity with zero submitted orders. Signal hash: `fc7ef7cbb1f1dd764f48352ecf24b03172f2572977af7f897c7814e2af8f5363`; intent hash: `73059e20035fe209b1adb8d98677d30dd14ccc05fecd60ed14639c64050ba24c`. Logs: artifacts/freqtrade-parity-m10a.log and artifacts/freqtrade-bootstrap-m10a-repair.log. The first local attempt failed because the copied dependency virtualenv's Python link was broken; after repairing the generated interpreter link, locked bootstrap and parity succeeded. No unexecuted live/dry-run trading startup is claimed.
+
+
+Milestone 10B: 280 local pytest tests passed with Ruff format/lint and provenance checks. The focused command is `.venv/bin/python -m pytest -q tests/test_paper_dispatch.py` (22 tests). These are synthetic PAPER transport-contract tests: write-ahead visibility is checked through a separate SQLite connection, and lost response/restart cases never resend or release reservations. No concrete operational backend or native Freqtrade order path is enabled.
