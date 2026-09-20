@@ -43,7 +43,7 @@ class AccountObservation:
     event_time: datetime
     available_at: datetime
     cash: Decimal
-    free_collateral: Decimal
+    free_collateral: Decimal  # venue spendable collateral before local strategy reserves
     positions: tuple[PositionObservation, ...]
     quality: Quality
     source: str
@@ -157,6 +157,7 @@ class OpenReconciler:
             raise ReconciliationRequired("Current minute equity risk sample required")
         risk_fraction = D(status["risk_fraction"])
         exposures, actions, reasons, newly_frozen = [], [], [], set()
+        available = observed.free_collateral
         for p in observed.positions:
             balance = open_positions[p.position_id]
             _, payload = read_tx(db, self.coordinator._protection_stream(p.position_id))
@@ -183,14 +184,21 @@ class OpenReconciler:
                 or prior.pending
                 or prior.initial_quantity != protection.entry_quantity
             )
+            row = db.execute(
+                "SELECT payload FROM intents WHERE scope=? AND signal_id=? AND purpose='ENTRY'",
+                (self.scope, p.position_id),
+            ).fetchone()
+            if row is None:
+                raise ReconciliationRequired("Missing original entry cost assumptions")
+            quote = json.loads(row["payload"])["sizing"]["quote"]
+            # Entry fees are already realized in cash. Keep only remaining exit,
+            # stop-slip and funding commitments outside venue spendable balance.
+            available -= p.quantity * (
+                protection.initial_stop * D(quote["exit_fee_rate"])
+                + protection.entry_vwap * D(quote["stop_slippage_fraction"])
+                + protection.entry_vwap * D(quote["funding_rate_per_hour"]) * 72
+            )
             if first:
-                row = db.execute(
-                    "SELECT payload FROM intents WHERE scope=? AND signal_id=? AND purpose='ENTRY'",
-                    (self.scope, p.position_id),
-                ).fetchone()
-                if row is None:
-                    raise ReconciliationRequired("Missing original entry cost assumptions")
-                quote = json.loads(row["payload"])["sizing"]["quote"]
                 fees = sum((f.fee for f in protection.fills.values() if not f.reduce_only), ZERO)
                 entry_fee = max(ZERO, fees / protection.entry_quantity)
                 entry, stop = protection.entry_vwap, protection.initial_stop
@@ -255,11 +263,66 @@ class OpenReconciler:
             protection = Protection.restore(payload)
             if protection.remaining == 0 and not protection.terminal:
                 intent = db.execute(
-                    "SELECT client_id,state FROM intents WHERE scope=? AND signal_id=? "
+                    "SELECT client_id,state,payload FROM intents WHERE scope=? AND signal_id=? "
                     "AND purpose='ENTRY'",
                     (self.scope, prior.position_id),
                 ).fetchone()
                 if intent is not None and intent["state"] == "PREPARED":
+                    sizing = json.loads(intent["payload"])["sizing"]
+                    if (
+                        not prior.pending
+                        or protection.fills
+                        or protection.actions
+                        or prior.initial_quantity != protection.requested_quantity
+                        or prior.remaining_quantity != prior.initial_quantity
+                        or D(sizing["quantity"]) != prior.initial_quantity
+                        or D(sizing["reserved_loss"]) != prior.initial_reserved_risk
+                        or D(sizing["initial_margin"]) != prior.initial_margin_commitment
+                    ):
+                        raise ReconciliationRequired(
+                            "Unsent reservation ownership/economics mismatch"
+                        )
+                    _, metadata = self.journal.snapshot(
+                        "entry-metadata:" + self.scope + ":" + prior.position_id
+                    )
+                    costs = sizing["costs"]
+                    commitment = prior.initial_margin_commitment + prior.initial_quantity * sum(
+                        (
+                            D(costs[k])
+                            for k in ("entry_fee", "exit_fee", "stop_slippage", "funding")
+                        ),
+                        ZERO,
+                    )
+                    current = Portfolio(equity, available, tuple(exposures))
+                    timely = metadata is not None and (
+                        datetime.fromisoformat(metadata["accepted_at"])
+                        <= time
+                        <= datetime.fromisoformat(metadata["order_deadline"])
+                    )
+                    capacity = (
+                        current.slots < 3
+                        and not any(x.symbol == prior.symbol for x in exposures)
+                        and D("0.0025") * equity
+                        <= prior.reserved_risk
+                        <= current.budget(prior.side, reduced=risk_fraction == D("0.005"))
+                        and prior.notional <= equity
+                        and current.gross_notional + prior.notional <= 3 * equity
+                        and prior.initial_margin_commitment <= D("0.20") * equity
+                        and current.margin + prior.initial_margin_commitment <= D("0.60") * equity
+                        and commitment <= available
+                    )
+                    if (
+                        timely
+                        and capacity
+                        and status["entries_allowed"]
+                        and not gate.get("safety_paused", False)
+                        and not reasons
+                    ):
+                        # Keep accepted batch order and exact original quantity.
+                        # Dispatch still rechecks current quote/book/clock limits.
+                        exposures.append(prior)
+                        available -= commitment
+                        continue
                     db.execute(
                         "UPDATE intents SET state='CANCELED' WHERE client_id=?",
                         (intent["client_id"],),
@@ -267,7 +330,7 @@ class OpenReconciler:
                     Journal.append_tx(
                         db,
                         "cancel-unsent:" + intent["client_id"],
-                        {"reason": "ACCOUNT_RECONCILIATION", "never_dispatched": True},
+                        {"reason": "UNSENT_DEADLINE_OR_CAPACITY", "never_dispatched": True},
                     )
                     protection.entry_terminal()
                     save_tx(
@@ -277,7 +340,9 @@ class OpenReconciler:
                     )
             if protection.remaining != 0 or not protection.terminal:
                 raise ReconciliationRequired("Pending/closed position has unresolved IOC outcome")
-        portfolio = Portfolio(equity, observed.free_collateral, tuple(exposures))
+        portfolio = Portfolio(equity, available, tuple(exposures))
+        if available < 0:
+            reasons.append("LOCAL_COLLATERAL_RESERVES_EXCEED_AVAILABLE")
         portfolio_breach = (
             portfolio.slots > 3
             or portfolio.reserved_risk > D("0.03") * equity

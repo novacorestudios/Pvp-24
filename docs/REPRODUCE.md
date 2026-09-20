@@ -81,3 +81,6 @@ Milestone 10E: 309 local pytest tests passed with Ruff format/lint and provenanc
 
 
 Milestone 10F: 318 local pytest tests passed with Ruff format/lint and provenance checks. Focused command: `.venv/bin/python -m pytest -q tests/test_paper_venue_actions.py tests/test_paper_venue.py` (17 tests). Synthetic fixtures explicitly freeze a one-second LAST freshness limit and fee inputs; these are not production defaults. A temporary test-edit placement error was caught by Ruff and corrected before the passing run. No live orders, historical data or operational Freqtrade process has run.
+
+
+Milestone 10G: 322 local pytest tests passed with Ruff format/lint and provenance checks. Focused command: `.venv/bin/python -m pytest -q tests/test_reconcile_pending_batch.py` (4 tests). `.venv/bin/python scripts/smoke_reference.py --output artifacts/reference-smoke-10g` also passed; use a new output directory on repeat. It still delivers 964 events with trace hash `14d443af600ab971927ef90121ba9acf49ca62645c73c21cb44dbdd1fdb5f6f0`, restart verified and zero external orders. Outputs remain synthetic integration evidence, not historical performance.
