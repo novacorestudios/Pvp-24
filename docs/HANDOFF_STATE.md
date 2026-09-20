@@ -1,4 +1,4 @@
-# Handoff — Milestone 10E (durable preliminary L2 entry model)
+# Handoff — Milestone 10F (durable PAPER protection and reduction execution)
 
 - Repository: novacorestudios/Pvp-24; branch build/pvb24-v1.
 - Exact current HEAD: read the Git branch ref; main remains initialization only.
@@ -6,7 +6,7 @@
 - Milestone 0 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35422954155 — SUCCESS.
 - Public-disclosure authorization: user explicitly approved publishing these files and will change visibility later. Do not request this approval again.
 - Milestone 1: official Freqtrade 2026.8 / 9f10e357a93c1dcf10c2a2b367659214d89c073e installed; repeat locked install and offline dry-run config smoke passed.
-- Local tests: 309 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
+- Local tests: 318 passed; Ruff lint/format passed. CI for this commit: check GitHub Actions after publication.
 - Milestone 1 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423197873 — SUCCESS.
 - Milestone 2 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423500106 — SUCCESS.
 - Milestone 3 final CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423929247 — SUCCESS.
@@ -37,7 +37,8 @@
 - Milestone 10B: 0f0785c74abe84c87bf14191329d0c5e38244b6b; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35489760438 — SUCCESS.
 - Milestone 10C: 965c4bd3ec2ce87844f6fa365c33f5b33b20c19d; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35490066066 — SUCCESS.
 - Milestone 10D: 2b270a8bc9f96e31cdb943aabf8e0069aef072ff; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35490438954 — SUCCESS.
-- Next: publish/verify Milestone 10E CI; add durable STOP_MARKET/LAST, reduce-only market exit and cancellation execution to L2PaperVenue, including target identity and fill/cancel races. Then wire the sole PVB24Executor process and qualify source/account/model parity. Keep operational_ready=false. Historical ingestion/general historical driver, stress/acceptance and paper readiness remain incomplete.
+- Milestone 10E: f4330f7a704b6ec0e1afb9e177b8f8b86bb31cf0; CI https://github.com/novacorestudios/Pvp-24/actions/runs/35490911580 — SUCCESS.
+- Next: publish/verify Milestone 10F CI; add durable source-cursor ingestion/dispatch orchestration and bind the sole PVB24Executor process. Explicitly retire stale unsent actions and reconcile UNKNOWN via lookup without resend. Then finish source/account/model qualification. Keep operational_ready=false. Historical ingestion/general historical driver, stress/acceptance and paper readiness remain incomplete.
 - Code: immutable Fill/Side types, precision-34 Decimal helpers, canonical IDs, SQLite WAL events/snapshots/write-ahead intents, fail-closed paper guard. Causal Timing/Candle/Mark/rule/security models, as-of revision selection, 30-day gap warmup, deterministic historical Top-20 and stale-universe grace implemented. Streaming Wilder ATR, channel/RVOL, exact long/short transitions, restartable indicator checkpoints, cooldown/status gates and timed simultaneous batch ranking implemented. Risk foundations now include rounded protective-stop costs, separate arrival shortfall gate, causal funding reserve with explicit coverage, immutable open/pending portfolio reservations and proportional confirmed-exit release. Descending quantity-step sizing, 1..5x minimum feasible leverage, isolated tier-consistent liquidation reconstruction, reduce-only post-fill action interface and transactional reservation+ENTRY intent are implemented. Execution market models now include sequence-consistent L2, consumed-depth replay, strict IOC caps and gates, partial sweep previews, and labelled preliminary OHLC proxies. Confirmed-fill protection lifecycle and transactional evidence/state/action-intent persistence now exist. Open-position reconciliation is now implemented; execution adapter and integrated backtest remain unimplemented. Exchange liquidation validation is still absent; actual post-fill collateral must come from the adapter, not a hypothetical newly opened smaller position.
 - Data: none acquired; OHLCV/Mark/funding/historical rules/security-master/L2 coverage remains unassessed. No backtest evidence, PRELIMINARY or VERIFIED.
 - PAPER: NOT READY. LIVE: DISABLED. No orders sent.
@@ -175,3 +176,14 @@ Each accepted or rejected request, complete input snapshot, actual modeled per-l
 OrderRejected is a distinct durable refusal receipt. A backend can refuse an order that expires after the host's dispatch claim without pretending it was accepted before its deadline. The account remains unresolved until its explicit REJECTED terminal evidence is ingested, after which flat cash/quantity reconciliation can release the reservation. A missing lookup still never authorizes resubmission or risk release.
 
 Eight tests verify actual modeled per-level fees, partial IOC depth consumption and replenishment, source cursors, two-database timeout/reopen recovery, deadline refusal and flat reconciliation, persisted book gaps, atomic backend failure and immutable policy/quality. All 309 local tests and governance checks pass. This backend currently executes entry only. Protective/market exit/cancel execution, full fee/funding/collateral/liquidation behavior, source-backed execution qualification and sole Freqtrade process integration remain pending. No operational PAPER or historical performance is claimed.
+
+
+## Durable PAPER protection and reduction execution (Milestone 10F)
+
+The concrete L2PaperVenue now accepts owned STOP_MARKET/LAST, reduce-only MARKET and cancel tickets. Active-stop evidence is committed with its receipt, and a stop requires an explicit frozen LAST freshness policy and a current valid LAST observation; already-crossed/stale stops are refused with a durable terminal result, allowing the shared core to request emergency closure. Only a post-activation LAST observation can trigger a stop. Book changes alone do not trigger LAST stops. Gap execution uses actual visible book levels, not an invented fill at the stop price.
+
+Market and triggered-stop fills are bounded by the backend's current owned position and consume visible depth. Insufficient visible depth leaves the unfilled residual PENDING; later explicit depth updates continue the same order with unique fill IDs/sequences. No automatic resubmission or invented full closure occurs. Simultaneous stops use acceptance order as a declared PRELIMINARY modeling assumption, and reduce-only execution prevents multiple active stops from reversing the position. Cancellation records the target's actual terminal outcome, including when a fill wins the race.
+
+The model policy is versioned L2_VISIBLE_ORDERS_LAST_STOP_V2 and cannot reopen an old/changed policy silently. LAST freshness, pending-market-depth behavior and simultaneous-stop ordering are frozen in the model record. Mutation clocks are persisted monotonically. Exit fee terms are explicit; unavailable execution terms/depth retain pending status. No numerical production freshness default was invented: tests explicitly freeze a one-second synthetic LAST policy. The account adapter now accepts explicit zero-fill cancel-request refusals without altering the target order.
+
+Nine tests cover replacement/cancel/market-exit accounting, LAST-only gap stops, partial pending exits resumed by new depth, crossed-stop emergency closure, stop/cancel races, reopen recovery, stale LAST, pre-activation trade exclusion, clock/policy rejection and lost stop-response lookup. The full local suite has 318 passing tests. Funding/collateral/liquidation execution modeling, feed completeness, durable process cursor/dispatch orchestration and sole Freqtrade startup/parity remain pending. Operational readiness and LIVE remain disabled; this is not verified exchange behavior or historical performance evidence.

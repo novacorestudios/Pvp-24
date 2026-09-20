@@ -201,6 +201,16 @@ class PaperEvidence:
                 },
             )
         if event.kind == "TERMINAL":
+            if row["purpose"] in ("CANCEL_ENTRY", "CANCEL_PROTECTION"):
+                if (
+                    raw["venue_order_id"] != order_id
+                    or raw["outcome"] != "REJECTED"
+                    or D(raw["cumulative_fill_quantity"]) != 0
+                ):
+                    raise Conflict("Cancel refusal requires explicit zero-fill request rejection")
+                self.journal.reconcile_intent(event.client_id, "REJECTED", raw)
+                self.account.coordinator._pause(db, "CANCEL_REQUEST_REJECTED", event.available_at)
+                return {"action_ids": ()}
             return self._terminal(db, event, row, ticket, order_id, raw, "terminal")
         if row["purpose"] not in ("CANCEL_ENTRY", "CANCEL_PROTECTION"):
             raise Conflict("Cancellation proof requires an owned cancel request")

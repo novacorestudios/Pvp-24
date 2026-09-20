@@ -1,12 +1,12 @@
 """Durable PRELIMINARY L2 PAPER model, without sockets or exchange credentials.
 
 Visible-book IOC simulation is explicit, not a queue/latency model or proof of
-actual venue behavior. This stage models entry only; operational PAPER remains
-blocked until protective/exit/cancel execution and process integration exist.
+actual venue behavior. Operational PAPER remains blocked until source/account
+qualification and the sole Freqtrade process integration are complete.
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import localcontext
 
 from pvb24.accounting.coordinator import read_tx, save_tx
@@ -15,6 +15,7 @@ from pvb24.data.contract_rules import ContractRules, MaintenanceTier
 from pvb24.decimal_math import CONTEXT, ZERO, D, require_decimal
 from pvb24.execution.book import Book
 from pvb24.ids import canonical, client_identity, digest
+from pvb24.integrations.paper_actions import ACTION_CONTRACT
 from pvb24.integrations.paper_dispatch import CONTRACT, EntryTicket, OrderAccepted, OrderRejected
 from pvb24.integrations.paper_evidence import PaperEvent
 from pvb24.state import Conflict, Journal
@@ -81,21 +82,37 @@ class L2PaperVenue:
     paper_only = True
     contract = CONTRACT
     quality = Quality.PRELIMINARY
+    action_contract = ACTION_CONTRACT
 
-    def __init__(self, path, *, instance_id, scope, manifest_id, clock):
+    def __init__(self, path, *, instance_id, scope, manifest_id, clock, max_last_age=None):
         if not instance_id or not scope or not manifest_id or not callable(clock):
             raise ValueError("Explicit PAPER model identity, policy manifest and clock required")
         self.instance_id, self.scope, self.clock = instance_id, scope, clock
+        if max_last_age is not None and (
+            not isinstance(max_last_age, timedelta) or max_last_age <= timedelta(0)
+        ):
+            raise ValueError("Explicit positive LAST freshness policy required")
+        self.max_last_age = max_last_age
         self.journal = Journal(path)
         self.policy = {
             "instance_id": instance_id,
             "scope": scope,
             "manifest_id": manifest_id,
             "quality": Quality.PRELIMINARY,
-            "model": "L2_VISIBLE_IOC_NO_QUEUE_V1",
+            "model": "L2_VISIBLE_ORDERS_LAST_STOP_V2",
+            "last_max_age_microseconds": None
+            if max_last_age is None
+            else (
+                max_last_age.days * 86400000000
+                + max_last_age.seconds * 1000000
+                + max_last_age.microseconds
+            ),
+            "simultaneous_stop_ordering": "ACCEPTANCE_SEQUENCE",
+            "insufficient_market_depth": "PENDING_UNTIL_EXPLICIT_DEPTH_UPDATE",
             "live_enabled": False,
             "operational_ready": False,
         }
+        self._frozen_policy = canonical(self.policy)
         try:
             with self.journal.transaction() as db:
                 _, previous = self.journal.snapshot("paper-model")
@@ -119,7 +136,24 @@ class L2PaperVenue:
             raise ValueError("This execution model has PRELIMINARY quality only")
         if self.instance_id != self.policy["instance_id"] or self.scope != self.policy["scope"]:
             raise Conflict("Bound PAPER model identity changed")
+        age = self.max_last_age
+        age_us = (
+            None
+            if age is None
+            else age.days * 86400000000 + age.seconds * 1000000 + age.microseconds
+        )
+        if (
+            canonical(self.policy) != self._frozen_policy
+            or age_us != self.policy["last_max_age_microseconds"]
+        ):
+            raise Conflict("Frozen PAPER execution policy changed")
         return utc(self.clock())
+
+    def _advance(self, db, now):
+        _, previous = self.journal.snapshot("model-clock")
+        if previous is not None and datetime.fromisoformat(previous["time"]) > now:
+            raise Conflict("PAPER model clock moved backwards")
+        save_tx(db, "model-clock", {"time": now})
 
     def install_book(self, book: Book, *, source_event_id: str):
         now = self._now()
@@ -127,6 +161,7 @@ class L2PaperVenue:
             raise ValueError("Causal synchronized fresh book and source identity required")
         payload = book_record(book)
         with self.journal.transaction() as db:
+            self._advance(db, now)
             if not Journal.append_tx(db, "model-book-source:" + source_event_id, payload):
                 return False  # never replenish a consumed level from a duplicate source
             stream = "model-book:" + book.symbol
@@ -137,6 +172,7 @@ class L2PaperVenue:
             ):
                 raise Conflict("Fresh resnapshot must advance book source time and sequence")
             save_tx(db, stream, payload)
+            self._run_pending(db, book.symbol, now)
             return True
 
     def update_book(
@@ -167,6 +203,7 @@ class L2PaperVenue:
         }
         error = None
         with self.journal.transaction() as db:
+            self._advance(db, now)
             if not Journal.append_tx(db, "model-book-source:" + source_event_id, evidence):
                 return False
             stream = "model-book:" + symbol
@@ -179,22 +216,30 @@ class L2PaperVenue:
                 book.synced = False
                 book.sequence = None
             save_tx(db, stream, book_record(book))
+            if error is None:
+                self._run_pending(db, symbol, now)
         if error is not None:
             raise error  # persist the unsynced state before reporting the gap
         return changed
 
-    def set_terms(self, rules, *, entry_fee_rate, available_at, source_revision):
+    def set_terms(
+        self, rules, *, entry_fee_rate, available_at, source_revision, exit_fee_rate=None
+    ):
         now = self._now()
         require_decimal(entry_fee_rate, nonnegative=True)
+        if exit_fee_rate is not None:
+            require_decimal(exit_fee_rate, nonnegative=True)
         if not source_revision or utc(available_at) > now or rules.available_at > available_at:
             raise ValueError("Causal execution fee/rule terms required")
         payload = {
             "rules": rules,
             "entry_fee_rate": entry_fee_rate,
+            "exit_fee_rate": exit_fee_rate,
             "available_at": available_at,
             "source_revision": source_revision,
         }
         with self.journal.transaction() as db:
+            self._advance(db, now)
             if not Journal.append_tx(
                 db, "model-terms-source:" + rules.symbol + ":" + source_revision, payload
             ):
@@ -248,6 +293,7 @@ class L2PaperVenue:
         if not isinstance(ticket, EntryTicket):
             raise TypeError("Immutable entry ticket required")
         with self.journal.transaction() as db, localcontext(CONTEXT):
+            self._advance(db, now)
             stream = "model-order:" + ticket.client_id
             _, existing = self.journal.snapshot(stream)
             if existing is not None:
@@ -377,3 +423,25 @@ class L2PaperVenue:
                 },
             )
             return response
+
+    def _run_pending(self, db, symbol, now):
+        from pvb24.integrations.paper_venue_actions import run_pending
+
+        return run_pending(self, db, symbol, now)
+
+    def submit_action(self, ticket):
+        from pvb24.integrations.paper_venue_actions import submit_action
+
+        return submit_action(self, ticket)
+
+    def publish_last(self, symbol, price, *, event_time, available_at, source_event_id):
+        from pvb24.integrations.paper_venue_actions import publish_last
+
+        return publish_last(
+            self,
+            symbol,
+            price,
+            event_time=event_time,
+            available_at=available_at,
+            source_event_id=source_event_id,
+        )

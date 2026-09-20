@@ -78,3 +78,6 @@ Milestone 10D: 301 local pytest tests passed with Ruff format/lint and provenanc
 
 
 Milestone 10E: 309 local pytest tests passed with Ruff format/lint and provenance checks. Focused command: `.venv/bin/python -m pytest -q tests/test_paper_venue.py` (8 tests). A concrete socket-free PRELIMINARY L2 model uses a separate durable SQLite database, explicit fixture book/fee/rule inputs and journaled order/fill evidence. It models entry only at this checkpoint. No historical dataset, native exchange order or operational Freqtrade trading run is claimed.
+
+
+Milestone 10F: 318 local pytest tests passed with Ruff format/lint and provenance checks. Focused command: `.venv/bin/python -m pytest -q tests/test_paper_venue_actions.py tests/test_paper_venue.py` (17 tests). Synthetic fixtures explicitly freeze a one-second LAST freshness limit and fee inputs; these are not production defaults. A temporary test-edit placement error was caught by Ruff and corrected before the passing run. No live orders, historical data or operational Freqtrade process has run.
