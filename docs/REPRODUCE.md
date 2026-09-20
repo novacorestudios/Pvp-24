@@ -96,3 +96,16 @@ Milestone 10J: 349 local pytest tests passed with Ruff format/lint and provenanc
 
 
 Milestone 10K: `.deps/freqtrade/.venv/bin/python scripts/smoke_freqtrade_parity.py --framework` passed, exercising real FreqtradeBot initialization/startup/three process cycles/cleanup with a strict offline exchange fixture and prohibited socket/DNS access. Log: artifacts/freqtrade-framework-m10k.log. The ordinary parity command also passed (artifacts/freqtrade-parity-m10k.log). Both keep execution evidence hash `f434633cf4dfef2025708f646550502946fc62e1f85a924c948399206190baa1`. Production core remains unchanged from the 349-test passing suite; Ruff/provenance pass. CI now executes both modes. Empty native-candle warnings are intentional: all normalized synthetic data enters the shared core. No public market feed or operational PAPER readiness is claimed.
+
+
+## Milestone 11A official archive sample
+
+374 tests passed with Ruff format/lint and provenance verification. The acquisition command below completed successfully, fetching public data only and submitting zero orders:
+
+```bash
+.venv/bin/python scripts/acquire_binance_archives.py --symbol BTCUSDT --month 2024-01 --output data/acquisition-11a-final
+```
+
+All five archives were acquired and reconsumption integrity checks passed. Exact source URLs, checksums, coverage, decoder/acquirer hashes, base commit, dirty-worktree flag and dataset hash are in docs/data/11a-source-manifest.json. The CLI prints the immutable report path. Existing identical ZIPs are cached; checksum retrieval remains fresh, and changed revisions are retained separately. Failed attempts remain auditable. Raw data is ignored by Git; no network acquisition runs in CI.
+
+The first ingestion attempt deliberately remains recorded locally as 4/5: raw funding timestamp jitter invalidated the initial continuous-interval interpretation. The corrected decoder retains the raw declared interval and actual timestamp, records 28 discrepancies and refuses to attest continuous funding coverage. Final successful reports contain 5/5 files; this is not strategy performance. No historical universe/rules or L2 has been acquired. Final Test months are rejected before any download.

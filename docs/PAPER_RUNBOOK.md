@@ -2,6 +2,8 @@
 
 NOT READY. LIVE remains disabled. No operational trading process or external order has been started.
 
+Milestone 11A adds an integrity-checked official archive sample, not an operational feed. Historical eligibility/rules, funding schedule/settlement pricing, actual availability and executable depth remain unresolved. Acquisition success cannot enable PAPER readiness or unlock Final Test.
+
 The pinned Freqtrade strategy loads, shared-core signal/intent parity passes, and the PAPER dispatch boundary has synthetic tests for write-ahead recovery, owned protection/exit/cancel tickets a single journal authority, and normalized owned fill/terminal/cancellation evidence with atomic account settlement. The bridge still refuses operational dispatch; an explicit LOCAL_PRELIMINARY_L2 research binding can host the socket-free model through PVB24Executor callbacks.
 
 A concrete durable PRELIMINARY L2 backend now models entry, LAST protective stops, reduce-only market exits and cancellation, with recoverable fills/refusals and pending residuals. Remaining gates include funding/collateral/liquidation execution modeling, durable market/account-feed integration, production protection-acknowledgement latency qualification and public-source operational process qualification, source-backed market/funding/rules coverage and execution-model qualification. Native Freqtrade dry-run does not preserve the required IOC/reduce-only semantics and is not used as a substitute.
