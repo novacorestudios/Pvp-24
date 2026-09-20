@@ -16,6 +16,7 @@ from decimal import Decimal, localcontext
 from typing import Protocol
 
 from pvb24.accounting.coordinator import AccountCoordinator, read_tx, save_tx
+from pvb24.data.lifecycle import entry_block_reason
 from pvb24.decimal_math import CONTEXT, D
 from pvb24.execution.book import Book
 from pvb24.execution.market import EntryBounds, preview_ioc
@@ -213,6 +214,8 @@ class PaperDispatch:
         _, meta = read_tx(db, "entry-metadata:" + self.scope + ":" + sid)
         status = self._ready(db, meta, now)
         payload = json.loads(row["payload"])
+        if entry_block_reason(db, self.scope, payload["symbol"], now):
+            raise Conflict("Lifecycle evidence blocks entry dispatch")
         original = payload["sizing"]
         quantity = D(original["quantity"])
         side = Side(payload["side"])

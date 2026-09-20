@@ -3,6 +3,7 @@
 from datetime import timedelta
 
 from pvb24.accounting.ledger import LedgerStore
+from pvb24.data.lifecycle import entry_block_reason
 from pvb24.data.universe import Universe
 from pvb24.execution.protection import Protection
 from pvb24.risk.reservations import Reservations
@@ -30,7 +31,13 @@ class SignalService:
                     frame = Indicators.restore(state).last_frame
                     if frame is not None:
                         frames[symbol] = frame
-                status[symbol] = {"has_position": False, "pending_entry": False}
+                status[symbol] = {
+                    "has_position": False,
+                    "pending_entry": False,
+                    "entry_block_reason": entry_block_reason(
+                        self.journal.db, self.scope, symbol, now
+                    ),
+                }
             _, portfolio = Reservations(self.journal, self.scope).read()
             for p in portfolio.exposures:
                 if p.symbol in status and p.remaining_quantity > 0:

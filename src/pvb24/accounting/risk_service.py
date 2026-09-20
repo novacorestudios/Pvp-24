@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from pvb24.accounting.controls import EquityControl
 from pvb24.accounting.coordinator import read_tx, save_tx
 from pvb24.accounting.ledger import Ledger, ReconciliationRequired
+from pvb24.data.lifecycle import prepare_entry_cancel
 from pvb24.execution.protection import Protection
 from pvb24.state import Conflict, Journal
 from pvb24.types import timestamp, utc
@@ -97,12 +98,8 @@ class AccountRiskService:
                             state.entry_terminal()
                             save_tx(db, stream, state.checkpoint())
                     else:
-                        cid, _ = Journal.prepare_intent_tx(
-                            db,
-                            self.scope,
-                            row["signal_id"],
-                            "CANCEL_ENTRY",
-                            {"target_client_id": row["client_id"], "reason": "GLOBAL_RISK_PAUSE"},
+                        cid = prepare_entry_cancel(
+                            db, self.scope, row["signal_id"], row["client_id"], "GLOBAL_RISK_PAUSE"
                         )
                         ids.append(cid)
             if status.hard_paused and view is not None:

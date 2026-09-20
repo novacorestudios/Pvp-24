@@ -37,3 +37,7 @@ The pinned sample was reread through ArchiveDataset at 2024-02-01 00:00:02 UTC: 
 ## Source inventory (11C)
 
 Complete enumeration observed 8 monthly source kinds, 9 daily kinds and 1018 monthly kline symbol directories. The four original XML pages are retained. These are source-discovery names, not 1018 historically eligible contracts. No archive content or Final-period market values were downloaded by the inventory. Historical metadata/rules remain unacquired; neither enumerated root exposes those datasets. The discovery of bookTicker/bookDepth directories does not yet qualify order-book coverage.
+
+## Lifecycle evidence review (11D)
+
+Two official pre-Final notices covering five symbols demonstrate distinct publication, trading-cutoff and scheduled-settlement times. Their factual annotations are retained in data/11d-lifecycle-source-review.json. They are not replay inputs: displayed publication timezone and original revision availability remain unqualified. The core now handles explicitly sourced delisting observations without relying on the next daily universe refresh. This integration does not establish historical security-master completeness or prove actual automatic-settlement outcomes.

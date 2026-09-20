@@ -124,9 +124,14 @@ class Journal:
         # A second caller/restart cannot dispatch UNKNOWN; it must query first.
         with self.transaction() as db:
             intent = db.execute(
-                "SELECT scope,purpose FROM intents WHERE client_id=?", (client_id,)
+                "SELECT scope,purpose,payload FROM intents WHERE client_id=?", (client_id,)
             ).fetchone()
             if intent is not None and intent["purpose"] == "ENTRY":
+                from pvb24.data.lifecycle import entry_block_reason
+
+                symbol = json.loads(intent["payload"]).get("symbol", "")
+                if entry_block_reason(db, intent["scope"], symbol):
+                    return False
                 gate = db.execute(
                     "SELECT payload FROM snapshots WHERE stream=?",
                     ("account-gate:" + intent["scope"],),

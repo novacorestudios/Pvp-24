@@ -4,6 +4,7 @@ import json
 from dataclasses import asdict
 from decimal import localcontext
 
+from pvb24.data.lifecycle import entry_block_reason
 from pvb24.decimal_math import CONTEXT, D
 from pvb24.ids import canonical
 from pvb24.risk.portfolio import Exposure, Portfolio
@@ -78,6 +79,8 @@ class Reservations:
         if entry.symbol != symbol or entry.side is not side:
             raise ValueError("Sizing identity does not match reservation")
         with self.journal.transaction() as db, localcontext(CONTEXT):
+            if entry_block_reason(db, self.scope, symbol):
+                raise Conflict("Lifecycle evidence blocks new entry reservations")
             gate = db.execute(
                 "SELECT payload FROM snapshots WHERE stream=?", ("account-gate:" + self.scope,)
             ).fetchone()

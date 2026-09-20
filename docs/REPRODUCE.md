@@ -138,3 +138,16 @@ Twelve additional tests cover explicit hash pins, metadata/object tampering, dup
 ```
 
 It enumerated 8 monthly kinds, 9 daily kinds and 1018 monthly kline symbol directories (two pages), fetching four XML directory pages and zero archive objects. Raw evidence and exact implementation hashes are committed in docs/data/11c-catalog-pages and docs/data/11c-source-inventory.json. Reruns may observe a changed directory inventory; preserve the existing checkpoint rather than overwriting historical observations. Fourteen new tests verify complete pagination, token encoding/identity, failed/truncated/repeated pages, resource boundaries, response identity, refusal of leaf/date paths and retention of prior evidence.
+
+
+## Milestone 11D causal delisting entry block
+
+411 tests passed with Ruff format/lint and provenance verification. The focused command is `.venv/bin/python -m pytest -q tests/test_lifecycle_gate.py` (11 tests). The actual pinned framework check also passed:
+
+```bash
+.deps/freqtrade/.venv/bin/python scripts/smoke_freqtrade_parity.py --framework
+```
+
+The offline framework execution evidence hash remains `f434633cf4dfef2025708f646550502946fc62e1f85a924c948399206190baa1`; zero external orders. Log: artifacts/freqtrade-parity-11d-framework.log. The restored dependency environment initially lacked its Python interpreter link (exit 127); repairing that generated link and running `python -m venv --upgrade .deps/freqtrade/.venv` restored the existing pinned environment without changing the Freqtrade source/dependency pins. A test initially used the wrong rejection-field name and was corrected before the full pass.
+
+The real announcement review is a factual, non-executable annotation, not a complete historical metadata acquisition. UTC settlement dates are explicit in the source body; displayed publication timestamps have not been qualified for historical availability and source-byte hashes are not claimed. No backtest, forced-settlement execution or PAPER readiness is established.

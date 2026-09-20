@@ -7,6 +7,7 @@ from decimal import Decimal, localcontext
 
 from pvb24.accounting.coordinator import AccountCoordinator, read_tx, save_tx
 from pvb24.data.contract_rules import ContractRules
+from pvb24.data.lifecycle import entry_block_reason
 from pvb24.decimal_math import CONTEXT, D, require_decimal
 from pvb24.execution.market import EntryBounds
 from pvb24.execution.protection import Protection
@@ -101,6 +102,8 @@ class EntryPlanner:
                 source = inputs.get(signal.symbol)
                 if now > signal.signal_time + timedelta(seconds=90):
                     reason = "ORDER_DEADLINE"
+                elif entry_block_reason(db, self.scope, signal.symbol, now):
+                    reason = entry_block_reason(db, self.scope, signal.symbol, now)
                 elif not ready:
                     reason = "ACCOUNT_OR_RISK_GATE"
                 elif source is None or source.available_at > now:

@@ -11,6 +11,7 @@ from pvb24.accounting.coordinator import AccountCoordinator, read_tx, save_tx
 from pvb24.accounting.ledger import LedgerStore, ReconciliationRequired
 from pvb24.accounting.reconciliation import OpenReconciler
 from pvb24.accounting.risk_service import AccountRiskService
+from pvb24.data.lifecycle import DelistingNotice, LifecycleService
 from pvb24.decimal_math import D
 from pvb24.execution.protection import Protection
 from pvb24.ids import canonical, client_identity, digest
@@ -153,6 +154,12 @@ class AccountReplay:
             self._timing(event, payment.settlement_time, payment.available_at)
             return {"ingested": self.coordinator.confirmed_funding(payment)}
         if event.kind is Kind.OBSERVATION:
+            if payload["type"] == "DELISTING_NOTICE":
+                notice = DelistingNotice.restore(payload["record"])
+                self._timing(event, notice.announced_at, notice.available_at)
+                if self.quality is Quality.VERIFIED and not notice.historical_verified:
+                    raise ValueError("Historical lifecycle evidence is not VERIFIED")
+                return LifecycleService(self.journal, self.scope).announce(notice, now)
             if payload["type"] == "MARK":
                 mark = codecs.mark(payload["record"])
                 self._timing(event, mark.timing.event_time, mark.timing.available_at)

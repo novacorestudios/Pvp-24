@@ -277,3 +277,10 @@ daily_last selects causal LAST 1h revisions and requires all 24 aligned UTC hour
 ## Directory inventory boundary (Milestone 11C)
 
 The catalog adapter performs bounded, strict, paginated enumeration of three fixed public directory roots. Source identity/count/token checks and duplicate detection prevent a partial or mismatched listing from being marked complete. Raw pages and failed attempts are retained. Leaf archive objects and deeper date paths are outside this interface, keeping Final data inaccessible. Its output is current source-discovery metadata, never a Security or ContractRules object and never a tradable-universe list.
+
+
+## Intraday lifecycle safety (Milestone 11D)
+
+DelistingNotice separates announcement, availability and scheduled settlement. AccountReplay validates payload/envelope times and rejects unqualified evidence in VERIFIED mode. LifecycleService records immutable source-revision evidence and an entry latch within the same transaction as any unsent cancellation or owned CANCEL_ENTRY intent. Scheduled settlement never creates fills or cashflows. No unconfirmed cancellation releases reservations.
+
+SignalService supplies the latch as an eligibility rejection; EntryPlanner rechecks it after batch ranking, Reservations rejects direct bypass, Journal.claim_dispatch blocks entry claims and PaperDispatch rechecks the symbol before ticket construction. Protective/exit/cancel paths remain dispatchable. Shared cancellation identity prevents global-risk and delisting causes from creating contradictory payloads or repeat requests. The latch survives restart and cannot be cleared by daily universe refresh or later account reconciliation. New relisting qualification is a separate unresolved adapter responsibility.

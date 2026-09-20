@@ -193,12 +193,15 @@ def decide(
     has_position=False,
     pending_entry=False,
     cooldown_end: datetime | None = None,
+    entry_block_reason: str | None = None,
 ):
     decision_time = utc(decision_time)
     signal_time = frame.candle.timing.interval_end
     symbol = frame.candle.symbol
     identity, signal_id = signal_identity("1.0", symbol, side, signal_time)
     reasons = []
+    if entry_block_reason is not None:
+        reasons.append(entry_block_reason)
     if universe is None or not universe.allows(symbol, decision_time):
         reasons.append("NOT_IN_UNIVERSE")
     if not frame.warmup_ok:
