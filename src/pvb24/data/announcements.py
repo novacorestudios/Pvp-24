@@ -252,8 +252,7 @@ def _listing_facts_from_text(body_text):
     for segment in launch_segments:
         contract_symbols.update(re.findall(r"\b([A-Z0-9]+)/USDT\b", segment))
         contract_symbols.update(
-            symbol.upper()
-            for symbol in re.findall(r"\b([A-Z0-9]+)USDT\b", segment, re.IGNORECASE)
+            symbol.upper() for symbol in re.findall(r"\b([A-Z0-9]+)USDT\b", segment, re.IGNORECASE)
         )
 
     post_contract = re.findall(

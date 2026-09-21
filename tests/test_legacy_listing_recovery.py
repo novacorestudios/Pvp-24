@@ -104,7 +104,6 @@ def test_coin_margined_listing_is_not_promoted():
         )
 
 
-
 def test_coin_margined_launch_does_not_promote_leveraged_token_pairs():
     with pytest.raises(ValueError, match="unambiguous"):
         extract_body_facts(
@@ -116,6 +115,7 @@ def test_coin_margined_launch_does_not_promote_leveraged_token_pairs():
                 "FILDOWN, with FILUP/USDT and FILDOWN/USDT trading pairs at the same time."
             ),
         )
+
 
 def test_qualification_accepts_retained_legacy_html_without_special_case():
     body = (
