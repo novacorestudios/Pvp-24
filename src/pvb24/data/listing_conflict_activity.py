@@ -1,7 +1,7 @@
 """Checksum-verified Binance Vision probes for M11X listing-start conflicts."""
 
 import json
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from pvb24.data.daily_activity import DailyKlineRequest, acquire_daily_activity
@@ -9,6 +9,12 @@ from pvb24.ids import canonical, digest
 from pvb24.types import utc
 
 SCHEMA = "PVB24_LISTING_CONFLICT_ACTIVITY_V1"
+
+
+def _time(value):
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value)
+    return utc(value)
 
 
 def _probe_spec(symbol, event):
@@ -62,8 +68,8 @@ def acquire_listing_conflict_activity(root, candidates):
         prior_row = acquired["PRIOR_DAY"]
         first_active = event_row.get("first_active_interval_start")
         if event_row["status"] == "ACQUIRED" and first_active is not None:
-            exact = utc(first_active) == event
-            precedes = utc(first_active) < event
+            exact = _time(first_active) == event
+            precedes = _time(first_active) < event
         else:
             exact = False
             precedes = False
