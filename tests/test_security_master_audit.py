@@ -281,7 +281,7 @@ def test_unknown_m11v_boundary_remains_blocking_with_recovered_evidence(tmp_path
 def test_recovery_pin_and_hash_fail_closed(tmp_path):
     m11v, m11v_sha = m11v_fixture(tmp_path)
     recovery = Path(tmp_path) / "recovery.json"
-    recovery_sha = write_recovery(recovery, [])
+    write_recovery(recovery, [])
     with pytest.raises(ValueError, match="recovery report hash changed"):
         compile_security_master_obligations(m11v, m11v_sha, recovery, "0" * 64)
 
