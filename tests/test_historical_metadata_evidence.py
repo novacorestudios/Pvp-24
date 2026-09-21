@@ -204,7 +204,14 @@ def test_lifecycle_must_bind_same_qualification_results(tmp_path):
     value["qualification_results_hash"] = "9" * 64
     lifecycle_ref = write(lifecycle_ref[0], value)
     with pytest.raises(ValueError, match="identities disagree"):
-        compile_partial_historical_metadata(q[0], q[1], lifecycle_ref[0], lifecycle_ref[1], tick_ref[0], tick_ref[1])
+        compile_partial_historical_metadata(
+            q[0],
+            q[1],
+            lifecycle_ref[0],
+            lifecycle_ref[1],
+            tick_ref[0],
+            tick_ref[1],
+        )
 
 
 def test_unknown_listing_is_never_materialized_as_security(tmp_path):
@@ -219,11 +226,25 @@ def test_event_time_and_final_lock_fail_closed(tmp_path):
     value["reconciliations"][0]["event_at"] = (NOW + timedelta(days=4)).isoformat()
     lifecycle_ref = write(lifecycle_ref[0], value)
     with pytest.raises(ValueError, match="event time"):
-        compile_partial_historical_metadata(q[0], q[1], lifecycle_ref[0], lifecycle_ref[1], tick_ref[0], tick_ref[1])
+        compile_partial_historical_metadata(
+            q[0],
+            q[1],
+            lifecycle_ref[0],
+            lifecycle_ref[1],
+            tick_ref[0],
+            tick_ref[1],
+        )
 
     q, lifecycle_ref, tick_ref = fixtures(tmp_path / "final")
     value = json.loads(q[0].read_text())
     value["results"][0]["available_at"] = "2025-07-01T00:00:00+00:00"
     q = write(q[0], value)
     with pytest.raises(ValueError, match="Final Test"):
-        compile_partial_historical_metadata(q[0], q[1], lifecycle_ref[0], lifecycle_ref[1], tick_ref[0], tick_ref[1])
+        compile_partial_historical_metadata(
+            q[0],
+            q[1],
+            lifecycle_ref[0],
+            lifecycle_ref[1],
+            tick_ref[0],
+            tick_ref[1],
+        )
