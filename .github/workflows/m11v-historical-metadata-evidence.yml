@@ -57,7 +57,7 @@ jobs:
         run: |
           install -m 0644 artifacts/m11v/output/11v-historical-metadata-evidence.json docs/data/11v-historical-metadata-evidence.json
           test "$(sha256sum docs/data/11v-historical-metadata-evidence.json | cut -d' ' -f1)" = "8130ae8d57cb60747daaef379a1713a990937d499a86360c920d0584a7e20252"
-          if git diff --quiet -- docs/data/11v-historical-metadata-evidence.json; then
+          if [ -z "$(git status --porcelain -- docs/data/11v-historical-metadata-evidence.json)" ]; then
             echo "Exact M11V report already captured"
           else
             git config user.name "github-actions[bot]"
