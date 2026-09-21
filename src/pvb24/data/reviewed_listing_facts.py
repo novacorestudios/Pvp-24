@@ -11,10 +11,8 @@ from datetime import datetime
 from pathlib import Path
 
 from pvb24.data.archive import FINAL_START
-from pvb24.data.reviewed_listing_source import (
-    SCHEMA as SOURCE_SCHEMA,
-    inspect_reviewed_listing_source,
-)
+from pvb24.data.reviewed_listing_source import SCHEMA as SOURCE_SCHEMA
+from pvb24.data.reviewed_listing_source import inspect_reviewed_listing_source
 from pvb24.ids import canonical, digest
 from pvb24.types import utc
 
