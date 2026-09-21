@@ -46,9 +46,7 @@ def main():
                 "candidate_count": report["candidate_count"],
                 "source_failures": report["source_failures"],
                 "statuses": {
-                    row["symbol"] + "@" + row["effective_from"]: row[
-                        "archive_boundary_status"
-                    ]
+                    row["symbol"] + "@" + row["effective_from"]: row["archive_boundary_status"]
                     for row in report["candidates"]
                 },
                 "activity_hash": report["activity_hash"],
