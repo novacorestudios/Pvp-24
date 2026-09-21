@@ -6,8 +6,8 @@ import pytest
 
 from pvb24.evaluation.readiness import (
     ATTESTATION_SCHEMA,
-    HistoricalEvaluationBlocked,
     REQUIRED_CAPABILITIES,
+    HistoricalEvaluationBlocked,
     evaluate_readiness,
     require_performance_ready,
 )
