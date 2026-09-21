@@ -159,7 +159,6 @@ def test_postponement_extracts_only_main_causal_schedule_not_later_editor_note()
     ]
 
 
-
 def test_listing_postponement_extracts_explicit_old_and_new_schedule_only():
     body = {
         "node": "root",

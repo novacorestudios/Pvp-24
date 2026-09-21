@@ -248,7 +248,6 @@ def test_postponement_supersedes_old_schedule_only_when_causally_available(tmp_p
     assert superseded["superseded_by_article_code"] == "c" * 32
 
 
-
 def test_late_listing_postponement_preserves_old_unknown_and_adds_new_boundary(tmp_path):
     old_event = datetime(2020, 8, 20, 7, tzinfo=UTC)
     revised_event = datetime(2020, 8, 22, 7, tzinfo=UTC)

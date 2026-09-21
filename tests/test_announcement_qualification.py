@@ -127,7 +127,6 @@ def test_delisting_postponement_qualifies_without_fabricating_entry_cutoff():
     assert "entry_cutoff_at" not in result["facts"][0]
 
 
-
 def test_listing_postponement_qualifies_without_fabricating_leverage():
     released = datetime(2020, 8, 20, 7, 45, 59, tzinfo=UTC)
     body = canonical(

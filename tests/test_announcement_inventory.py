@@ -76,7 +76,6 @@ def test_inventory_is_discovery_only_and_deterministic():
     assert result["candidate_hash"] == digest(result["candidates"])
 
 
-
 def test_inventory_discovers_retained_listing_delay_revision():
     delayed = row(
         48,
