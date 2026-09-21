@@ -24,7 +24,9 @@ from pvb24.state import Journal
 from pvb24.types import Quality
 
 PUBLISHED = datetime(2024, 3, 19, 5, 5, 2, 6000, tzinfo=UTC)
-SETTLEMENT = datetime(2024, 3, 26, 9, tzinfo=UTC)\nLEGACY_PUBLISHED = datetime(2020, 2, 13, 6, 1, tzinfo=UTC)\nLEGACY_LAUNCH = datetime(2020, 2, 14, 8, tzinfo=UTC)
+SETTLEMENT = datetime(2024, 3, 26, 9, tzinfo=UTC)
+LEGACY_PUBLISHED = datetime(2020, 2, 13, 6, 1, tzinfo=UTC)
+LEGACY_LAUNCH = datetime(2020, 2, 14, 8, tzinfo=UTC)
 
 
 def node(tag, *children):
