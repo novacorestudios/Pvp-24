@@ -122,8 +122,8 @@ def decode_daily_activity(request, archive, checksum):
                     continue
                 start, end, is_zero = _validate_row(row, request, index)
                 if previous is not None:
-                    if start <= previous:
-                        raise ValueError("Duplicate/backwards daily kline timestamp")
+                    if start < previous:
+                        raise ValueError("Overlapping/backwards daily kline timestamp")
                     if start > previous:
                         gaps.append({"start": previous, "end": start})
                 first = start if first is None else first

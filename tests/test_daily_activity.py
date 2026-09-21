@@ -9,6 +9,7 @@ import pytest
 from pvb24.data.daily_activity import (
     DailyKlineRequest,
     acquire_daily_activity,
+    decode_daily_activity,
     load_daily_activity,
     reconcile_qualification_activity,
 )
@@ -81,6 +82,19 @@ def add_source(objects, request, starts):
     archive, checksum = source(request, starts)
     objects[request.url] = archive
     objects[request.checksum_url] = checksum
+
+
+
+def test_contiguous_minute_rows_are_valid_and_gap_free():
+    request = DailyKlineRequest("TESTUSDT", "2024-01-01")
+    first = datetime(2024, 1, 1, tzinfo=UTC)
+    archive, checksum = source(request, [first, first + timedelta(minutes=1)])
+    activity = decode_daily_activity(request, archive, checksum)
+    assert activity["rows"] == 2
+    assert activity["first_interval_start"] == first.isoformat(timespec="microseconds").replace("+00:00", "Z")
+    assert activity["last_interval_end"] == (first + timedelta(minutes=2)).isoformat(timespec="microseconds").replace("+00:00", "Z")
+    assert activity["internal_gaps"] == []
+
 
 
 def test_listing_exact_event_start_is_consistent_but_missing_prior_day_is_unknown(tmp_path):
