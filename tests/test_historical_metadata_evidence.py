@@ -142,7 +142,14 @@ def fixtures(tmp_path):
 
 def compile_fixture(tmp_path):
     q, lifecycle_ref, tick_ref = fixtures(tmp_path)
-    return compile_partial_historical_metadata(q[0], q[1], lifecycle_ref[0], lifecycle_ref[1], tick_ref[0], tick_ref[1])
+    return compile_partial_historical_metadata(
+        q[0],
+        q[1],
+        lifecycle_ref[0],
+        lifecycle_ref[1],
+        tick_ref[0],
+        tick_ref[1],
+    )
 
 
 def test_compiler_emits_only_consistent_preliminary_listing_candidate(tmp_path):
