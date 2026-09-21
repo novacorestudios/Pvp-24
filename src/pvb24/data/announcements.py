@@ -38,12 +38,12 @@ class AnnouncementRequest:
     facts_hash: str
 
     def __post_init__(self):
-        if not re.fullmatch(r"[0-9a-f]{32}", self.code):
+        if not re.fullmatch(ARTICLE_CODE, self.code):
             raise ValueError("Explicit official article code required")
         day = date.fromisoformat(self.published_day)
         if day.isoformat() != self.published_day or day >= FINAL_START.date():
             raise ValueError("Reviewed pre-Final publication date required; Final remains LOCKED")
-        if self.kind not in ("DELISTING", "TICK_CHANGE"):
+        if self.kind not in ("DELISTING", "TICK_CHANGE", "LISTING"):
             raise ValueError("Unsupported reviewed announcement kind")
         if any(not re.fullmatch(r"[0-9a-f]{64}", h) for h in (self.body_sha256, self.facts_hash)):
             raise ValueError("Reviewed body and facts hashes required")
@@ -55,7 +55,7 @@ class AnnouncementRequest:
 
 
 def public_announcement(url):
-    if not re.fullmatch(re.escape(BASE) + r"[0-9a-f]{32}", url):
+    if not re.fullmatch(re.escape(BASE) + ARTICLE_CODE, url):
         raise ValueError("Official read-only announcement URL required")
     with urllib.request.build_opener(NoRedirect()).open(url, timeout=30) as response:
         raw = response.read(MAX_BYTES + 1)
@@ -104,6 +104,13 @@ def explicit_time(value):
     return result
 
 
+def legacy_listing_time(value):
+    result = datetime.strptime(value, "%Y/%m/%d %I:%M %p").replace(tzinfo=UTC)
+    if result >= FINAL_START:
+        raise ValueError("Final-period metadata facts remain LOCKED")
+    return result
+
+
 def extract_facts(kind, body):
     all_nodes = list(nodes(body))
     if len(all_nodes) > 20000 or body.get("node") != "root":
@@ -143,6 +150,35 @@ def extract_facts(kind, body):
                 "entry_cutoff_at": cutoff_time,
             }
             for symbol in sorted(symbols)
+        ]
+    if kind == "LISTING":
+        body_text = text(body)
+        if "Binance Futures will launch" not in body_text or "perpetual contract" not in body_text:
+            raise ValueError("Explicit Binance Futures perpetual launch statement required")
+        symbols = sorted(set(re.findall(r"\\b([A-Z0-9]+)/USDT\\b", body_text)))
+        launches = re.findall(
+            r"(?:trading opening at|trading opens on|open trading at)\\s*"
+            r"(\\d{4}/\\d{2}/\\d{2}\\s+\\d{1,2}:\\d{2}\\s+(?:AM|PM))\\s*\\(UTC\\)",
+            body_text,
+        )
+        leverages = re.findall(
+            r"(?:select between 1-|up to )(\\d+)x leverage",
+            body_text,
+            flags=re.IGNORECASE,
+        )
+        if len(symbols) != 1 or len(launches) != 1 or len(leverages) != 1:
+            raise ValueError("One unambiguous legacy USDT perpetual listing required")
+        maximum = int(leverages[0])
+        if not 1 <= maximum <= 125:
+            raise ValueError("Unsupported announced maximum leverage")
+        return [
+            {
+                "symbol": symbols[0] + "USDT",
+                "launch_at": legacy_listing_time(launches[0]),
+                "max_leverage": maximum,
+                "contract_type": "PERPETUAL",
+                "quote_asset": "USDT",
+            }
         ]
     if kind != "TICK_CHANGE":
         raise ValueError("Unsupported announcement kind")
@@ -206,7 +242,11 @@ def decode(request, raw):
     facts = extract_facts(request.kind, strict_json(body))
     if digest(facts) != request.facts_hash:
         raise ValueError("Extracted facts differ from independently reviewed facts")
-    effective_key = "scheduled_settlement_at" if request.kind == "DELISTING" else "effective_at"
+    effective_key = {
+        "DELISTING": "scheduled_settlement_at",
+        "TICK_CHANGE": "effective_at",
+        "LISTING": "launch_at",
+    }[request.kind]
     if any(f[effective_key] <= published for f in facts):
         raise ValueError("Announcement must precede its scheduled change")
     if not isinstance(data.get("version"), str) or not data["version"]:

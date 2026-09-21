@@ -24,7 +24,7 @@ from pvb24.state import Journal
 from pvb24.types import Quality
 
 PUBLISHED = datetime(2024, 3, 19, 5, 5, 2, 6000, tzinfo=UTC)
-SETTLEMENT = datetime(2024, 3, 26, 9, tzinfo=UTC)
+SETTLEMENT = datetime(2024, 3, 26, 9, tzinfo=UTC)\nLEGACY_PUBLISHED = datetime(2020, 2, 13, 6, 1, tzinfo=UTC)\nLEGACY_LAUNCH = datetime(2020, 2, 14, 8, tzinfo=UTC)
 
 
 def node(tag, *children):
@@ -287,3 +287,119 @@ def test_final_request_fails_before_network_and_final_replay_before_file_io(tmp_
             expected_report_hash="0" * 64,
             through=datetime(2025, 7, 1, tzinfo=UTC),
         )
+
+
+def legacy_listing_fixture():
+    body = {
+        "node": "root",
+        "child": [
+            node(
+                "p",
+                "Binance Futures will launch VET/USDT perpetual contract, with trading opening "
+                "at 2020/02/14 08:00 AM (UTC). Users will be able to select between 1-50x "
+                "leverage.",
+            )
+        ],
+    }
+    facts = [
+        {
+            "symbol": "VETUSDT",
+            "launch_at": LEGACY_LAUNCH,
+            "max_leverage": 50,
+            "contract_type": "PERPETUAL",
+            "quote_asset": "USDT",
+        }
+    ]
+    body_raw = canonical(body)
+    request = AnnouncementRequest(
+        "360039757391",
+        "2020-02-13",
+        "LISTING",
+        hashlib.sha256(body_raw.encode()).hexdigest(),
+        digest(facts),
+    )
+    response = {
+        "success": True,
+        "data": {
+            "code": request.code,
+            "publishDate": 1581573660000,
+            "lastUpdateTime": 0,
+            "version": "1",
+            "body": body_raw,
+        },
+    }
+    return request, response
+
+
+def test_legacy_numeric_article_listing_extracts_only_announced_partial_facts():
+    request, response = legacy_listing_fixture()
+    report = decode(request, canonical(response).encode())
+    assert report["published_at"] == LEGACY_PUBLISHED
+    assert report["available_at"] == LEGACY_PUBLISHED + timedelta(seconds=2)
+    assert report["facts"] == [
+        {
+            "symbol": "VETUSDT",
+            "launch_at": "2020-02-14T08:00:00.000000Z",
+            "max_leverage": 50,
+            "contract_type": "PERPETUAL",
+            "quote_asset": "USDT",
+        }
+    ]
+    assert not report["security_master_complete"]
+    assert not report["contract_rules_complete"]
+    assert not report["historical_verified"]
+
+
+def test_legacy_listing_is_not_promoted_to_delisting_or_full_rule_event(tmp_path):
+    request, response = legacy_listing_fixture()
+    report, path = acquire(request, tmp_path, fetch=lambda url: canonical(response).encode())
+    pin = Path(path).stem
+    assert report["kind"] == "LISTING"
+    assert not delisting_events(
+        tmp_path,
+        path,
+        expected_report_hash=pin,
+        through=LEGACY_LAUNCH + timedelta(days=1),
+    )
+
+
+@pytest.mark.parametrize("code", ["36003975739", "3600397573910", "ABC123", "g" * 32])
+def test_unreviewed_or_malformed_legacy_article_identity_is_rejected(code):
+    request, _ = legacy_listing_fixture()
+    with pytest.raises(ValueError, match="article code"):
+        replace(request, code=code).__post_init__()
+
+
+def test_legacy_listing_ambiguity_and_backdated_launch_fail_closed():
+    request, response = legacy_listing_fixture()
+    response["data"]["body"] = response["data"]["body"].replace(
+        "VET/USDT perpetual contract",
+        "VET/USDT and NEO/USDT perpetual contract",
+    )
+    request = replace(
+        request, body_sha256=hashlib.sha256(response["data"]["body"].encode()).hexdigest()
+    )
+    with pytest.raises(ValueError, match="unambiguous"):
+        decode(request, canonical(response).encode())
+
+    request, response = legacy_listing_fixture()
+    response["data"]["body"] = response["data"]["body"].replace(
+        "2020/02/14 08:00 AM", "2020/02/12 08:00 AM"
+    )
+    body = response["data"]["body"]
+    facts = [
+        {
+            "symbol": "VETUSDT",
+            "launch_at": datetime(2020, 2, 12, 8, tzinfo=UTC),
+            "max_leverage": 50,
+            "contract_type": "PERPETUAL",
+            "quote_asset": "USDT",
+        }
+    ]
+    request = replace(
+        request,
+        body_sha256=hashlib.sha256(body.encode()).hexdigest(),
+        facts_hash=digest(facts),
+    )
+    with pytest.raises(ValueError, match="must precede"):
+        decode(request, canonical(response).encode())

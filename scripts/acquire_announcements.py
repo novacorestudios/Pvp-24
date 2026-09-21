@@ -56,12 +56,22 @@ def main():
                     "available_at": report["available_at"],
                     "facts": fact,
                     "quality": "PRELIMINARY",
-                    "history_coverage_start": None,
+                    "history_coverage_start": (
+                        fact.get("launch_at") if report["kind"] == "LISTING" else None
+                    ),
                     "history_coverage_end": None,
-                    "full_security_record": "MISSING",
+                    "full_security_record": (
+                        "PARTIAL_LISTING_FACTS_ONLY"
+                        if report["kind"] == "LISTING"
+                        else "MISSING"
+                    ),
                     "full_contract_rules": "MISSING",
                     "actual_settlement_fill": "NOT_PROVEN",
-                    "eligibility": "NOT_INFERRED_FROM_ANNOUNCEMENT",
+                    "eligibility": (
+                        "NOT_INFERRED_FROM_LISTING"
+                        if report["kind"] == "LISTING"
+                        else "NOT_INFERRED_FROM_ANNOUNCEMENT"
+                    ),
                 }
             )
     summary = {

@@ -1,0 +1,82 @@
+{
+  "schema": "PVB24_LEGACY_LISTING_SOURCE_REVIEW_V1",
+  "reviewed_scope": "OFFICIAL_BINANCE_SUPPORT_PAGES_PRE_FINAL_PAGE_TEXT_ONLY",
+  "execution_eligible": false,
+  "raw_cms_acquired": false,
+  "historical_availability_verified": false,
+  "original_revision_as_published_verified": false,
+  "findings": [
+    "Legacy Binance Futures launch announcements from 2020 use 12-digit numeric article identifiers, while the prior adapter accepted only 32-hex identifiers.",
+    "The reviewed pages explicitly state USDT perpetual launch times and announced maximum leverage for the selected examples.",
+    "Page-text review does not supply retained CMS bytes, body hashes, original historical receipt times, complete security classification, quantity/notional rules, maintenance tiers, or subsequent rule-change coverage.",
+    "These rows are acquisition candidates only; they must not enter replay or a historical universe until raw CMS evidence is acquired and independently reviewed."
+  ],
+  "candidates": [
+    {
+      "code": "360038585151",
+      "symbol": "LTCUSDT",
+      "published_at": "2020-01-08T09:01:00Z",
+      "launch_at": "2020-01-09T08:00:00Z",
+      "max_leverage": 75,
+      "source_page": "https://www.binance.com/en/support/announcement/detail/360038585151"
+    },
+    {
+      "code": "360038969011",
+      "symbol": "XLMUSDT",
+      "published_at": "2020-01-19T09:04:00Z",
+      "launch_at": "2020-01-20T08:00:00Z",
+      "max_leverage": 75,
+      "source_page": "https://www.binance.com/en/support/announcement/detail/360038969011"
+    },
+    {
+      "code": "360039355391",
+      "symbol": "ADAUSDT",
+      "published_at": "2020-01-30T09:38:00Z",
+      "launch_at": "2020-01-31T08:00:00Z",
+      "max_leverage": 75,
+      "source_page": "https://www.binance.com/en/support/announcement/detail/360039355391"
+    },
+    {
+      "code": "360039045092",
+      "symbol": "DASHUSDT",
+      "published_at": "2020-02-03T09:28:00Z",
+      "launch_at": "2020-02-04T08:00:00Z",
+      "max_leverage": 50,
+      "source_page": "https://www.binance.com/en/support/announcement/detail/360039045092"
+    },
+    {
+      "code": "360039562671",
+      "symbol": "ATOMUSDT",
+      "published_at": "2020-02-06T07:26:00Z",
+      "launch_at": "2020-02-07T08:00:00Z",
+      "max_leverage": 50,
+      "source_page": "https://www.binance.com/en/support/announcement/detail/360039562671"
+    },
+    {
+      "code": "360039190692",
+      "symbol": "BNBUSDT",
+      "published_at": "2020-02-07T10:43:00Z",
+      "launch_at": "2020-02-10T08:00:00Z",
+      "max_leverage": 50,
+      "source_page": "https://www.binance.com/en/support/announcement/detail/360039190692"
+    },
+    {
+      "code": "360039757391",
+      "symbol": "VETUSDT",
+      "published_at": "2020-02-13T06:01:00Z",
+      "launch_at": "2020-02-14T08:00:00Z",
+      "max_leverage": 50,
+      "source_page": "https://www.binance.com/en/support/announcement/detail/360039757391"
+    },
+    {
+      "code": "360039470132",
+      "symbol": "NEOUSDT",
+      "published_at": "2020-02-16T08:59:00Z",
+      "launch_at": "2020-02-17T08:00:00Z",
+      "max_leverage": 50,
+      "source_page": "https://www.binance.com/en/support/announcement/detail/360039470132"
+    }
+  ],
+  "final_test_access": "LOCKED",
+  "operational_ready": false
+}
