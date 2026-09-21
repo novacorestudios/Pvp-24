@@ -69,7 +69,7 @@ def fixtures(tmp_path):
     lifecycle = {
         "schema": "PVB24_LIFECYCLE_ARCHIVE_ACTIVITY_V3",
         "final_test_access": "LOCKED",
-        "source_failures": 0,
+        "source_failures": [],
         "qualification_results_hash": "a" * 64,
         "qualification_review_requests_hash": "b" * 64,
         "reconciliation_hash": "c" * 64,
@@ -197,6 +197,24 @@ def test_pins_are_rechecked(target, tmp_path):
     args[index] = "0" * 64
     with pytest.raises(ValueError, match="hash changed"):
         compile_partial_historical_metadata(*args)
+
+
+
+def test_source_failure_shape_and_contents_fail_closed(tmp_path):
+    q, lifecycle_ref, tick_ref = fixtures(tmp_path)
+    for source_failures in (1, ["failed-probe"]):
+        value = json.loads(lifecycle_ref[0].read_text())
+        value["source_failures"] = source_failures
+        changed = write(tmp_path / f"l-{len(str(source_failures))}.json", value)
+        with pytest.raises(ValueError, match="empty explicit list"):
+            compile_partial_historical_metadata(
+                q[0],
+                q[1],
+                changed[0],
+                changed[1],
+                tick_ref[0],
+                tick_ref[1],
+            )
 
 
 def test_lifecycle_must_bind_same_qualification_results(tmp_path):

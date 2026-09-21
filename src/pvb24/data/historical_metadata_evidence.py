@@ -94,10 +94,11 @@ def compile_partial_historical_metadata(
     lifecycle = _load_pinned(lifecycle_path, lifecycle_sha256, schema=LIFECYCLE_SCHEMA)
     ticks = _load_pinned(tick_path, tick_sha256, schema=TICK_SCHEMA)
 
-    if not qualification.get("source_fetch_complete"):
+    if qualification.get("source_fetch_complete") is not True:
         raise ValueError("Complete selected announcement source fetch required")
-    if lifecycle.get("source_failures") != 0:
-        raise ValueError("Lifecycle source failures must be resolved before compilation")
+    source_failures = lifecycle.get("source_failures")
+    if not isinstance(source_failures, list) or source_failures:
+        raise ValueError("Lifecycle source failures must be an empty explicit list")
     if lifecycle.get("qualification_results_hash") != qualification.get("results_hash"):
         raise ValueError("Lifecycle/qualification result identities disagree")
     if lifecycle.get("qualification_review_requests_hash") != qualification.get(
