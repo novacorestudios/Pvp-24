@@ -1,4 +1,4 @@
-# Handoff — Milestone 11L (causal replay funding-boundary eligibility)
+# Handoff — Milestone 11M (pre-Final historical evaluation readiness gate)
 
 - Repository: novacorestudios/Pvp-24; branch build/pvb24-v1.
 - Exact current HEAD: read the Git branch ref; main remains initialization only.
@@ -6,7 +6,7 @@
 - Milestone 0 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35422954155 — SUCCESS.
 - Public-disclosure authorization: user explicitly approved publishing these files and will change visibility later. Do not request this approval again.
 - Milestone 1: official Freqtrade 2026.8 / 9f10e357a93c1dcf10c2a2b367659214d89c073e installed; repeat locked install and offline dry-run config smoke passed.
-- Local tests/CI: 527 passed; Ruff lint/format passed. Milestone 11L CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35599685386 — SUCCESS.
+- Local tests/CI: 539 passed; Ruff lint/format passed. Milestone 11M CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35601347834 — SUCCESS.
 - Milestone 1 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423197873 — SUCCESS.
 - Milestone 2 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423500106 — SUCCESS.
 - Milestone 3 final CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423929247 — SUCCESS.
@@ -55,7 +55,10 @@
 - Milestone 11I final: a5e7cdaa838846a2ba9099924ea5a2340ea26d5f; CI 35593905942 — SUCCESS.
 - Milestone 11J final: 8fd34b0c80f5372b60da3ada403588da9b9032ab; CI 35595263337 — SUCCESS.
 - Milestone 11K final: 8f9092f2880c7f202bcd4b4d5b58a987a80eda2a; CI 35598476129 — SUCCESS.
-- Next: wire independently proven replay position-boundary eligibility into exact-source funding payments where source economics are complete, while keeping schedule coverage separate; continue historical-rule/security qualification and historical-evaluation readiness. Do not backdate current funding documentation as historical schedule proof. Full historical rules/security coverage, complete settlement pricing before November 2023, funding schedule coverage and six-year historical evaluation remain incomplete. Final Test LOCKED; operational_ready=false; LIVE DISABLED.
+- Milestone 11L implementation: 74aa52ed8a2cef39041272f3e7909ee494fd9ed0; CI 35599685386 — SUCCESS.
+- Milestone 11L documentation checkpoint: 88b8b3b6f7a6781a51aa5f5635e0525200151d1b; CI 35599961699 — SUCCESS.
+- Milestone 11M implementation: 435eaef94db9bc637242712bfa27701739a5fa17; CI 35601347834 — SUCCESS.
+- Next: close the readiness matrix with qualified evidence rather than bypassing it. Priority is historical universe/security/rules/lifecycle qualification plus full pre-Final LAST 1h/LAST 1m/Mark 1m coverage; funding settlement pricing still has 4,291 missing source Marks, the funding schedule/reserve remain incomplete, and historical liquidation tiers remain incomplete. Any future performance runner must call require_performance_ready() and remain blocked until every mandatory capability has a complete pinned attestation. Final Test LOCKED; operational_ready=false; LIVE DISABLED.
 - Code: immutable Fill/Side types, precision-34 Decimal helpers, canonical IDs, SQLite WAL events/snapshots/write-ahead intents, fail-closed paper guard. Causal Timing/Candle/Mark/rule/security models, as-of revision selection, 30-day gap warmup, deterministic historical Top-20 and stale-universe grace implemented. Streaming Wilder ATR, channel/RVOL, exact long/short transitions, restartable indicator checkpoints, cooldown/status gates and timed simultaneous batch ranking implemented. Risk foundations now include rounded protective-stop costs, separate arrival shortfall gate, causal funding reserve with explicit coverage, immutable open/pending portfolio reservations and proportional confirmed-exit release. Descending quantity-step sizing, 1..5x minimum feasible leverage, isolated tier-consistent liquidation reconstruction, reduce-only post-fill action interface and transactional reservation+ENTRY intent are implemented. Execution market models now include sequence-consistent L2, consumed-depth replay, strict IOC caps and gates, partial sweep previews, and labelled preliminary OHLC proxies. Confirmed-fill protection lifecycle and transactional evidence/state/action-intent persistence now exist. Open-position reconciliation is now implemented; execution adapter and integrated backtest remain unimplemented. Exchange liquidation validation is still absent; actual post-fill collateral must come from the adapter, not a hypothetical newly opened smaller position.
 - Data: five official BTCUSDT January 2024 archives acquired and SHA-256/CSV verified: LAST/Mark 1m (44640 rows each), LAST/Mark 1h (744 each), raw funding (93). Candle grids complete for this sample only; funding has 28 millisecond interval discrepancies and no schedule attestation. PRELIMINARY availability model; no historical rules/security master/L2. See DATA_COVERAGE.md and data/11a-source-manifest.json. No backtest evidence.
 - PAPER: NOT READY. LIVE: DISABLED. No orders sent.
@@ -373,3 +376,18 @@ A deterministic FundingEligibilityEvidence revision binds owner, settlement, rep
 This proves only causal strategy-position eligibility for individually evidenced settlements inside PRELIMINARY replay. It does not establish a complete funding calendar, FundingCoverage, original historical publication latency, external exchange-account eligibility, the 4,291 missing pre-November-2023 settlement Marks, or complete historical rule/security coverage. See docs/FUNDING_REPLAY_BOUNDARY.md.
 
 Thirteen new tests cover exact owned quantity, pre-boundary reductions, post-boundary exclusions, late-fill invalidation, source timing/provenance, missing Marks, unsupported rate types, VERIFIED-promotion rejection, flat boundaries, restart idempotence and ambiguous same-time fills. Full CI 35599685386 passes 527 tests plus Ruff, provenance, reference smoke and pinned Freqtrade lifecycle/parity checks. No Alpha/risk/config value changed, no performance result was produced and no external order was sent.
+
+
+## Pre-Final historical evaluation readiness gate (Milestone 11M)
+
+A hard readiness boundary now sits in front of any historical performance run. The frozen gate covers Development + Validation from 2020-01-01 through the exclusive 2025-07-01 Final Test boundary and rejects attempts to widen the window, unlock Final Test, or pre-authorize performance/operations.
+
+The committed matrix at docs/data/11m-pre-final-readiness.json contains eleven mandatory capabilities: historical universe, security master, contract rules, lifecycle, LAST 1h, LAST 1m, Mark 1m, funding settlement pricing, funding schedule, funding reserve, and liquidation rules. Each PARTIAL evidence file is pinned by exact Git blob identity plus semantic source/report anchors. Changed bytes, schema drift, a failed semantic anchor, duplicate/missing capability rows, path escape, or holdout-policy change fails closed.
+
+M11M distinguishes source evidence from a completion attestation. An arbitrary source report cannot simply be relabeled COMPLETE. COMPLETE requires a dedicated PVB24_CAPABILITY_ATTESTATION_V1 spanning the entire frozen pre-Final window with explicit PRELIMINARY/VERIFIED quality and no gaps. MISSING and PARTIAL always block require_performance_ready().
+
+The current repository matrix intentionally evaluates NOT READY: all eleven mandatory capabilities are PARTIAL. This accurately reflects the one-month BTCUSDT candle sample, reviewed-only announcement coverage, incomplete historical universe/rules, 4,291 missing settlement Marks, unqualified funding schedule/reserve, and missing historical liquidation tiers. The gate therefore prevents a six-year P&L from being generated from incomplete evidence rather than weakening any data rule.
+
+The audit CLI is scripts/check_historical_evaluation_readiness.py; blocked readiness exits 2 and lists every blocking capability. Future historical performance entrypoints must call require_performance_ready() before producing strategy metrics. See docs/HISTORICAL_EVALUATION_READINESS.md.
+
+Twelve new tests cover all-complete synthetic attestations, partial/missing blocking, prevention of self-declared completion, Final Test/window governance, evidence tampering, semantic-anchor mismatch, exact capability-set enforcement, full-window coverage and the real committed blocked matrix. Full CI 35601347834 passes 539 tests plus Ruff, provenance, reference smoke and pinned Freqtrade lifecycle/parity checks. No Alpha/risk/config value changed, no performance result was produced and no external order was sent.
