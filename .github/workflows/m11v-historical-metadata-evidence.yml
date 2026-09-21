@@ -1,0 +1,60 @@
+name: M11V Historical Metadata Evidence
+
+on:
+  push:
+    branches:
+      - build/pvb24-v1
+    paths:
+      - ".github/workflows/m11v-historical-metadata-evidence.yml"
+      - "src/pvb24/data/historical_metadata_evidence.py"
+      - "scripts/compile_historical_metadata_evidence.py"
+      - "docs/data/11f-announcement-coverage.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN_ID: "35636682664"
+      QUALIFICATION_SHA256: "ed5539a48c6fca0fca16823bfd4dfd60ad3048c57716635adbb5d04d4b5ddd3a"
+      LIFECYCLE_SHA256: "2c935625dffef3a949b7b30c4dfb55ca75b6b78c70771958d710c6925a0253bd"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e '.[dev]'
+      - name: Restore pinned M11T source reports
+        run: |
+          mkdir -p artifacts/m11v/qualification artifacts/m11v/lifecycle
+          gh run download "$SOURCE_RUN_ID"             --repo "${{ github.repository }}"             --name announcement-body-qualification-evidence             --dir artifacts/m11v/qualification
+          gh run download "$SOURCE_RUN_ID"             --repo "${{ github.repository }}"             --name lifecycle-archive-reconciliation-evidence             --dir artifacts/m11v/lifecycle
+      - name: Verify exact source report pins
+        run: |
+          QUAL="artifacts/m11v/qualification/reports/${QUALIFICATION_SHA256}.json"
+          LIFE="artifacts/m11v/lifecycle/reports/${LIFECYCLE_SHA256}.json"
+          test -f "$QUAL"
+          test -f "$LIFE"
+          test "$(sha256sum "$QUAL" | cut -d' ' -f1)" = "$QUALIFICATION_SHA256"
+          test "$(sha256sum "$LIFE" | cut -d' ' -f1)" = "$LIFECYCLE_SHA256"
+      - name: Verify repository provenance
+        run: python scripts/verify_provenance.py
+      - name: Compile partial historical metadata evidence
+        run: |
+          QUAL="artifacts/m11v/qualification/reports/${QUALIFICATION_SHA256}.json"
+          LIFE="artifacts/m11v/lifecycle/reports/${LIFECYCLE_SHA256}.json"
+          TICK="docs/data/11f-announcement-coverage.json"
+          TICK_SHA="$(sha256sum "$TICK" | cut -d' ' -f1)"
+          mkdir -p artifacts/m11v/output
+          python scripts/compile_historical_metadata_evidence.py             --qualification "$QUAL"             --qualification-sha256 "$QUALIFICATION_SHA256"             --lifecycle "$LIFE"             --lifecycle-sha256 "$LIFECYCLE_SHA256"             --tick-evidence "$TICK"             --tick-evidence-sha256 "$TICK_SHA"             --output artifacts/m11v/output/11v-historical-metadata-evidence.json
+          sha256sum artifacts/m11v/output/11v-historical-metadata-evidence.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m11v-historical-metadata-evidence
+          path: artifacts/m11v/output/11v-historical-metadata-evidence.json
+          if-no-files-found: error
