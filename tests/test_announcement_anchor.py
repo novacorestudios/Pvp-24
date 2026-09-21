@@ -7,6 +7,7 @@ from urllib.parse import parse_qs, urlsplit
 import pytest
 
 from pvb24.data.announcement_anchor import (
+    REVIEWED_ANCHORS,
     CatalogAnchor,
     load_anchor_review,
     review_anchor_start,
