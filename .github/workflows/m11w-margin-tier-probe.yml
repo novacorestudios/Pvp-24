@@ -26,6 +26,7 @@ jobs:
         run: python scripts/verify_provenance.py
       - name: Probe reviewed official margin-tier sources
         run: |
+          mkdir -p artifacts/m11w
           python scripts/probe_margin_tier_sources.py \
             --root artifacts/m11w/source-probe \
             --code aa735cd2d8bd4e7bb092179cf086e486 \

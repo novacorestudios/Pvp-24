@@ -60,9 +60,7 @@ def test_pre_final_probe_retains_exact_table_cells_and_no_rules(tmp_path):
     assert result["status"] == "PRE_FINAL_REVISION_REVIEWABLE"
     assert result["source_sha256"] == hashlib.sha256(raw).hexdigest()
     assert result["table_count"] == 1
-    assert result["tables"] == [
-        [["Previous", "New"], ["0 < Position ≤ 5,000", "0.60%"]]
-    ]
+    assert result["tables"] == [[["Previous", "New"], ["0 < Position ≤ 5,000", "0.60%"]]]
     assert not result["contract_rules_emitted"]
     assert not result["liquidation_validated"]
 
