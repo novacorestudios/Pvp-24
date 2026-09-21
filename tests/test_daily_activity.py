@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+from pvb24.data.announcement_qualification import SCHEMA as QUALIFICATION_SCHEMA
 from pvb24.data.daily_activity import (
     DailyKlineRequest,
     acquire_daily_activity,
@@ -66,8 +67,9 @@ def fetcher(objects):
 
 def qualification(kind, event):
     key = "launch_at" if kind == "LISTING" else "scheduled_settlement_at"
+    published = event - timedelta(days=7)
     return {
-        "schema": "PVB24_ANNOUNCEMENT_BODY_QUALIFICATION_V1",
+        "schema": QUALIFICATION_SCHEMA,
         "final_test_access": "LOCKED",
         "results_hash": "r" * 64,
         "review_requests_hash": "q" * 64,
@@ -77,6 +79,8 @@ def qualification(kind, event):
                 "code": "a" * 32,
                 "source_sha256": "b" * 64,
                 "kind": kind,
+                "published_at": published.isoformat(),
+                "available_at": (published + timedelta(seconds=2)).isoformat(),
                 "facts": [{"symbol": "TESTUSDT", key: event.isoformat()}],
             }
         ],
@@ -201,6 +205,49 @@ def test_delisting_nonzero_activity_after_event_remains_a_contradiction(tmp_path
     row = report["reconciliations"][0]
     assert row["status"] == "CONTRADICTED_BY_ARCHIVE_ACTIVITY"
     assert "EVENT_DAY_ACTIVITY_CONTINUES_AFTER_SCHEDULED_SETTLEMENT" in row["contradictions"]
+
+
+
+def test_postponement_supersedes_old_schedule_only_when_causally_available(tmp_path):
+    old_event = datetime(2024, 12, 16, 9, tzinfo=UTC)
+    revised_event = datetime(2024, 12, 30, 9, tzinfo=UTC)
+    qualification_report = qualification("DELISTING", old_event)
+    revised_published = datetime(2024, 12, 14, 13, 53, 34, tzinfo=UTC)
+    qualification_report["results"].append(
+        {
+            "status": "QUALIFIED_PRELIMINARY",
+            "code": "c" * 32,
+            "source_sha256": "d" * 64,
+            "kind": "DELISTING",
+            "published_at": revised_published.isoformat(),
+            "available_at": (revised_published + timedelta(seconds=2)).isoformat(),
+            "facts": [
+                {
+                    "symbol": "TESTUSDT",
+                    "scheduled_settlement_at": revised_event.isoformat(),
+                    "revision_type": "POSTPONEMENT",
+                }
+            ],
+        }
+    )
+    event_request = DailyKlineRequest("TESTUSDT", revised_event.date().isoformat())
+    objects = {}
+    add_source(objects, event_request, [revised_event - timedelta(minutes=1)])
+
+    report, _ = reconcile_qualification_activity(
+        qualification_report, tmp_path, fetch=fetcher(objects)
+    )
+    assert report["superseded_count"] == 1
+    assert report["effective_fact_count"] == 1
+    assert report["reconciliation_count"] == 1
+    row = report["reconciliations"][0]
+    expected = revised_event.isoformat(timespec="microseconds").replace("+00:00", "Z")
+    assert row["event_at"] == expected
+    assert row["status"] == "CONSISTENT_EVENT_BOUNDARY_ONLY"
+    superseded = report["superseded_facts"][0]
+    assert superseded["superseded_article_code"] == "a" * 32
+    assert superseded["superseded_by_article_code"] == "c" * 32
+
 
 
 def test_delisting_next_day_activity_is_a_contradiction(tmp_path):

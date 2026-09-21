@@ -11,6 +11,7 @@ from pvb24.data.announcements import (
     AnnouncementRequest,
     acquire,
     decode,
+    extract_facts,
     delisting_events,
     load_acquired,
 )
@@ -130,6 +131,33 @@ def acquired(tmp_path, kind="DELISTING"):
     request, response = fixture(kind)
     report, path = acquire(request, tmp_path, fetch=lambda url: canonical(response).encode())
     return report, path, Path(path).stem
+
+
+
+def test_postponement_extracts_only_main_causal_schedule_not_later_editor_note():
+    body = {
+        "node": "root",
+        "child": [
+            node(
+                "p",
+                "Note: The delisting date has been revised to 2025-01-31 09:00 (UTC).",
+            ),
+            node(
+                "p",
+                "Binance Futures will postpone the delisting of the USDⓈ-M OMGUSDT "
+                "Perpetual Contract to 2024-12-30 09:00 (UTC). We will conduct automatic "
+                "settlements on the USDⓈ-M OMGUSDT Perpetual Contract and then delist this contract.",
+            ),
+        ],
+    }
+    assert extract_facts("DELISTING", body) == [
+        {
+            "symbol": "OMGUSDT",
+            "scheduled_settlement_at": datetime(2024, 12, 30, 9, tzinfo=UTC),
+            "revision_type": "POSTPONEMENT",
+        }
+    ]
+
 
 
 def test_original_clock_precision_preliminary_policy_and_no_fabricated_metadata():

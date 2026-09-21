@@ -18,6 +18,7 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 from pvb24.data.acquisition import NoRedirect, object_write
+from pvb24.data.announcement_qualification import SCHEMA as QUALIFICATION_SCHEMA
 from pvb24.data.archive import FINAL_START, KLINE_HEADER, checksum_digest, milliseconds
 from pvb24.decimal_math import D, require_decimal
 from pvb24.ids import canonical, digest
@@ -248,24 +249,108 @@ def _event(kind, fact):
     return value
 
 
-def probe_plan(qualification):
-    probes = set()
+def _qualified_lifecycle_records(qualification):
+    records = []
     for article in qualification.get("results", []):
         if article.get("status") != "QUALIFIED_PRELIMINARY":
             continue
         kind = article.get("kind")
         if kind not in ("LISTING", "DELISTING"):
             raise ValueError("Only listing/delisting lifecycle facts may be reconciled")
+        published = utc(datetime.fromisoformat(article["published_at"]))
+        available = utc(datetime.fromisoformat(article["available_at"]))
+        if available < published or available >= FINAL_START:
+            raise ValueError("Strict pre-Final announcement availability required")
         for fact in article.get("facts", []):
             event = _event(kind, fact)
-            boundary = (
-                event.date() - timedelta(days=1)
-                if kind == "LISTING"
-                else event.date() + timedelta(days=1)
+            if event <= available:
+                raise ValueError("Lifecycle event must follow causal article availability")
+            records.append(
+                {
+                    "article_code": article["code"],
+                    "article_source_sha256": article["source_sha256"],
+                    "kind": kind,
+                    "symbol": fact["symbol"],
+                    "published_at": published,
+                    "available_at": available,
+                    "event_at": event,
+                    "fact": fact,
+                }
             )
-            for day in (event.date(), boundary):
-                probes.add(DailyKlineRequest(fact["symbol"], day.isoformat()))
+    return tuple(
+        sorted(
+            records,
+            key=lambda row: (
+                row["available_at"],
+                row["event_at"],
+                row["symbol"],
+                row["article_code"],
+            ),
+        )
+    )
+
+
+def _effective_lifecycle_records(qualification):
+    active = []
+    superseded = []
+    for record in _qualified_lifecycle_records(qualification):
+        is_postponement = (
+            record["kind"] == "DELISTING"
+            and record["fact"].get("revision_type") == "POSTPONEMENT"
+        )
+        if is_postponement:
+            candidates = [
+                (index, previous)
+                for index, previous in enumerate(active)
+                if previous["kind"] == "DELISTING"
+                and previous["symbol"] == record["symbol"]
+                and record["available_at"] <= previous["event_at"]
+            ]
+            if len(candidates) > 1:
+                raise ValueError("Ambiguous causal delisting schedule supersession")
+            if candidates:
+                index, previous = candidates[0]
+                active.pop(index)
+                superseded.append(
+                    {
+                        "symbol": record["symbol"],
+                        "kind": "DELISTING",
+                        "superseded_article_code": previous["article_code"],
+                        "superseded_event_at": previous["event_at"],
+                        "superseded_by_article_code": record["article_code"],
+                        "revision_available_at": record["available_at"],
+                        "replacement_event_at": record["event_at"],
+                    }
+                )
+        active.append(record)
+    active.sort(key=lambda row: (row["event_at"], row["symbol"], row["article_code"]))
+    superseded.sort(
+        key=lambda row: (
+            row["revision_available_at"],
+            row["symbol"],
+            row["superseded_article_code"],
+        )
+    )
+    return tuple(active), tuple(superseded)
+
+
+def _probe_plan(records):
+    probes = set()
+    for record in records:
+        event = record["event_at"]
+        boundary = (
+            event.date() - timedelta(days=1)
+            if record["kind"] == "LISTING"
+            else event.date() + timedelta(days=1)
+        )
+        for day in (event.date(), boundary):
+            probes.add(DailyKlineRequest(record["symbol"], day.isoformat()))
     return tuple(sorted(probes, key=lambda item: (item.symbol, item.day)))
+
+
+def probe_plan(qualification):
+    records, _ = _effective_lifecycle_records(qualification)
+    return _probe_plan(records)
 
 
 def _observation(result, attempt):
@@ -360,14 +445,15 @@ def _reconcile(kind, fact, event_observation, boundary_observation):
     }
 
 def reconcile_qualification_activity(qualification, output, *, fetch=public_daily_bytes):
-    if qualification.get("schema") != "PVB24_ANNOUNCEMENT_BODY_QUALIFICATION_V1":
+    if qualification.get("schema") != QUALIFICATION_SCHEMA:
         raise ValueError("Pinned body qualification report required")
     if qualification.get("final_test_access") != "LOCKED":
         raise ValueError("Final Test must remain locked")
     output = Path(output)
+    effective_records, superseded = _effective_lifecycle_records(qualification)
     attempts = {}
     failures = []
-    for request in probe_plan(qualification):
+    for request in _probe_plan(effective_records):
         result, attempt = acquire_daily_activity(request, output / "archive", fetch=fetch)
         attempts[(request.symbol, request.day)] = (result, attempt)
         if result["status"] in ("HTTP_ERROR", "INVALID_OR_FAILED"):
@@ -376,34 +462,34 @@ def reconcile_qualification_activity(qualification, output, *, fetch=public_dail
             )
 
     reconciliations = []
-    for article in qualification["results"]:
-        if article.get("status") != "QUALIFIED_PRELIMINARY":
-            continue
-        kind = article["kind"]
-        for fact in article["facts"]:
-            event = _event(kind, fact)
-            boundary = (
-                event.date() - timedelta(days=1)
-                if kind == "LISTING"
-                else event.date() + timedelta(days=1)
-            )
-            event_result, event_attempt = attempts[(fact["symbol"], event.date().isoformat())]
-            boundary_result, boundary_attempt = attempts[(fact["symbol"], boundary.isoformat())]
-            event_obs = _observation(event_result, event_attempt)
-            boundary_obs = _observation(boundary_result, boundary_attempt)
-            reconciliations.append(
-                {
-                    "article_code": article["code"],
-                    "article_source_sha256": article["source_sha256"],
-                    "kind": kind,
-                    "symbol": fact["symbol"],
-                    "event_at": event,
-                    "fact": fact,
-                    "event_day": event_obs,
-                    "boundary_day": boundary_obs,
-                    **_reconcile(kind, fact, event_obs, boundary_obs),
-                }
-            )
+    for record in effective_records:
+        kind = record["kind"]
+        fact = record["fact"]
+        event = record["event_at"]
+        boundary = (
+            event.date() - timedelta(days=1)
+            if kind == "LISTING"
+            else event.date() + timedelta(days=1)
+        )
+        event_result, event_attempt = attempts[(record["symbol"], event.date().isoformat())]
+        boundary_result, boundary_attempt = attempts[
+            (record["symbol"], boundary.isoformat())
+        ]
+        event_obs = _observation(event_result, event_attempt)
+        boundary_obs = _observation(boundary_result, boundary_attempt)
+        reconciliations.append(
+            {
+                "article_code": record["article_code"],
+                "article_source_sha256": record["article_source_sha256"],
+                "kind": kind,
+                "symbol": record["symbol"],
+                "event_at": event,
+                "fact": fact,
+                "event_day": event_obs,
+                "boundary_day": boundary_obs,
+                **_reconcile(kind, fact, event_obs, boundary_obs),
+            }
+        )
     reconciliations.sort(key=lambda row: (row["event_at"], row["symbol"], row["article_code"]))
     counts = {}
     for row in reconciliations:
@@ -415,6 +501,11 @@ def reconcile_qualification_activity(qualification, output, *, fetch=public_dail
         "qualification_results_hash": qualification["results_hash"],
         "qualification_review_requests_hash": qualification["review_requests_hash"],
         "final_test_access": "LOCKED",
+        "qualified_fact_count": len(_qualified_lifecycle_records(qualification)),
+        "effective_fact_count": len(effective_records),
+        "superseded_count": len(superseded),
+        "superseded_facts": list(superseded),
+        "superseded_hash": digest(superseded),
         "probe_count": len(attempts),
         "source_failures": failures,
         "reconciliation_count": len(reconciliations),

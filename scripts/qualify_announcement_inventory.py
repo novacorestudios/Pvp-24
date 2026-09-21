@@ -30,7 +30,7 @@ def main():
         expected_inventory_sha256=args.inventory_sha256,
     )
     summary = {
-        "schema": "PVB24_ANNOUNCEMENT_BODY_QUALIFICATION_SUMMARY_V1",
+        "schema": "PVB24_ANNOUNCEMENT_BODY_QUALIFICATION_SUMMARY_V2",
         "report": str(path),
         "report_sha256": path.stem,
         "candidate_count": report["candidate_count"],

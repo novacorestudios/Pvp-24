@@ -90,6 +90,45 @@ def test_listing_body_qualifies_only_from_body_semantics():
     assert result["lifecycle_fact"] is False
 
 
+
+def test_delisting_postponement_qualifies_without_fabricating_entry_cutoff():
+    released = datetime(2024, 12, 14, tzinfo=UTC)
+    body = canonical(
+        {
+            "node": "root",
+            "child": [
+                {
+                    "node": "element",
+                    "tag": "p",
+                    "child": [
+                        {
+                            "node": "text",
+                            "text": (
+                                "Binance Futures will postpone the delisting of the USDⓈ-M "
+                                "OMGUSDT Perpetual Contract to 2024-12-30 09:00 (UTC). "
+                                "We will conduct automatic settlements on the USDⓈ-M OMGUSDT "
+                                "Perpetual Contract and then delist this contract."
+                            ),
+                        }
+                    ],
+                }
+            ],
+        }
+    )
+    published = int(datetime(2024, 12, 14, 13, 53, 34, tzinfo=UTC).timestamp() * 1000)
+    result = qualify_candidate(candidate(161, released), response(body, publish=published))
+    assert result["status"] == QUALIFIED
+    assert result["facts"] == [
+        {
+            "symbol": "OMGUSDT",
+            "scheduled_settlement_at": datetime(2024, 12, 30, 9, tzinfo=UTC),
+            "revision_type": "POSTPONEMENT",
+        }
+    ]
+    assert "entry_cutoff_at" not in result["facts"][0]
+
+
+
 def test_coin_margined_or_ambiguous_listing_is_not_promoted():
     body = listing_body().replace("VET/USDT", "VET/USD")
     result = qualify_candidate(candidate(), response(body))

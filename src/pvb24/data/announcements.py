@@ -117,7 +117,29 @@ def extract_facts(kind, body):
     if len(all_nodes) > 20000 or body.get("node") != "root":
         raise ValueError("Bounded rich-text root required")
     if kind == "DELISTING":
-        # Match the contract announcement, never the separate arbitrage-bot paragraph.
+        body_text = text(body)
+        postponements = re.findall(
+            r"Binance Futures will (?:further )?postpone the delisting of the USDⓈ-M "
+            r"([A-Z0-9]+USDT) Perpetual Contract to " + UTC_TEXT,
+            body_text,
+        )
+        if postponements:
+            if (
+                len(postponements) != 1
+                or "conduct automatic settlements" not in body_text
+                or "then delist this contract" not in body_text
+            ):
+                raise ValueError("One unambiguous perpetual-contract postponement required")
+            symbol, when = postponements[0]
+            return [
+                {
+                    "symbol": symbol,
+                    "scheduled_settlement_at": explicit_time(when),
+                    "revision_type": "POSTPONEMENT",
+                }
+            ]
+
+        # Match the original contract announcement, never a separate bot paragraph.
         matches = []
         for block in body.get("child", []):
             matches.extend(
@@ -127,7 +149,7 @@ def extract_facts(kind, body):
                     text(block),
                 )
             )
-        if len(matches) != 1 or "contracts will be delisted" not in text(body):
+        if len(matches) != 1 or "contracts will be delisted" not in body_text:
             raise ValueError("One unambiguous perpetual-contract delisting required")
         names, when = matches[0]
         symbols = re.findall(r"\b[A-Z0-9]+USDT\b", names)
@@ -137,7 +159,7 @@ def extract_facts(kind, body):
         cutoff = re.findall(
             r"not allowed to open new positions for the aforementioned contracts starting from "
             + UTC_TEXT,
-            text(body),
+            body_text,
         )
         if len(cutoff) != 1:
             raise ValueError("One explicit new-position cutoff required")
