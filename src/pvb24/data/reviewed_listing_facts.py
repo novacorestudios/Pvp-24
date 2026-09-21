@@ -254,11 +254,14 @@ def extract_target_listing_fact(body, target):
         raise ValueError("Reviewed maximum leverage is out of range")
 
     stamp = launch_at.strftime("%Y-%m-%d %H:%M")
-    if re.search(
-        re.escape(symbol) + r"\s*Launch Time\s*" + re.escape(stamp) + r"\s*\(UTC\)",
-        body,
-        flags=re.IGNORECASE,
-    ) is None:
+    if (
+        re.search(
+            re.escape(symbol) + r"\s*Launch Time\s*" + re.escape(stamp) + r"\s*\(UTC\)",
+            body,
+            flags=re.IGNORECASE,
+        )
+        is None
+    ):
         raise ValueError("Rendered contract table does not corroborate target launch")
 
     prior = re.search(
@@ -299,9 +302,7 @@ def compile_reviewed_listing_facts(root):
                 "published_at": _time(report["published_at"]),
                 "available_at": available_at,
                 "fact": fact,
-                "revision_id": digest(
-                    [REVISION_DOMAIN, code, report["source_sha256"], fact]
-                ),
+                "revision_id": digest([REVISION_DOMAIN, code, report["source_sha256"], fact]),
                 "boundary_reconciled": False,
                 "historical_verified": False,
                 "universe_eligible": False,
@@ -314,9 +315,7 @@ def compile_reviewed_listing_facts(root):
         "fact_count": len(rows),
         "target_symbols": sorted(row["target"] for row in rows),
         "results": rows,
-        "prior_epoch_disclosure_count": sum(
-            row["fact"]["prior_epoch_disclosed"] for row in rows
-        ),
+        "prior_epoch_disclosure_count": sum(row["fact"]["prior_epoch_disclosed"] for row in rows),
         "classification_hint_count": sum(
             row["fact"]["classification_hint"] is not None for row in rows
         ),

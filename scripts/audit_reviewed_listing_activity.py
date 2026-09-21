@@ -31,8 +31,7 @@ def main():
                 "candidate_count": report["candidate_count"],
                 "source_failures": report["source_failures"],
                 "statuses": {
-                    row["symbol"]: row["archive_boundary_status"]
-                    for row in report["candidates"]
+                    row["symbol"]: row["archive_boundary_status"] for row in report["candidates"]
                 },
                 "activity_hash": report["activity_hash"],
             }
