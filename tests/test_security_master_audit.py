@@ -107,8 +107,7 @@ def test_delisting_without_prior_listing_never_invents_trading_start(tmp_path):
     assert row["symbol"] == "CCCUSDT"
     assert row["blocking_obligation"] == "ACQUIRE_TRADING_START_BEFORE_DELISTING"
     assert all(
-        transition["symbol"] != "CCCUSDT"
-        for transition in report["confirmed_inactive_transitions"]
+        transition["symbol"] != "CCCUSDT" for transition in report["confirmed_inactive_transitions"]
     )
 
 

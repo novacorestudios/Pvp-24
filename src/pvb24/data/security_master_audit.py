@@ -186,9 +186,7 @@ def compile_security_master_obligations(path, expected_sha256):
     by_symbol = []
     active_symbols = {row["symbol"] for row in active_transitions}
     unresolved_symbols = {row["symbol"] for row in unresolved_rows}
-    delisted_symbols = {
-        row["symbol"] for row in unpaired_delistings + inactive_transitions
-    }
+    delisted_symbols = {row["symbol"] for row in unpaired_delistings + inactive_transitions}
     for symbol in symbols:
         obligations = ["ACQUIRE_CAUSAL_CLASSIFICATION_HISTORY", "PROVE_COMPLETE_CHANGE_STREAM"]
         if symbol in unresolved_symbols:

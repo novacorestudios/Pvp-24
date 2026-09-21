@@ -31,9 +31,7 @@ def main():
         json.dumps(
             {
                 "symbol_count": report["symbol_count"],
-                "confirmed_active_transition_count": report[
-                    "confirmed_active_transition_count"
-                ],
+                "confirmed_active_transition_count": report["confirmed_active_transition_count"],
                 "confirmed_inactive_transition_count": report[
                     "confirmed_inactive_transition_count"
                 ],
