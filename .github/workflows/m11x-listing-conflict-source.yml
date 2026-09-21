@@ -31,7 +31,11 @@ jobs:
             --root artifacts/m11x/listing-conflict-source \
             --code 02d2b629c7b04786b9a76c132a3ed541 \
             --code e59b61e52ad24b43bd1032052ea3a025 \
-            | tee artifacts/m11x/listing-conflict-source-summary.json
+            > artifacts/m11x/listing-conflict-source-summary.json
+          cat artifacts/m11x/listing-conflict-source-summary.json
+          test -s artifacts/m11x/listing-conflict-source-summary.json
+          test "$(find artifacts/m11x/listing-conflict-source -path '*/objects/*.json' -type f | wc -l)" -eq 2
+          test "$(find artifacts/m11x/listing-conflict-source -path '*/reports/*.json' -type f | wc -l)" -eq 2
       - uses: actions/upload-artifact@v4
         with:
           name: m11x-listing-conflict-source
