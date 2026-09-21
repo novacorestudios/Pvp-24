@@ -1,4 +1,4 @@
-# Handoff — Milestone 11K (exact-source funding settlement usability)
+# Handoff — Milestone 11L (causal replay funding-boundary eligibility)
 
 - Repository: novacorestudios/Pvp-24; branch build/pvb24-v1.
 - Exact current HEAD: read the Git branch ref; main remains initialization only.
@@ -6,7 +6,7 @@
 - Milestone 0 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35422954155 — SUCCESS.
 - Public-disclosure authorization: user explicitly approved publishing these files and will change visibility later. Do not request this approval again.
 - Milestone 1: official Freqtrade 2026.8 / 9f10e357a93c1dcf10c2a2b367659214d89c073e installed; repeat locked install and offline dry-run config smoke passed.
-- Local tests/CI: 514 passed; Ruff lint/format passed. Milestone 11K CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35598476129 — SUCCESS.
+- Local tests/CI: 527 passed; Ruff lint/format passed. Milestone 11L CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35599685386 — SUCCESS.
 - Milestone 1 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423197873 — SUCCESS.
 - Milestone 2 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423500106 — SUCCESS.
 - Milestone 3 final CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423929247 — SUCCESS.
@@ -362,3 +362,14 @@ FundingEligibilityEvidence is a separate exact-boundary object carrying the owne
 The pinned BTCUSDT January 2024 control has 93 Regular source rows and 93 source-associated settlement Marks, so 93 rows pass the conditional economics gate. Zero are unconditionally ledger-usable from public market history alone because historical position-boundary eligibility is a separate input. The broader source audit still retains 4,291 missing settlement Marks before November 2023. See docs/FUNDING_SETTLEMENT_USABILITY.md and docs/data/11k-funding-usability-control.json.
 
 Fifteen new tests cover exact economics, eligibility mismatch, source/eligibility availability ordering, missing Marks, unsupported rate types, timestamp jitter, duplicate identities, schema strictness and deterministic evidence binding. Full CI 35598476129 passes 514 tests, Ruff, provenance, reference smoke and pinned Freqtrade lifecycle/parity checks. No Alpha/risk/config value changed, no performance result was produced and no external order was sent.
+
+
+## Causal replay funding-boundary eligibility (Milestone 11L)
+
+The exact-source funding path is now wired into AccountReplay. A PRELIMINARY funding event must match the selected source timestamp and provenance exactly and cannot arrive before the source row. Replay reconstructs the owned quantity at that settlement using only fills whose exchange event time is at or before the boundary and whose evidence is available by the replay seal. Fills occurring after settlement are excluded even when already known. Same-boundary entry/reduction mixtures without comparable exchange sequence fail closed.
+
+A deterministic FundingEligibilityEvidence revision binds owner, settlement, replay seal and selected fills before M11K constructs FundingPayment economics. Flat boundaries emit no payment. Restart receipts remain idempotent. If a later-arriving fill has exchange event time at or before a boundary whose funding payment was already frozen, AccountCoordinator rejects it and replay latches reconciliation instead of silently revising historical funding.
+
+This proves only causal strategy-position eligibility for individually evidenced settlements inside PRELIMINARY replay. It does not establish a complete funding calendar, FundingCoverage, original historical publication latency, external exchange-account eligibility, the 4,291 missing pre-November-2023 settlement Marks, or complete historical rule/security coverage. See docs/FUNDING_REPLAY_BOUNDARY.md.
+
+Thirteen new tests cover exact owned quantity, pre-boundary reductions, post-boundary exclusions, late-fill invalidation, source timing/provenance, missing Marks, unsupported rate types, VERIFIED-promotion rejection, flat boundaries, restart idempotence and ambiguous same-time fills. Full CI 35599685386 passes 527 tests plus Ruff, provenance, reference smoke and pinned Freqtrade lifecycle/parity checks. No Alpha/risk/config value changed, no performance result was produced and no external order was sent.
