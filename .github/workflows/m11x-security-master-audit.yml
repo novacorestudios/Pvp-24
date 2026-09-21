@@ -1,0 +1,40 @@
+name: M11X Security Master Obligation Audit
+
+on:
+  push:
+    branches:
+      - build/pvb24-v1
+    paths:
+      - ".github/workflows/m11x-security-master-audit.yml"
+      - "src/pvb24/data/security_master_audit.py"
+      - "scripts/audit_security_master_obligations.py"
+      - "docs/data/11v-historical-metadata-evidence.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e '.[dev]'
+      - name: Verify repository provenance
+        run: python scripts/verify_provenance.py
+      - name: Compile Security Master obligations
+        run: |
+          mkdir -p artifacts/m11x
+          python scripts/audit_security_master_obligations.py \
+            --input docs/data/11v-historical-metadata-evidence.json \
+            --input-sha256 8130ae8d57cb60747daaef379a1713a990937d499a86360c920d0584a7e20252 \
+            --output artifacts/m11x/11x-security-master-obligations.json
+          sha256sum artifacts/m11x/11x-security-master-obligations.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m11x-security-master-obligation-audit
+          path: artifacts/m11x/11x-security-master-obligations.json
+          if-no-files-found: error
