@@ -104,6 +104,19 @@ def test_coin_margined_listing_is_not_promoted():
         )
 
 
+
+def test_coin_margined_launch_does_not_promote_leveraged_token_pairs():
+    with pytest.raises(ValueError, match="unambiguous"):
+        extract_body_facts(
+            "LISTING",
+            rich(
+                "Binance Futures will launch a FIL/USD coin-margined perpetual contract with "
+                "trading opening at 2020/10/20 7:00 AM (UTC). Users will be able to select "
+                "between 1-50x leverage. Binance will also list Leveraged Tokens FILUP and "
+                "FILDOWN, with FILUP/USDT and FILDOWN/USDT trading pairs at the same time."
+            ),
+        )
+
 def test_qualification_accepts_retained_legacy_html_without_special_case():
     body = (
         "<p>Binance Futures will launch OMG/USDT perpetual contract and open trading at "

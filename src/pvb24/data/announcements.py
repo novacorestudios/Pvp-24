@@ -242,11 +242,29 @@ def _listing_facts_from_text(body_text):
         body_text,
         flags=re.IGNORECASE,
     )
-    slash_symbols = sorted(set(re.findall(r"\b([A-Z0-9]+)/USDT\b", body_text)))
-    compact_symbols = sorted(
-        set(re.findall(r"\b([A-Z0-9]+)USDT\s+perpetual contracts?\b", body_text, re.IGNORECASE))
+
+    launch_segments = re.findall(
+        r"Binance Futures will launch\s+(?:a\s+|an\s+)?(.{1,240}?)\s+perpetual contracts?",
+        body_text,
+        flags=re.IGNORECASE,
     )
-    symbols = slash_symbols or [symbol.upper() for symbol in compact_symbols]
+    contract_symbols = set()
+    for segment in launch_segments:
+        contract_symbols.update(re.findall(r"\b([A-Z0-9]+)/USDT\b", segment))
+        contract_symbols.update(
+            symbol.upper()
+            for symbol in re.findall(r"\b([A-Z0-9]+)USDT\b", segment, re.IGNORECASE)
+        )
+
+    post_contract = re.findall(
+        r"Binance Futures will launch(?:\s+its\s+[A-Za-z0-9]+)?\s+perpetual contract,?\s*"
+        r"([A-Z0-9]+)/USDT\b",
+        body_text,
+        flags=re.IGNORECASE,
+    )
+    contract_symbols.update(symbol.upper() for symbol in post_contract)
+    symbols = sorted(contract_symbols)
+
     if symbols and len(launches) == 1 and len(set(leverages)) == 1:
         maximum = int(leverages[0])
         if not 1 <= maximum <= 125:
