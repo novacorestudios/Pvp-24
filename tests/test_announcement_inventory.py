@@ -84,9 +84,7 @@ def test_inventory_discovers_retained_listing_delay_revision():
         "DOT USDT-Margined Perpetual Contract Listing Delayed to 2020/08/22",
         datetime(2024, 2, 1, tzinfo=UTC),
     )
-    result = build_candidate_inventory(
-        report(48, "NEW_CRYPTOCURRENCY_LISTING", [delayed])
-    )
+    result = build_candidate_inventory(report(48, "NEW_CRYPTOCURRENCY_LISTING", [delayed]))
     assert [item["code"] for item in result["candidates"]] == [delayed["code"]]
     assert result["candidates"][0]["qualification"] == "BODY_REVIEW_REQUIRED"
     assert result["candidates"][0]["lifecycle_fact"] is False

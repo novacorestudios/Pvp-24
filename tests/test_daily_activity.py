@@ -277,9 +277,7 @@ def test_late_listing_postponement_preserves_old_unknown_and_adds_new_boundary(t
     revised_request = DailyKlineRequest("TESTUSDT", revised_event.date().isoformat())
     add_source(objects, revised_request, [revised_event, revised_event + timedelta(minutes=1)])
 
-    result, _ = reconcile_qualification_activity(
-        report, tmp_path, fetch=fetcher(objects)
-    )
+    result, _ = reconcile_qualification_activity(report, tmp_path, fetch=fetcher(objects))
     assert result["superseded_count"] == 0
     assert result["late_revision_count"] == 1
     assert result["qualified_fact_count"] == 2
