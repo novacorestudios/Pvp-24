@@ -1,0 +1,19 @@
+# M11H: settlement Mark source review
+
+The BTCUSDT source audit retains 4,291 missing settlement prices; none can be filled from the reviewed OHLC evidence. This blocks complete settlement pricing for the audited pre-Final period. Source-associated prices already present in REST remain PRELIMINARY because historical publication timing, funding schedule and position eligibility are not yet verified.
+
+Official sources reviewed:
+
+- [Binance USD-M market-data documentation](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data): funding history associates `markPrice` with a funding charge; Mark klines describe intervals and identify bars by open time. This does not attest the precise observation time of their OHLC values. `exchangeInfo` provides current rules, not historical effective intervals.
+- [Official archive download scripts](https://github.com/binance/binance-public-data/blob/master/python/README.md): confirm monthly/daily Mark archive access. Existing M11C inventory contains no historical rule snapshot directory in the reviewed USD-M roots.
+- M11F's pinned official announcements provide partial tick/delisting changes, not complete tick/step/minimum/contract-size/maintenance-tier histories. Current exchangeInfo and current leverage brackets must not be backdated. No complete historical rule source was found in the bounded official search; no further repeated search is required before building snapshot ingestion.
+
+Actual evidence is in `data/11h-settlement-mark-audit.json` and `data/11h-mark-source-manifest.json`. Exactly two Mark months were inspected: October 2023 newly acquired and January 2024 reused. The other Mark archives were not downloaded. All 67 existing funding reports were locally revalidated only to identify exact missing prices. Missing times are integer epoch milliseconds, with no rounding. Every month records its selected source hash; empty missing lists mean source prices exist, not that settlement eligibility or historical publication timing is verified.
+
+The January control sample disproves a general open-price substitution: 17 of 78 exact-time matches disagree with the associated funding Mark. Matching values in the other 61 cases and the two October control points do not establish settlement association for missing rows. Under the frozen completed-candle availability rule, all matched bars arrive too late at the funding observation's modelled availability. Previous candle closes also have no exact settlement observation proof and were not substituted.
+
+Reproduce without network with `scripts/audit_settlement_marks.py`: supply the SHA-256 of the committed M11G coverage file, the recovered `data/funding-11g/history` directory, and explicit `(root, attempt)` sample pairs from the audit. Use the M11G recovery bundle for existing raw inputs; the October archive URL/SHA and acquisition timing are pinned in the new source manifest. A changed archive revision must be reviewed separately, never silently substituted.
+
+Next independent task: strict pinned historical metadata import and field/time qualification. Required rules include tick, quantity step/minimum/maximum, minimum notional, contract size, IOC/LAST-stop capability, and complete maintenance/leverage tiers. Required security evidence includes listing/trading start, classification, contract type, quote asset, active history and delisting knowledge. The eligible historical symbol set itself remains unknown; BTCUSDT source coverage is not a reconstructed universe. No full historical rule interval is qualified for any symbol during the requested warmup/Dev/Validation span `[2019-12-01, 2025-07-01)`.
+
+Final Test remains LOCKED. No performance results, Alpha/risk/threshold changes, live orders, or readiness promotion.

@@ -1,0 +1,66 @@
+{
+  "acquired_archives": 1,
+  "archives": [
+    {
+      "acquirer_sha256": "9881b44fc4b00fefc49b540dd370f491b18053aa7a5f7b246f1f595a9dd7b171",
+      "actual_sha256": "515848caafbd72c51e60fada274af8fff339f74fb80fa9ca22e28e2837e2aaee",
+      "archive_object": "515848caafbd72c51e60fada274af8fff339f74fb80fa9ca22e28e2837e2aaee.zip",
+      "attempt": "attempts/3758c4615156155eae9027fb7815acb2b9e7717f96d40d8ff708df7026999156.json",
+      "bytes": 1029482,
+      "checksum_object": "c7aa84591b999cc03b7e3f99952349cc3dfc9400795861a86d2622a05d6df9fc.checksum",
+      "checksum_url": "https://data.binance.vision/data/futures/um/monthly/markPriceKlines/BTCUSDT/1m/BTCUSDT-1m-2023-10.zip.CHECKSUM",
+      "completed_at": "2026-09-21T10:04:22.088876Z",
+      "coverage": {
+        "contract_eligibility_verified": false,
+        "execution_depth_verified": false,
+        "first_interval_start": "2023-10-01T00:00:00.000000Z",
+        "funding_interval_discontinuities": [],
+        "funding_schedule_complete": false,
+        "gaps": [],
+        "historical_publication_times_verified": false,
+        "last_interval_end": "2023-11-01T00:00:00.000000Z",
+        "monthly_bar_grid_complete": true,
+        "quality": "PRELIMINARY",
+        "rows": 44640,
+        "timing_policy": "INTERVAL_END_PLUS_2S_MODELLED",
+        "zero_volume_last_bars": 0
+      },
+      "decoder_sha256": "49584df97e46582fe582c5cdd503daa99cecf58af93b7e4bcadc44b3f85c9b71",
+      "expected_sha256": "515848caafbd72c51e60fada274af8fff339f74fb80fa9ca22e28e2837e2aaee",
+      "quality": "PRELIMINARY",
+      "request": {
+        "interval": "1m",
+        "kind": "markPriceKlines",
+        "month": "2023-10",
+        "symbol": "BTCUSDT"
+      },
+      "started_at": "2026-09-21T10:03:59.788994Z",
+      "status": "ACQUIRED",
+      "url": "https://data.binance.vision/data/futures/um/monthly/markPriceKlines/BTCUSDT/1m/BTCUSDT-1m-2023-10.zip"
+    }
+  ],
+  "code_sha": "24b27298a2efd467e12fa4d1c6a5c8b763280da9",
+  "completed_at": "2026-09-21T10:04:22.089484Z",
+  "config_hash": "6d267edbcde56081012bc7b93d46f2c7f345aceb0e3bc769095ba53ef00b5be7",
+  "dataset_hash": "21cc60a4e19e16b83b7091023b83ff504a25893f47a532b052b60f601a5cc1f9",
+  "final_test_access": "LOCKED",
+  "freqtrade": {
+    "commit": "9f10e357a93c1dcf10c2a2b367659214d89c073e",
+    "python": "3.12",
+    "release_url": "https://github.com/freqtrade/freqtrade/releases/tag/2026.8",
+    "requires_python": ">=3.11",
+    "tag": "2026.8",
+    "version": "2026.8"
+  },
+  "historical_rules": "NOT_ACQUIRED",
+  "historical_universe": "NOT_RECONSTRUCTED",
+  "l2_depth": "NOT_ACQUIRED",
+  "operational_paper_ready": false,
+  "performance_run": false,
+  "report_hash": "233aa22344cba3df87214170e6fe0c07ae7b456dd8dcfc4582a5643ce84f17d6",
+  "requested_archives": 1,
+  "schema": "PVB24_ARCHIVE_ACQUISITION_V1",
+  "source_sha256": "098a3ca390bce81d506bdec011fc3a936ecbb793f46c2f117f337998bfc1c5d8",
+  "started_at": "2026-09-21T10:03:59.784163Z",
+  "worktree_dirty": false
+}
