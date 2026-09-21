@@ -57,7 +57,6 @@ def response(*, effective="2024-05-28 10:30", published=1716790000000, affected=
             "11 - 20x",
             "5,000 < Position ≤ 50,000",
             "2.50%",
-            "NA",
             "21 - 25x",
             "5,000 < Position ≤ 10,000",
             "2.00%",

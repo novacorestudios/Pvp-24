@@ -9,7 +9,7 @@ prices, so this module never emits ContractRules or marks liquidation validated.
 import hashlib
 import json
 import re
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from pvb24.data.announcements import nodes, strict_json, text
@@ -64,6 +64,12 @@ def _load_probe(root, code, report_hash):
     if canonical(rechecked) != canonical(report):
         raise ValueError("Margin-tier probe differs from retained source bytes")
     return report, raw
+
+
+def _time(value):
+    if not isinstance(value, str):
+        raise TypeError("Canonical timestamp string required")
+    return utc(datetime.fromisoformat(value))
 
 
 def _number(value):
@@ -159,8 +165,8 @@ def _article_facts(report, raw):
     from pvb24.data.announcements import explicit_time
 
     effective_at = explicit_time(effective_matches[0])
-    published_at = utc(report["published_at"])
-    updated_at = utc(report["known_updated_at"]) if report["known_updated_at"] else None
+    published_at = _time(report["published_at"])
+    updated_at = _time(report["known_updated_at"]) if report["known_updated_at"] else None
     available_at = (updated_at or published_at) + timedelta(seconds=2)
 
     has_not_affected = NOT_AFFECTED in body_text
