@@ -116,6 +116,14 @@ class AccountCoordinator:
                 return ()
             _, payload = read_tx(db, self.ledger_stream)
             ledger = Ledger.restore(payload)
+            for payment in ledger.funding.values():
+                if (
+                    payment.position_id == f.position_id
+                    and f.event_time <= payment.settlement_time
+                ):
+                    raise ReconciliationRequired(
+                        "Late fill revises frozen funding boundary eligibility"
+                    )
             _, payload = read_tx(db, self._protection_stream(f.position_id))
             state = Protection.restore(payload)
             ledger.ingest_fill(record)

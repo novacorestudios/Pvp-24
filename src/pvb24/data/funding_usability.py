@@ -76,6 +76,11 @@ def _source_row(entry):
     return row, settlement, available, rate, mark
 
 
+def source_funding_economics(entry):
+    """Return strictly decoded source economics and exact source timing."""
+    return _source_row(entry)
+
+
 def funding_payment_from_exact_source(entry, eligibility: FundingEligibilityEvidence):
     """Build one accounting payment only when economics and eligibility both match exactly.
 
@@ -85,7 +90,7 @@ def funding_payment_from_exact_source(entry, eligibility: FundingEligibilityEvid
     """
     if not isinstance(eligibility, FundingEligibilityEvidence):
         raise TypeError("Independent FundingEligibilityEvidence required")
-    row, settlement, source_available, rate, mark = _source_row(entry)
+    row, settlement, source_available, rate, mark = source_funding_economics(entry)
     if row["symbol"] != eligibility.symbol or settlement != utc(eligibility.settlement_time):
         raise ValueError("Funding economics and eligibility boundary must match exactly")
     available = max(source_available, utc(eligibility.available_at))

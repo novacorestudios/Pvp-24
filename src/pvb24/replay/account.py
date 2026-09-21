@@ -8,15 +8,17 @@ import json
 from datetime import datetime
 
 from pvb24.accounting.coordinator import AccountCoordinator, read_tx, save_tx
-from pvb24.accounting.ledger import LedgerStore, ReconciliationRequired
+from pvb24.accounting.ledger import Ledger, LedgerStore, ReconciliationRequired
 from pvb24.accounting.reconciliation import OpenReconciler
 from pvb24.accounting.risk_service import AccountRiskService
+from pvb24.data.funding_usability import source_funding_economics
 from pvb24.data.lifecycle import DelistingNotice, LifecycleService
 from pvb24.decimal_math import D
 from pvb24.execution.protection import Protection
 from pvb24.ids import canonical, client_identity, digest
 from pvb24.replay import codecs
 from pvb24.replay.events import Delivery, Kind
+from pvb24.replay.funding import replay_funding_payments
 from pvb24.state import Conflict, Journal
 from pvb24.strategy.exits import Entry, Exits
 from pvb24.strategy.service import SignalService
@@ -150,6 +152,32 @@ class AccountReplay:
                 raise ValueError("Fill priority incompatible with reduce-only flag")
             return {"action_ids": self.coordinator.confirmed_fill(record)}
         if event.kind is Kind.FUNDING:
+            if isinstance(payload, dict) and payload.get("type") == "EXACT_SOURCE_FUNDING":
+                if set(payload) != {"type", "entry"}:
+                    raise ValueError("Exact-source funding payload schema required")
+                if event.quality is not Quality.PRELIMINARY:
+                    raise ValueError("Exact-source historical funding remains PRELIMINARY")
+                entry = payload["entry"]
+                _, settlement, source_available, _, _ = source_funding_economics(entry)
+                if settlement != event.event_time:
+                    raise ValueError("Funding source timing differs from replay envelope")
+                if source_available > event.available_at:
+                    raise ValueError("Funding event predates source availability")
+                if event.source != entry["source"]:
+                    raise ValueError("Funding replay source differs from source evidence")
+                _, raw = read_tx(db, self.coordinator.ledger_stream)
+                ledger = Ledger.restore(raw)
+                payments = replay_funding_payments(ledger, entry, event.available_at)
+                payment_ids = []
+                for payment in payments:
+                    if self.coordinator.confirmed_funding(payment):
+                        payment_ids.append(payment.event_id)
+                return {
+                    "eligible_positions": len(payments),
+                    "ingested": len(payment_ids),
+                    "payment_ids": payment_ids,
+                    "settlement_time": settlement,
+                }
             payment = codecs.funding(payload)
             self._timing(event, payment.settlement_time, payment.available_at)
             return {"ingested": self.coordinator.confirmed_funding(payment)}
