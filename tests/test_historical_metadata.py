@@ -205,9 +205,7 @@ def test_duplicate_symbol_or_filter_is_ambiguous_not_last_write_wins(tmp_path):
         load_selection(tmp_path, path, expected_hash=pin)
 
     payload = source()
-    payload["symbols"][0]["filters"].append(
-        {"filterType": "PRICE_FILTER", "tickSize": "0.20"}
-    )
+    payload["symbols"][0]["filters"].append({"filterType": "PRICE_FILTER", "tickSize": "0.20"})
     path, pin, _ = frozen(tmp_path / "other", payload=payload)
     with pytest.raises(ValueError, match="Ambiguous exchangeInfo filter"):
         load_selection(tmp_path / "other", path, expected_hash=pin)

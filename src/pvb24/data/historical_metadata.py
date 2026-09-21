@@ -160,9 +160,7 @@ def _symbol_row(payload: dict, symbol: str) -> dict:
     if not isinstance(payload, dict) or not isinstance(payload.get("symbols"), list):
         raise ValueError("Binance exchangeInfo symbols array required")
     rows = [
-        row
-        for row in payload["symbols"]
-        if isinstance(row, dict) and row.get("symbol") == symbol
+        row for row in payload["symbols"] if isinstance(row, dict) and row.get("symbol") == symbol
     ]
     if len(rows) != 1:
         raise ValueError("Exactly one requested symbol must exist in the exchangeInfo snapshot")
