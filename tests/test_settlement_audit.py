@@ -37,6 +37,7 @@ def test_exact_join_keeps_missing_and_never_promotes_open_close_or_jitter(tmp_pa
     sample = result["archive_samples"][0]
     assert sample["exact_open_time_matches"] == 1  # second funding time is +1ms
     assert sample["matched_bars_unavailable_at_funding_availability"] == 1
+    assert sample["exact_previous_close_time_matches"] == 0
     assert sample["qualified_settlement_prices"] == 0
     assert not result["settlement_pricing_complete"]
     assert not result["operational_ready"] and result["final_test_access"] == "LOCKED"
@@ -55,6 +56,62 @@ def test_later_archive_information_cannot_fill_settlement_gaps(tmp_path):
         "settlement_pricing_complete",
     ):
         assert before[key] == after[key]
+
+
+def test_previous_close_is_diagnostic_only_even_when_exactly_available(tmp_path):
+    from test_funding_history import payload, row
+
+    from pvb24.data.funding_coverage import audit_month
+
+    funding_root = tmp_path / "funding"
+    mark_root = tmp_path / "marks"
+    funding_time = START + 60_000
+    funding_request = ArchiveRequest("BTCUSDT", "fundingRate", "2024-01")
+    funding_raw, funding_checksum = archive(
+        funding_request,
+        [[str(funding_time), "8", "0.0001"]],
+    )
+    monthly, _ = audit_month(
+        funding_request,
+        funding_root,
+        archive_fetch=lambda url, **kw: (
+            funding_checksum if url.endswith(".CHECKSUM") else funding_raw
+        ),
+        history_fetch=lambda url: payload([row(funding_time, markPrice="100.25")]),
+    )
+    selection = {"final_test_access": "LOCKED", "coverage": [monthly]}
+    selection_path = tmp_path / "selection-previous-close.json"
+    selection_path.write_text(canonical(selection))
+
+    mark_request = ArchiveRequest("BTCUSDT", "markPriceKlines", "2024-01", "1m")
+    mark_raw, mark_checksum = archive(
+        mark_request,
+        [
+            bar(START, **{"4": "100.20"}),
+            bar(funding_time, **{"1": "100.30"}),
+        ],
+    )
+    _, attempt = acquire(
+        mark_request,
+        mark_root,
+        fetch=lambda url, **kw: mark_checksum if url.endswith("CHECKSUM") else mark_raw,
+    )
+
+    result = audit_settlement_marks(
+        selection_path,
+        hashlib.sha256(selection_path.read_bytes()).hexdigest(),
+        funding_root / "history",
+        [(mark_root, attempt)],
+    )
+    sample = result["archive_samples"][0]
+    assert sample["exact_previous_close_time_matches"] == 1
+    assert sample["previous_close_unavailable_at_funding_availability"] == 0
+    assert sample["known_mark_unequal_previous_close_times"] == [
+        "2024-01-01T00:01:00.000000Z"
+    ]
+    assert sample["qualified_settlement_prices"] == 0
+    assert result["archive_derived_settlement_prices"] == 0
+
 
 
 @pytest.mark.parametrize("change", ["hash", "request", "report", "duplicate", "final", "empty"])
@@ -106,6 +163,7 @@ def test_price_agreement_and_disagreement_are_diagnostics_not_qualification(tmp_
     sample = result["archive_samples"][0]
     assert len(sample["known_mark_unequal_open_times"]) == 1
     assert not sample["known_mark_equal_open_times"]
+    assert sample["exact_previous_close_time_matches"] == 0
     assert sample["qualified_settlement_prices"] == 0
     assert result["settlement_pricing_complete"]  # Both REST rows have associated prices.
     assert not result["funding_schedule_complete"]

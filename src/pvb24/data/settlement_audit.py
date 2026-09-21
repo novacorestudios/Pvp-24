@@ -87,19 +87,36 @@ def audit_settlement_marks(coverage_path, expected_hash, history_root, samples=(
         sample_seen.add(identity)
         candles = list(records(request, raw, checksum))
         opens = {c.timing.interval_start: c for c in candles}
-        matched, equal, unequal, late = [], [], [], []
+        previous_closes = {c.timing.interval_end: c for c in candles}
+        open_matched, open_equal, open_unequal, open_late = [], [], [], []
+        close_matched, close_equal, close_unequal, close_late = [], [], [], []
         for row in histories[identity]:
             time = datetime.fromisoformat(row["funding_time"])
-            candle = opens.get(time)  # No rounding, nearest join, interpolation or close.
-            if candle is None:
-                continue
-            matched.append(row["funding_time"])
-            if candle.timing.available_at > datetime.fromisoformat(row["available_at"]):
-                late.append(row["funding_time"])
-            if row["mark_price"] is not None:
-                (equal if candle.open == D(row["mark_price"]) else unequal).append(
-                    row["funding_time"]
-                )
+            available = datetime.fromisoformat(row["available_at"])
+            mark = D(row["mark_price"]) if row["mark_price"] is not None else None
+
+            # Exact identities only. No rounding, nearest join, interpolation, or
+            # substitution between OHLC fields and a source-associated settlement Mark.
+            current = opens.get(time)
+            if current is not None:
+                open_matched.append(row["funding_time"])
+                if current.timing.available_at > available:
+                    open_late.append(row["funding_time"])
+                if mark is not None:
+                    (open_equal if current.open == mark else open_unequal).append(
+                        row["funding_time"]
+                    )
+
+            previous = previous_closes.get(time)
+            if previous is not None:
+                close_matched.append(row["funding_time"])
+                if previous.timing.available_at > available:
+                    close_late.append(row["funding_time"])
+                if mark is not None:
+                    (close_equal if previous.close == mark else close_unequal).append(
+                        row["funding_time"]
+                    )
+
         diagnostics.append(
             {
                 "symbol": request.symbol,
@@ -109,16 +126,20 @@ def audit_settlement_marks(coverage_path, expected_hash, history_root, samples=(
                 "source": request.url,
                 "candle_rows": len(candles),
                 "funding_rows": len(histories[identity]),
-                "exact_open_time_matches": len(matched),
-                "matched_bars_unavailable_at_funding_availability": len(late),
-                "known_mark_equal_open_times": equal,
-                "known_mark_unequal_open_times": unequal,
+                "exact_open_time_matches": len(open_matched),
+                "matched_bars_unavailable_at_funding_availability": len(open_late),
+                "known_mark_equal_open_times": open_equal,
+                "known_mark_unequal_open_times": open_unequal,
+                "exact_previous_close_time_matches": len(close_matched),
+                "previous_close_unavailable_at_funding_availability": len(close_late),
+                "known_mark_equal_previous_close_times": close_equal,
+                "known_mark_unequal_previous_close_times": close_unequal,
                 "qualified_settlement_prices": 0,
                 "reason": "OHLC_HAS_NO_POINT_OBSERVATION_TIME_OR_SETTLEMENT_ASSOCIATION",
             }
         )
     report = {
-        "schema": "PVB24_SETTLEMENT_MARK_AUDIT_V1",
+        "schema": "PVB24_SETTLEMENT_MARK_AUDIT_V2",
         "funding_coverage_sha256": expected_hash,
         "months": months,
         "source_mark_present": sum(m["source_mark_present"] for m in months),
