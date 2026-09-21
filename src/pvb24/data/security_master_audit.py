@@ -18,7 +18,9 @@ from pvb24.types import utc
 
 INPUT_SCHEMA = "PVB24_PARTIAL_HISTORICAL_METADATA_EVIDENCE_V1"
 RECOVERY_SCHEMA = "PVB24_RETAINED_ANNOUNCEMENT_RECOVERY_V2"
-OUTPUT_SCHEMA = "PVB24_SECURITY_MASTER_OBLIGATION_AUDIT_V2"
+CONFLICT_RESOLUTION_SCHEMA = "PVB24_LISTING_CONFLICT_RESOLUTION_V1"
+CONFLICT_ACTIVITY_SCHEMA = "PVB24_LISTING_CONFLICT_ACTIVITY_V1"
+OUTPUT_SCHEMA = "PVB24_SECURITY_MASTER_OBLIGATION_AUDIT_V3"
 CONSISTENT = "CONSISTENT_EVENT_BOUNDARY_ONLY"
 UNKNOWN = "UNKNOWN"
 
@@ -88,6 +90,53 @@ def _load_recovery(path, expected_sha256):
         raise ValueError("M11X retrospective count changed")
     if report.get("remaining_semantic_unqualified_count") != len(report.get("remaining", [])):
         raise ValueError("M11X remaining semantic count changed")
+    return report
+
+
+def _load_conflict_resolution(path, expected_sha256):
+    raw = Path(path).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != expected_sha256:
+        raise ValueError("Pinned listing-conflict resolution hash changed")
+    report = json.loads(raw)
+    if (
+        report.get("schema") != CONFLICT_RESOLUTION_SCHEMA
+        or report.get("final_test_access") != "LOCKED"
+        or report.get("quality") != "PRELIMINARY"
+        or report.get("historical_universe_complete") is not False
+        or report.get("security_history_complete") is not False
+        or report.get("full_security_rows_emitted") != 0
+    ):
+        raise ValueError("Locked PRELIMINARY listing-conflict resolution required")
+    recorded = report.get("resolution_hash")
+    unhashed = dict(report)
+    unhashed.pop("resolution_hash", None)
+    if recorded != digest(unhashed):
+        raise ValueError("Listing-conflict resolution content hash changed")
+    return report
+
+
+def _load_conflict_activity(path, expected_sha256):
+    raw = Path(path).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != expected_sha256:
+        raise ValueError("Pinned listing-conflict activity hash changed")
+    report = json.loads(raw)
+    if (
+        report.get("schema") != CONFLICT_ACTIVITY_SCHEMA
+        or report.get("final_test_access") != "LOCKED"
+        or report.get("quality") != "PRELIMINARY"
+        or report.get("historical_universe_complete") is not False
+        or report.get("archive_absence_proves_inactivity") is not False
+        or report.get("source_failures") != []
+    ):
+        raise ValueError("Source-clean PRELIMINARY listing-conflict activity required")
+    recorded = report.get("activity_hash")
+    unhashed = dict(report)
+    unhashed.pop("activity_hash", None)
+    if recorded != digest(unhashed):
+        raise ValueError("Listing-conflict activity content hash changed")
+    candidates = report.get("candidates")
+    if not isinstance(candidates, list) or len(candidates) != report.get("candidate_count"):
+        raise ValueError("Listing-conflict activity candidate count changed")
     return report
 
 
@@ -161,12 +210,43 @@ def compile_security_master_obligations(
     expected_sha256,
     recovery_path=None,
     recovery_sha256=None,
+    conflict_resolution_path=None,
+    conflict_resolution_sha256=None,
+    conflict_activity_path=None,
+    conflict_activity_sha256=None,
 ):
     """Compile only source-backed partial transitions and explicit completion obligations."""
     source = _load_m11v(path, expected_sha256)
     if (recovery_path is None) != (recovery_sha256 is None):
         raise ValueError("Recovery path and SHA-256 must be supplied together")
     recovery = _load_recovery(recovery_path, recovery_sha256) if recovery_path is not None else None
+    conflict_args = (
+        conflict_resolution_path,
+        conflict_resolution_sha256,
+        conflict_activity_path,
+        conflict_activity_sha256,
+    )
+    if any(value is not None for value in conflict_args) and not all(
+        value is not None for value in conflict_args
+    ):
+        raise ValueError("Conflict resolution/activity paths and SHA-256 pins must be supplied together")
+    resolution = (
+        _load_conflict_resolution(conflict_resolution_path, conflict_resolution_sha256)
+        if conflict_resolution_path is not None
+        else None
+    )
+    activity = (
+        _load_conflict_activity(conflict_activity_path, conflict_activity_sha256)
+        if conflict_activity_path is not None
+        else None
+    )
+    if resolution is not None:
+        if recovery is None:
+            raise ValueError("Conflict resolution requires the pinned recovery report")
+        if resolution["inputs"].get("recovery_sha256") != recovery_sha256:
+            raise ValueError("Conflict resolution/recovery SHA-256 pins disagree")
+        if resolution["inputs"].get("recovery_hash") != recovery["recovery_hash"]:
+            raise ValueError("Conflict resolution/recovery content identities disagree")
 
     listings = source.get("listing_candidates")
     unresolved = source.get("unresolved_listings")
@@ -301,6 +381,103 @@ def compile_security_master_obligations(
                         revision=revision,
                         reconciled=False,
                     )
+
+    applied_cancellations = []
+    if resolution is not None:
+        for item in resolution.get("cancellations", []):
+            symbol = item.get("symbol")
+            effective = _time(item.get("canceled_effective_from"))
+            revision = item.get("canceled_revision_id")
+            matches = [
+                row
+                for row in listing_evidence.get(symbol, [])
+                if row["effective_from"] == effective and row["revision_id"] == revision
+            ]
+            if len(matches) != 1:
+                raise ValueError("Conflict cancellation must match exactly one listing evidence row")
+            listing_evidence[symbol].remove(matches[0])
+            applied_cancellations.append(
+                {
+                    "symbol": symbol,
+                    "effective_from": effective,
+                    "revision_id": revision,
+                    "reason": item.get("reason"),
+                    "cancellation_source": item.get("cancellation_source"),
+                    "cancellation_source_sha256": item.get("cancellation_source_sha256"),
+                }
+            )
+        supplemental = resolution.get("supplemental_listings")
+        if (
+            not isinstance(supplemental, list)
+            or len(supplemental) != resolution.get("supplemental_listing_count")
+        ):
+            raise ValueError("Conflict supplemental listing count changed")
+        for item in supplemental:
+            if (
+                item.get("contract_type") != "PERPETUAL"
+                or item.get("quote_asset") != "USDT"
+                or item.get("historical_verified") is not False
+                or item.get("universe_eligible") is not False
+            ):
+                raise ValueError("Supplemental listing evidence flags changed")
+            _append_listing(
+                listing_evidence,
+                symbol=item["symbol"],
+                effective=item["effective_from"],
+                available=item["available_at"],
+                source=item["source"],
+                revision=item["revision_id"],
+                reconciled=False,
+            )
+
+    activity_exact = []
+    activity_unknown = []
+    activity_contradicted = []
+    if activity is not None:
+        activity_by_key = {}
+        for item in activity["candidates"]:
+            symbol = item.get("symbol")
+            effective = _time(item.get("effective_from"))
+            key = (symbol, effective)
+            if key in activity_by_key:
+                raise ValueError("Duplicate listing-conflict activity candidate")
+            status = item.get("archive_boundary_status")
+            if status not in (
+                "CONSISTENT_EVENT_BOUNDARY_ONLY",
+                "UNKNOWN",
+                "CONTRADICTED_BY_ARCHIVE_ACTIVITY",
+            ):
+                raise ValueError("Unsupported listing-conflict activity state")
+            activity_by_key[key] = item
+
+        for symbol, rows in list(listing_evidence.items()):
+            retained = []
+            for row in rows:
+                item = activity_by_key.get((symbol, row["effective_from"]))
+                if item is None:
+                    retained.append(row)
+                    continue
+                status = item["archive_boundary_status"]
+                if status == "CONSISTENT_EVENT_BOUNDARY_ONLY":
+                    row = {**row, "boundary_reconciled": True}
+                    activity_exact.append(
+                        {"symbol": symbol, "effective_from": row["effective_from"]}
+                    )
+                    retained.append(row)
+                elif status == "UNKNOWN":
+                    activity_unknown.append(
+                        {"symbol": symbol, "effective_from": row["effective_from"]}
+                    )
+                    retained.append(row)
+                else:
+                    activity_contradicted.append(
+                        {
+                            "symbol": symbol,
+                            "effective_from": row["effective_from"],
+                            "blocking_obligation": "REJECT_CONTRADICTED_LISTING_START",
+                        }
+                    )
+            listing_evidence[symbol] = retained
 
     listing_evidence = {symbol: _dedupe(rows) for symbol, rows in listing_evidence.items()}
     delisting_evidence = {symbol: _dedupe(rows) for symbol, rows in delisting_evidence.items()}
@@ -450,7 +627,29 @@ def compile_security_master_obligations(
             "source_qualification_report_sha256": (
                 recovery["source_qualification_report_sha256"] if recovery is not None else None
             ),
+            "conflict_resolution_sha256": conflict_resolution_sha256,
+            "conflict_resolution_hash": (
+                resolution["resolution_hash"] if resolution is not None else None
+            ),
+            "conflict_activity_sha256": conflict_activity_sha256,
+            "conflict_activity_hash": activity["activity_hash"] if activity is not None else None,
         },
+        "applied_cancellation_count": len(applied_cancellations),
+        "applied_cancellations": sorted(
+            applied_cancellations, key=lambda row: (row["symbol"], row["effective_from"])
+        ),
+        "activity_exact_boundary_count": len(activity_exact),
+        "activity_exact_boundaries": sorted(
+            activity_exact, key=lambda row: (row["symbol"], row["effective_from"])
+        ),
+        "activity_unknown_boundary_count": len(activity_unknown),
+        "activity_unknown_boundaries": sorted(
+            activity_unknown, key=lambda row: (row["symbol"], row["effective_from"])
+        ),
+        "activity_contradicted_boundary_count": len(activity_contradicted),
+        "activity_contradicted_boundaries": sorted(
+            activity_contradicted, key=lambda row: (row["symbol"], row["effective_from"])
+        ),
         "symbol_count": len(symbols),
         "symbols": symbols,
         "selected_active_transition_count": len(active_transitions),

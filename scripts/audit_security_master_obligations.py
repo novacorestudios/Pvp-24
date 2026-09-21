@@ -19,6 +19,10 @@ def main():
     parser.add_argument("--input-sha256", required=True)
     parser.add_argument("--recovery", type=Path)
     parser.add_argument("--recovery-sha256")
+    parser.add_argument("--conflict-resolution", type=Path)
+    parser.add_argument("--conflict-resolution-sha256")
+    parser.add_argument("--conflict-activity", type=Path)
+    parser.add_argument("--conflict-activity-sha256")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
@@ -28,6 +32,10 @@ def main():
         args.input_sha256,
         args.recovery,
         args.recovery_sha256,
+        args.conflict_resolution,
+        args.conflict_resolution_sha256,
+        args.conflict_activity,
+        args.conflict_activity_sha256,
     )
     encoded = (json.dumps(report, indent=2) + "\n").encode()
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -40,6 +48,9 @@ def main():
                 "symbol_count": report["symbol_count"],
                 "selected_active_transition_count": report["selected_active_transition_count"],
                 "selected_inactive_transition_count": report["selected_inactive_transition_count"],
+                "applied_cancellation_count": report["applied_cancellation_count"],
+                "activity_exact_boundary_count": report["activity_exact_boundary_count"],
+                "activity_unknown_boundary_count": report["activity_unknown_boundary_count"],
                 "unresolved_listing_count": report["unresolved_listing_count"],
                 "listing_start_conflict_count": report["listing_start_conflict_count"],
                 "unpaired_delisting_count": report["unpaired_delisting_count"],
