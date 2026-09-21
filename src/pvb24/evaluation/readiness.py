@@ -175,14 +175,19 @@ def evaluate_readiness(root, manifest_path):
         raise ValueError("Final Test must remain LOCKED before historical evaluation")
     if manifest["performance_run"] is not False or manifest["operational_ready"] is not False:
         raise ValueError("Readiness input cannot pre-authorize performance or operations")
-    if _time(manifest["window_start"]) != WINDOW_START or _time(manifest["window_end"]) != WINDOW_END:
+    if (
+        _time(manifest["window_start"]) != WINDOW_START
+        or _time(manifest["window_end"]) != WINDOW_END
+    ):
         raise ValueError("Pre-Final evaluation window is frozen and cannot be widened")
 
     rows = manifest["capabilities"]
     if not isinstance(rows, list):
         raise TypeError("Capability matrix must be a list")
     names = [row.get("name") for row in rows if isinstance(row, dict)]
-    if tuple(sorted(names)) != tuple(sorted(REQUIRED_CAPABILITIES)) or len(names) != len(set(names)):
+    if tuple(sorted(names)) != tuple(sorted(REQUIRED_CAPABILITIES)) or len(names) != len(
+        set(names)
+    ):
         raise ValueError("Capability matrix must contain each required capability exactly once")
 
     results = []
