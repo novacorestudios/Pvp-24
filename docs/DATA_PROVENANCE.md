@@ -31,3 +31,10 @@ The official https://data.binance.vision/ index declares `https://s3-ap-northeas
 The observed complete inventory contains 8 monthly kinds, 9 daily kinds and 1018 kline symbol directories. This evidence concerns current directory enumeration only, including names regardless of present trading status; no current active-pairs endpoint is used to restrict candidates. No historical listing/classification/delisting/rule record is inferred from a directory name or archive boundary. Neither enumerated type root contains a security-master or rule-history dataset. Other source acquisition remains open. `bookTicker` or `bookDepth` directories alone do not certify executable depth, completeness or event sequencing. See the exact committed XML and metadata in data/11c-catalog-pages and data/11c-source-inventory.json.
 
 The official Exchange Information documentation describes current rules and symbol information: https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Exchange-Information . It has not been used to backfill historical contract rules. Source review date: 2026-09-20.
+
+
+## Funding REST corroboration (11E)
+
+Official endpoint documentation: https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Get-Funding-Rate-History . It provides ascending funding history with inclusive start/end bounds and a maximum page size of 1000, including the Mark price associated with a funding charge. The adapter preserves rate types and does not replace settlement Mark with a bar close.
+
+For BTCUSDT January 2024, one response contained 93 Regular records with settlement Mark prices. Every timestamp and rate exactly matched the pinned monthly archive; the millisecond timestamp differences therefore occur in both sources. Original bytes, page identity and decoder hash are retained. Availability remains explicitly modelled as fundingTime plus two seconds; historical publication/receipt time, continuous schedule qualification and position eligibility are not established. Reviewed 2026-09-20; no credentials or order endpoints used.

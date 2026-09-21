@@ -151,3 +151,19 @@ It enumerated 8 monthly kinds, 9 daily kinds and 1018 monthly kline symbol direc
 The offline framework execution evidence hash remains `f434633cf4dfef2025708f646550502946fc62e1f85a924c948399206190baa1`; zero external orders. Log: artifacts/freqtrade-parity-11d-framework.log. The restored dependency environment initially lacked its Python interpreter link (exit 127); repairing that generated link and running `python -m venv --upgrade .deps/freqtrade/.venv` restored the existing pinned environment without changing the Freqtrade source/dependency pins. A test initially used the wrong rejection-field name and was corrected before the full pass.
 
 The real announcement review is a factual, non-executable annotation, not a complete historical metadata acquisition. UTC settlement dates are explicit in the source body; displayed publication timestamps have not been qualified for historical availability and source-byte hashes are not claimed. No backtest, forced-settlement execution or PAPER readiness is established.
+
+
+## Milestone 11E funding source corroboration
+
+424 tests passed with Ruff format/lint and provenance verification. The public-source comparison completed successfully:
+
+```bash
+.venv/bin/python scripts/audit_funding_history.py \
+  --symbol BTCUSDT --month 2024-01 \
+  --archive-root data/acquisition-11a-final \
+  --manifest docs/data/11a-source-manifest.json \
+  --dataset-hash 985453a92d0283cd4fd6fc60b55296bfe65110b7c8f07baa99ffda3d280bb0a6 \
+  --output data/funding-11e
+```
+
+All 93 Regular rows matched archive time/rate exactly, with no unsupported types or missing settlement Mark prices. The single API page SHA-256 is `7b8419572ab8cd68087d392fe2d205e49e008991aef260e13bee15771463c94f`. The committed comparison and original page are in docs/data/11e-funding-comparison.json and docs/data/11e-funding-pages. Each rerun retains its own response/revision metadata. Thirteen new tests cover inclusive same-time pagination, decimal/source identity checks, missing Mark and unknown rate types, changed or stalled pages, explicit Final locking and exact comparison without rounding. No FundingCoverage or account cashflow was inferred.

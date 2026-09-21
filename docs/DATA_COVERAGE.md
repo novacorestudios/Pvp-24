@@ -22,7 +22,8 @@ The 93 funding rows contain 28 differences of 1–3 milliseconds (signed) betwee
 | Full Development/Validation coverage | Not acquired |
 | Historical listings/delistings/renames/classifications | Not reconstructed |
 | Historical trading filters and margin tiers | Not acquired |
-| Continuous causal funding coverage and settlement Mark | Unresolved |
+| Continuous causal funding coverage | Unresolved |
+| Funding settlement Mark | Acquired for the 93-row January 2024 sample only (11E) |
 | Actual publication/receipt times and prior revisions | Unknown; +2s availability model only |
 | Sequence-consistent executable quotes/L2 | Not acquired |
 | Final Test | Locked; no archive access |
@@ -41,3 +42,7 @@ Complete enumeration observed 8 monthly source kinds, 9 daily kinds and 1018 mon
 ## Lifecycle evidence review (11D)
 
 Two official pre-Final notices covering five symbols demonstrate distinct publication, trading-cutoff and scheduled-settlement times. Their factual annotations are retained in data/11d-lifecycle-source-review.json. They are not replay inputs: displayed publication timezone and original revision availability remain unqualified. The core now handles explicitly sourced delisting observations without relying on the next daily universe refresh. This integration does not establish historical security-master completeness or prove actual automatic-settlement outcomes.
+
+## Funding source comparison (11E)
+
+The official historical funding endpoint returned 93 Regular BTCUSDT January 2024 records, all with settlement Mark prices. All 93 match the archive exactly on timestamp and rate; no rounding, missing rows or rate mismatches in this sample comparison. Continuous interval qualification and historical availability remain unresolved, and funding_schedule_complete remains false. Raw API evidence and complete diagnostics are committed. No position eligibility or cashflow is inferred.
