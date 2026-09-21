@@ -199,7 +199,6 @@ def test_pins_are_rechecked(target, tmp_path):
         compile_partial_historical_metadata(*args)
 
 
-
 def test_source_failure_shape_and_contents_fail_closed(tmp_path):
     q, lifecycle_ref, tick_ref = fixtures(tmp_path)
     for source_failures in (1, ["failed-probe"]):
