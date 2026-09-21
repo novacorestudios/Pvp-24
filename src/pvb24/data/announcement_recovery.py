@@ -136,9 +136,7 @@ def recover_retained_listing_facts(root, expected_report_sha256):
 
     recovered.sort(key=lambda row: (row["published_at"], row["code"]))
     remaining.sort(key=lambda row: (row["kind"], row["code"]))
-    symbols = sorted(
-        {fact["symbol"] for row in recovered for fact in row["facts"]}
-    )
+    symbols = sorted({fact["symbol"] for row in recovered for fact in row["facts"]})
     remaining_reasons = Counter(row["new_reason"] for row in remaining)
 
     result = {

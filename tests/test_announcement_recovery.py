@@ -66,9 +66,7 @@ def retained_result(root, candidate_row, raw, *, old_status, old_reason=None):
         "cms_version": "1",
         "status": old_status,
         "reason": old_reason,
-        "body_sha256": hashlib.sha256(
-            json.loads(raw)["data"]["body"].encode()
-        ).hexdigest(),
+        "body_sha256": hashlib.sha256(json.loads(raw)["data"]["body"].encode()).hexdigest(),
         "retrieved_at": datetime(2020, 7, 1, 1, tzinfo=UTC),
         "source_object": f"objects/{source_hash}.json",
     }
