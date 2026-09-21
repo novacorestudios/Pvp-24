@@ -137,7 +137,7 @@ def test_explicit_pre_final_slice_retains_pages_and_stops_after_lower_boundary(t
     def fetch(url):
         page = int(parse_qs(urlsplit(url).query)["pageNo"][0])
         calls.append(page)
-        return payload(48, pages[page], total=123)
+        return payload(48, pages[page], total=11)
 
     report, path = acquire_slice(
         48,
@@ -174,6 +174,8 @@ def test_page_with_final_or_upper_boundary_article_fails_closed_instead_of_filte
     assert report["status"] == "INCOMPLETE"
     assert "locked/upper boundary" in report["error"]
     assert not report["catalog_slice_complete"] and path.exists()
+    assert not list((tmp_path / "objects").glob("*"))
+    assert not report["pages"] and not report["articles"]
 
 
 @pytest.mark.parametrize("case", ["total_change", "revision", "budget"])
@@ -233,7 +235,7 @@ def test_retained_source_object_and_report_pins_are_rechecked(tmp_path):
         fetch=lambda url: payload(
             161,
             [article(when=datetime(2019, 12, 1, tzinfo=UTC))],
-            total=1,
+            total=41,
         ),
     )
     expected = hashlib.sha256(path.read_bytes()).hexdigest()

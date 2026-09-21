@@ -43,3 +43,18 @@ The next step after a clean catalog inventory is to acquire the retained bodies 
 pre-Final candidates, validate listing/delisting facts through the existing announcement decoder,
 and reconcile those facts with causal archive activity before any
 `HISTORICAL_UNIVERSE` attestation can be considered.
+
+## Reviewed candidate inventory and source replay (M11P)
+
+Use `scripts/build_announcement_inventory.py` with explicit retained catalog report hashes;
+report dictionaries alone are not a provenance boundary. Reconsumption now reconstructs the
+exact article selection from the ordered source page chain, checks receipt/pagination/terminal
+evidence and rejects changed rows even if a report's article hash is recomputed. Acquisition
+validates pages before retaining raw bytes, including every row's pre-Final upper boundary.
+Short pages inconsistent with the declared total cannot silently establish completion.
+
+Inventory output links every candidate to a report pin, counts unmatched titles and explicitly
+keeps title-filter recall and historical publication timing unverified. See
+[POST_M11O_REVIEW.md](POST_M11O_REVIEW.md) for review findings, safe offline use and the exact
+remaining source acquisition prerequisite. No production candidate inventory or historical
+universe completion is claimed by the synthetic tests.

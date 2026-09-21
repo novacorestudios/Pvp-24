@@ -18,6 +18,7 @@ from pvb24.data.acquisition import NoRedirect, object_write
 from pvb24.data.announcements import ARTICLE_CODE
 from pvb24.data.archive import EPOCH, FINAL_START, milliseconds
 from pvb24.ids import canonical, digest
+from pvb24.types import utc
 
 BASE = "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query"
 MAX_PAGE = 2 * 1024 * 1024
@@ -30,7 +31,7 @@ DECODER_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 def epoch_ms(value):
-    value = value.astimezone(UTC)
+    value = utc(value)
     delta = value - EPOCH
     if delta.microseconds % 1000:
         raise ValueError("Catalog boundary must be an exact millisecond")
@@ -128,6 +129,7 @@ def decode_page(raw, catalog_id, page_no, page_size=DEFAULT_PAGE_SIZE):
             or release < 0
             or type(article_id) is not int
             or article_id < 0
+            or type(article_type) is not int
             or article_type != 1
         ):
             raise ValueError("Malformed announcement catalog article identity")
@@ -150,6 +152,38 @@ def decode_page(raw, catalog_id, page_no, page_size=DEFAULT_PAGE_SIZE):
     return total, tuple(rows)
 
 
+def catalog_time(value):
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value)
+    return utc(value)
+
+
+def _accept_rows(selected, rows, start, end, page_size, page_no, total):
+    # Validate before retaining any bytes. Never filter out a Final-period row.
+    if any(row["released_at"] >= end for row in rows):
+        raise ValueError("Fetched catalog page crosses the locked/upper boundary")
+    expected_count = max(0, min(page_size, total - (page_no - 1) * page_size))
+    if len(rows) != expected_count:
+        raise ValueError("Catalog page length conflicts with declared total/position")
+    if (
+        selected
+        and rows
+        and rows[0]["released_at"] > min(row["released_at"] for row in selected.values())
+    ):
+        raise ValueError("Catalog ordering changed across pages")
+    for row in rows:
+        if row["code"] in selected:
+            raise ValueError("Duplicate/revised article across catalog pages")
+    selected.update((row["code"], row) for row in rows)
+    return not rows or len(rows) < page_size or min(row["released_at"] for row in rows) < start
+
+
+def _ordered(selected):
+    return sorted(
+        selected.values(), key=lambda row: (row["released_at"], row["code"]), reverse=True
+    )
+
+
 def acquire_slice(
     catalog_id,
     output,
@@ -169,7 +203,9 @@ def acquire_slice(
     """
 
     page_url(catalog_id, start_page, page_size)
-    start, end = start.astimezone(UTC), end.astimezone(UTC)
+    start, end = utc(start), utc(end)
+    epoch_ms(start)
+    epoch_ms(end)
     if not start < end <= FINAL_START:
         raise ValueError("Nonempty pre-Final announcement discovery window required")
     if type(max_pages) is not int or not 1 <= max_pages <= 200:
@@ -203,12 +239,13 @@ def acquire_slice(
             page_no = start_page + offset
             url = page_url(catalog_id, page_no, page_size)
             raw = fetch(url)
-            name = object_write(root / "objects", raw, ".json")
             total, rows = decode_page(raw, catalog_id, page_no, page_size)
             if expected_total is None:
                 expected_total = total
             elif total != expected_total:
                 raise ValueError("Catalog total changed during one acquisition slice")
+            terminal = _accept_rows(selected, rows, start, end, page_size, page_no, total)
+            name = object_write(root / "objects", raw, ".json")
             report["pages"].append(
                 {
                     "page_no": page_no,
@@ -217,32 +254,8 @@ def acquire_slice(
                     "received_at": datetime.now(UTC),
                 }
             )
-            if not rows:
-                report["status"] = "ACQUIRED"
-                break
-            for row in rows:
-                released = row["released_at"]
-                if released >= end:
-                    raise ValueError("Fetched catalog page crosses the locked/upper boundary")
-                prior = selected.get(row["code"])
-                if prior is not None and canonical(prior) != canonical(row):
-                    raise ValueError("Announcement catalog revision changed across pages")
-                selected[row["code"]] = row
-            report["articles"] = [
-                selected[key]
-                for key in sorted(
-                    selected,
-                    key=lambda code: (
-                        selected[code]["released_at"],
-                        code,
-                    ),
-                    reverse=True,
-                )
-            ]
-            if min(row["released_at"] for row in rows) < start:
-                report["status"] = "ACQUIRED"
-                break
-            if len(rows) < page_size:
+            report["articles"] = _ordered(selected)
+            if terminal:
                 report["status"] = "ACQUIRED"
                 break
         else:
@@ -263,10 +276,14 @@ def acquire_slice(
 
 
 def load_slice(root, report_path, *, expected_report_sha256):
-    root = Path(root)
-    path = Path(report_path)
-    if path.is_absolute() or len(path.parts) != 2 or path.parts[0] != "reports":
-        raise ValueError("Owned announcement catalog report path required")
+    """Replay the pinned page chain; a self-consistent report hash is insufficient."""
+    root, path = Path(root), Path(report_path)
+    if (
+        not isinstance(expected_report_sha256, str)
+        or not re.fullmatch(r"[0-9a-f]{64}", expected_report_sha256)
+        or path.as_posix() != "reports/" + expected_report_sha256 + ".json"
+    ):
+        raise ValueError("Owned pinned announcement catalog report changed/path invalid")
     raw = (root / path).read_bytes()
     if hashlib.sha256(raw).hexdigest() != expected_report_sha256:
         raise ValueError("Pinned announcement catalog report changed")
@@ -276,23 +293,65 @@ def load_slice(root, report_path, *, expected_report_sha256):
         or report.get("status") != "ACQUIRED"
         or report.get("final_test_access") != "LOCKED"
         or report.get("decoder_sha256") != DECODER_SHA256
+        or report.get("catalog_slice_complete") is not True
+        or report.get("quality") != "PRELIMINARY"
+        or any(
+            report.get(k) is not False
+            for k in (
+                "historical_universe_complete",
+                "security_master_complete",
+                "lifecycle_complete",
+                "performance_run",
+            )
+        )
     ):
-        raise ValueError("Acquired locked announcement catalog slice required")
-    if digest(report.get("in_window_articles")) != report.get("article_hash"):
-        raise ValueError("Announcement catalog article selection changed")
-    for page in report.get("pages", []):
+        raise ValueError("Acquired locked preliminary announcement catalog slice required")
+    catalog, size, first = (report[k] for k in ("catalog_id", "page_size", "start_page"))
+    page_url(catalog, first, size)
+    if report.get("catalog_scope") != CATALOGS[catalog]:
+        raise ValueError("Catalog source scope changed")
+    start, end = (catalog_time(report[k]) for k in ("window_start", "window_end"))
+    if not start < end <= FINAL_START:
+        raise ValueError("Strict pre-Final catalog window required")
+    epoch_ms(start)
+    epoch_ms(end)
+    begun, completed = (catalog_time(report[k]) for k in ("started_at", "completed_at"))
+    pages = report.get("pages")
+    if not isinstance(pages, list) or not 1 <= len(pages) <= 200:
+        raise ValueError("Nonempty bounded catalog source page chain required")
+    selected, terminal, previous_receipt = {}, False, begun
+    for offset, page in enumerate(pages):
+        if terminal:
+            raise ValueError("Catalog pages continue after terminal source page")
+        if page.get("page_no") != first + offset or page.get("url") != page_url(
+            catalog, first + offset, size
+        ):
+            raise ValueError("Catalog page sequence/URL changed")
+        received = catalog_time(page["received_at"])
+        if not previous_receipt <= received <= completed:
+            raise ValueError("Catalog receipt outside ordered acquisition interval")
+        previous_receipt = received
         name = page.get("object")
         if not isinstance(name, str) or not re.fullmatch(r"[0-9a-f]{64}\.json", name):
             raise ValueError("Content-addressed catalog source page required")
         source = (root / "objects" / name).read_bytes()
         if hashlib.sha256(source).hexdigest() + ".json" != name:
             raise ValueError("Announcement catalog source page changed")
-        total, _ = decode_page(
-            source,
-            report["catalog_id"],
-            page["page_no"],
-            report["page_size"],
-        )
-        if total != report["catalog_total_observed"]:
+        total, rows = decode_page(source, catalog, page["page_no"], size)
+        if (
+            type(report.get("catalog_total_observed")) is not int
+            or total != report["catalog_total_observed"]
+        ):
             raise ValueError("Retained catalog page total differs from report")
+        terminal = _accept_rows(selected, rows, start, end, size, page["page_no"], total)
+    if not terminal:
+        raise ValueError("Catalog source page chain truncated before lower boundary")
+    articles = _ordered(selected)
+    in_window = [row for row in articles if start <= row["released_at"] < end]
+    if (
+        canonical(articles) != canonical(report.get("articles"))
+        or canonical(in_window) != canonical(report.get("in_window_articles"))
+        or digest(in_window) != report.get("article_hash")
+    ):
+        raise ValueError("Catalog article selection differs from retained source pages")
     return report

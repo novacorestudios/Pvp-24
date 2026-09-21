@@ -5,14 +5,15 @@ Only complete, locked M11O slices may enter this inventory; article bodies must 
 acquired and semantically qualified by the announcement decoder before any attestation.
 """
 
+import hashlib
 import re
-from datetime import datetime
+from dataclasses import dataclass
+from pathlib import Path
 
-from pvb24.data.announcement_catalog import CATALOGS
+from pvb24.data.announcement_catalog import CATALOGS, catalog_time, load_slice
 from pvb24.data.announcements import BASE as ARTICLE_BASE
 from pvb24.data.archive import FINAL_START
 from pvb24.ids import canonical, digest
-from pvb24.types import utc
 
 SCHEMA = "PVB24_ANNOUNCEMENT_CANDIDATE_INVENTORY_V1"
 
@@ -26,20 +27,13 @@ _DELISTING_HINTS = (
 )
 
 
-def _time(value):
-    # Catalog reports serialize aware timestamps as ISO-8601, not epoch text.
-    if isinstance(value, str):
-        value = datetime.fromisoformat(value)
-    return utc(value)
-
-
 def _candidate_kind(catalog_id, title):
     patterns = _LISTING_HINTS if catalog_id == 48 else _DELISTING_HINTS
     return CATALOGS[catalog_id] if any(pattern.search(title) for pattern in patterns) else None
 
 
-def build_candidate_inventory(*reports):
-    """Build a deterministic discovery inventory from pinned M11O report payloads.
+def _build_candidate_inventory(*reports):
+    """Transform already revalidated report payloads; use the public pinned loader.
 
     The function deliberately does not fetch article bodies and does not infer symbols from titles.
     Unmatched titles remain counted as reviewed catalog rows but are not promoted to candidates.
@@ -65,8 +59,8 @@ def build_candidate_inventory(*reports):
             or report.get("final_test_access") != "LOCKED"
         ):
             raise ValueError("Complete locked announcement catalog slice required")
-        start = _time(report.get("window_start"))
-        end = _time(report.get("window_end"))
+        start = catalog_time(report.get("window_start"))
+        end = catalog_time(report.get("window_end"))
         if not start < end <= FINAL_START:
             raise ValueError("Strict pre-Final inventory window required")
         windows.add((start, end))
@@ -80,7 +74,7 @@ def build_candidate_inventory(*reports):
                 or row.get("catalog_scope") != CATALOGS[catalog_id]
             ):
                 raise ValueError("Catalog row identity mismatch")
-            released = _time(row.get("released_at"))
+            released = catalog_time(row.get("released_at"))
             if not start <= released < end:
                 raise ValueError("Catalog row escapes pinned pre-Final window")
             code, title = row.get("code"), row.get("title")
@@ -116,6 +110,11 @@ def build_candidate_inventory(*reports):
         "final_test_access": "LOCKED",
         "catalogs": sorted(seen_catalogs),
         "reviewed_catalog_rows": reviewed_rows,
+        "unmatched_catalog_rows": reviewed_rows - len(ordered),
+        "title_filter_recall_verified": False,
+        "historical_publication_times_verified": False,
+        "operational_ready": False,
+        "live_enabled": False,
         "candidates": ordered,
         "candidate_hash": digest(ordered),
         "historical_universe_complete": False,
@@ -123,4 +122,50 @@ def build_candidate_inventory(*reports):
         "lifecycle_complete": False,
         "performance_run": False,
     }
+    return result
+
+
+@dataclass(frozen=True)
+class CatalogSlice:
+    root: Path
+    report: str
+    sha256: str
+
+
+def build_candidate_inventory(*sources):
+    """Build only from externally pinned reports and revalidated retained pages.
+
+    No fetch, implicit latest revision, or title-derived lifecycle/availability.
+    """
+    if not sources or any(not isinstance(source, CatalogSlice) for source in sources):
+        raise ValueError("Pinned CatalogSlice source selections required")
+    reports = [
+        load_slice(source.root, source.report, expected_report_sha256=source.sha256)
+        for source in sources
+    ]
+    result = _build_candidate_inventory(*reports)
+    pins = {
+        report["catalog_id"]: source.sha256 for report, source in zip(reports, sources, strict=True)
+    }
+    result["source_reports"] = sorted(
+        [
+            {
+                "catalog_id": report["catalog_id"],
+                "report_sha256": source.sha256,
+                "report": source.report,
+                "start_page": report["start_page"],
+                "page_size": report["page_size"],
+                "article_hash": report["article_hash"],
+                "pages": report["pages"],
+            }
+            for report, source in zip(reports, sources, strict=True)
+        ],
+        key=lambda row: row["catalog_id"],
+    )
+    for candidate in result["candidates"]:
+        candidate["source_report_sha256"] = pins[candidate["catalog_id"]]
+    result["candidate_hash"] = digest(result["candidates"])
+    result["source_page_chain_revalidated"] = True
+    result["implementation_sha256"] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    result["inventory_hash"] = digest(result)
     return result

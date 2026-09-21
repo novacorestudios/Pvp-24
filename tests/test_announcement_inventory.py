@@ -4,7 +4,9 @@ from datetime import UTC, datetime
 
 import pytest
 
-from pvb24.data.announcement_inventory import build_candidate_inventory
+from pvb24.data.announcement_inventory import (
+    _build_candidate_inventory as build_candidate_inventory,
+)
 from pvb24.ids import canonical, digest
 
 START = datetime(2024, 1, 1, tzinfo=UTC)
