@@ -226,7 +226,6 @@ def test_review_rejects_cross_page_order_drift(tmp_path):
         )
 
 
-
 def test_anchor_review_loader_replays_and_binds_source_chain(tmp_path):
     code = "a" * 32
     when = datetime(2025, 6, 30, 7, 0, tzinfo=UTC)

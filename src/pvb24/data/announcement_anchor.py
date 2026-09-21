@@ -343,9 +343,8 @@ def load_anchor_review(root: Path, report_path: Path, *, expected_report_sha256:
         raise ValueError("Reviewed announcement anchor release time changed")
 
     safe_start_page = report.get("safe_start_page")
-    if (
-        safe_start_page != pages[-1]["page_no"]
-        or report.get("safe_start_url") != page_url(catalog_id, safe_start_page, page_size)
+    if safe_start_page != pages[-1]["page_no"] or report.get("safe_start_url") != page_url(
+        catalog_id, safe_start_page, page_size
     ):
         raise ValueError("Reviewed announcement safe start page changed")
 
