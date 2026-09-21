@@ -146,6 +146,7 @@ def test_explicit_pre_final_slice_retains_pages_and_stops_after_lower_boundary(t
         start=START,
         end=END,
         fetch=fetch,
+        page_size=2,
     )
     assert report["status"] == "ACQUIRED" and report["catalog_slice_complete"]
     assert calls == [5, 6] and len(report["in_window_articles"]) == 2
