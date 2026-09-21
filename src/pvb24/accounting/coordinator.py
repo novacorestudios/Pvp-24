@@ -117,10 +117,7 @@ class AccountCoordinator:
             _, payload = read_tx(db, self.ledger_stream)
             ledger = Ledger.restore(payload)
             for payment in ledger.funding.values():
-                if (
-                    payment.position_id == f.position_id
-                    and f.event_time <= payment.settlement_time
-                ):
+                if payment.position_id == f.position_id and f.event_time <= payment.settlement_time:
                     raise ReconciliationRequired(
                         "Late fill revises frozen funding boundary eligibility"
                     )

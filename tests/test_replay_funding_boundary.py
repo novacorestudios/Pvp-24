@@ -60,9 +60,7 @@ def test_exact_source_funding_uses_owned_replay_boundary_quantity(tmp_path):
     result = deliver(runtime, funding_event())
     assert result["eligible_positions"] == 1 and result["ingested"] == 1
     assert len(result["payment_ids"]) == 1
-    view = LedgerStore(db, "paper").read()[1].view(
-        SETTLEMENT + timedelta(seconds=2)
-    )
+    view = LedgerStore(db, "paper").read()[1].view(SETTLEMENT + timedelta(seconds=2))
     assert view.funding == D("-0.45")
     payment = next(iter(LedgerStore(db, "paper").read()[1].funding.values()))
     assert payment.eligible_quantity == D("4.5")
@@ -122,9 +120,7 @@ def test_fill_after_settlement_is_known_but_excluded_from_boundary_quantity(tmp_
     deliver(runtime, funding_event())
     payment = next(iter(LedgerStore(db, "paper").read()[1].funding.values()))
     assert payment.eligible_quantity == D("4.5")
-    view = LedgerStore(db, "paper").read()[1].view(
-        SETTLEMENT + timedelta(seconds=2)
-    )
+    view = LedgerStore(db, "paper").read()[1].view(SETTLEMENT + timedelta(seconds=2))
     assert view.positions[0].quantity == D("3.5")
     db.close()
 

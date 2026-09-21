@@ -74,9 +74,7 @@ def _boundary_quantity(
         fill = record.fill
         if fill.reduce_only:
             if fill.quantity > quantity:
-                raise ReconciliationRequired(
-                    "Boundary reduction exceeds known owned quantity"
-                )
+                raise ReconciliationRequired("Boundary reduction exceeds known owned quantity")
             quantity -= fill.quantity
         else:
             quantity += fill.quantity
