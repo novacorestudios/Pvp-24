@@ -367,7 +367,7 @@ def extract_facts(kind, body):
         cutoff = re.findall(
             r"not allowed to open new positions for the aforementioned contracts starting from "
             + UTC_TEXT
-            + r"([^.]*)\\.",
+            + r"([^.]*)\.",
             body_text,
         )
         if len(cutoff) != 1:
