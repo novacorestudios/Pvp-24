@@ -44,13 +44,17 @@ def page_url(catalog_id, page_no, page_size=DEFAULT_PAGE_SIZE):
         raise ValueError("Positive catalog page number required")
     if type(page_size) is not int or not 1 <= page_size <= 20:
         raise ValueError("Bounded catalog page size 1..20 required")
-    return BASE + "?" + urlencode(
-        {
-            "type": 1,
-            "catalogId": catalog_id,
-            "pageNo": page_no,
-            "pageSize": page_size,
-        }
+    return (
+        BASE
+        + "?"
+        + urlencode(
+            {
+                "type": 1,
+                "catalogId": catalog_id,
+                "pageNo": page_no,
+                "pageSize": page_size,
+            }
+        )
     )
 
 
