@@ -106,9 +106,7 @@ def test_previous_close_is_diagnostic_only_even_when_exactly_available(tmp_path)
     sample = result["archive_samples"][0]
     assert sample["exact_previous_close_time_matches"] == 1
     assert sample["previous_close_unavailable_at_funding_availability"] == 0
-    assert sample["known_mark_unequal_previous_close_times"] == [
-        "2024-01-01T00:01:00.000000Z"
-    ]
+    assert sample["known_mark_unequal_previous_close_times"] == ["2024-01-01T00:01:00.000000Z"]
     assert sample["qualified_settlement_prices"] == 0
     assert result["archive_derived_settlement_prices"] == 0
 
