@@ -495,9 +495,7 @@ def recover_retained_lifecycle_facts(root, expected_report_sha256):
     recovered.sort(key=lambda row: (row["available_at"], row["kind"], row["code"]))
     retrospective.sort(key=lambda row: (row["kind"], row["code"]))
     remaining.sort(key=lambda row: (row["kind"], row["code"]))
-    listing_facts = [
-        fact for row in recovered if row["kind"] == "LISTING" for fact in row["facts"]
-    ]
+    listing_facts = [fact for row in recovered if row["kind"] == "LISTING" for fact in row["facts"]]
     delisting_facts = [
         fact for row in recovered if row["kind"] == "DELISTING" for fact in row["facts"]
     ]
