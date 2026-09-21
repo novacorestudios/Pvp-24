@@ -229,7 +229,9 @@ def compile_security_master_obligations(
     if any(value is not None for value in conflict_args) and not all(
         value is not None for value in conflict_args
     ):
-        raise ValueError("Conflict resolution/activity paths and SHA-256 pins must be supplied together")
+        raise ValueError(
+            "Conflict resolution/activity paths and SHA-256 pins must be supplied together"
+        )
     resolution = (
         _load_conflict_resolution(conflict_resolution_path, conflict_resolution_sha256)
         if conflict_resolution_path is not None
@@ -394,7 +396,9 @@ def compile_security_master_obligations(
                 if row["effective_from"] == effective and row["revision_id"] == revision
             ]
             if len(matches) != 1:
-                raise ValueError("Conflict cancellation must match exactly one listing evidence row")
+                raise ValueError(
+                    "Conflict cancellation must match exactly one listing evidence row"
+                )
             listing_evidence[symbol].remove(matches[0])
             applied_cancellations.append(
                 {
@@ -407,9 +411,8 @@ def compile_security_master_obligations(
                 }
             )
         supplemental = resolution.get("supplemental_listings")
-        if (
-            not isinstance(supplemental, list)
-            or len(supplemental) != resolution.get("supplemental_listing_count")
+        if not isinstance(supplemental, list) or len(supplemental) != resolution.get(
+            "supplemental_listing_count"
         ):
             raise ValueError("Conflict supplemental listing count changed")
         for item in supplemental:
