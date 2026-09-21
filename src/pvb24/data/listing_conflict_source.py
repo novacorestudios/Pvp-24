@@ -7,7 +7,7 @@ listing boundaries. Semantic conflict resolution must be a separate pinned step.
 import hashlib
 import json
 import re
-from datetime import datetime
+from datetime import timedelta
 from pathlib import Path
 
 from pvb24.data.announcements import ARTICLE_CODE, BASE, nodes, strict_json, text
@@ -59,7 +59,7 @@ def inspect_listing_conflict_source(code, raw):
         "body_sha256": hashlib.sha256(body_raw.encode()).hexdigest(),
         "published_at": published,
         "known_updated_at": updated,
-        "available_at": (updated or published).timestamp(),
+        "available_at": (updated or published) + timedelta(seconds=2),
         "body_text": body_text,
         "semantic_resolution_emitted": False,
         "security_rows_emitted": 0,
