@@ -136,7 +136,7 @@ def test_irregular_exact_timestamps_are_preserved_not_rounded_into_a_schedule():
         ),
     ]
     report = qualify_history_rows(rows)
-    assert report["last_settlement_time"] == "2024-01-01T08:00:00.001000Z"
+    assert report["last_settlement_time"] == T0 + timedelta(hours=8, milliseconds=1)
     assert not report["funding_schedule_complete"]
 
 
