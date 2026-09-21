@@ -135,14 +135,14 @@ def fixtures(tmp_path):
         ],
     }
     q = write(tmp_path / "q.json", qualification)
-    l = write(tmp_path / "l.json", lifecycle)
-    t = write(tmp_path / "t.json", ticks)
-    return q, l, t
+    lifecycle_ref = write(tmp_path / "l.json", lifecycle)
+    tick_ref = write(tmp_path / "t.json", ticks)
+    return q, lifecycle_ref, tick_ref
 
 
 def compile_fixture(tmp_path):
-    q, l, t = fixtures(tmp_path)
-    return compile_partial_historical_metadata(q[0], q[1], l[0], l[1], t[0], t[1])
+    q, lifecycle_ref, tick_ref = fixtures(tmp_path)
+    return compile_partial_historical_metadata(q[0], q[1], lifecycle_ref[0], lifecycle_ref[1], tick_ref[0], tick_ref[1])
 
 
 def test_compiler_emits_only_consistent_preliminary_listing_candidate(tmp_path):
@@ -183,8 +183,8 @@ def test_tick_evidence_is_field_level_only(tmp_path):
 
 @pytest.mark.parametrize("target", ["qualification", "lifecycle", "tick"])
 def test_pins_are_rechecked(target, tmp_path):
-    q, l, t = fixtures(tmp_path)
-    args = [q[0], q[1], l[0], l[1], t[0], t[1]]
+    q, lifecycle_ref, tick_ref = fixtures(tmp_path)
+    args = [q[0], q[1], lifecycle_ref[0], lifecycle_ref[1], tick_ref[0], tick_ref[1]]
     index = {"qualification": 1, "lifecycle": 3, "tick": 5}[target]
     args[index] = "0" * 64
     with pytest.raises(ValueError, match="hash changed"):
@@ -192,12 +192,12 @@ def test_pins_are_rechecked(target, tmp_path):
 
 
 def test_lifecycle_must_bind_same_qualification_results(tmp_path):
-    q, l, t = fixtures(tmp_path)
-    value = json.loads(l[0].read_text())
+    q, lifecycle_ref, tick_ref = fixtures(tmp_path)
+    value = json.loads(lifecycle_ref[0].read_text())
     value["qualification_results_hash"] = "9" * 64
-    l = write(l[0], value)
+    lifecycle_ref = write(lifecycle_ref[0], value)
     with pytest.raises(ValueError, match="identities disagree"):
-        compile_partial_historical_metadata(q[0], q[1], l[0], l[1], t[0], t[1])
+        compile_partial_historical_metadata(q[0], q[1], lifecycle_ref[0], lifecycle_ref[1], tick_ref[0], tick_ref[1])
 
 
 def test_unknown_listing_is_never_materialized_as_security(tmp_path):
@@ -207,16 +207,16 @@ def test_unknown_listing_is_never_materialized_as_security(tmp_path):
 
 
 def test_event_time_and_final_lock_fail_closed(tmp_path):
-    q, l, t = fixtures(tmp_path)
-    value = json.loads(l[0].read_text())
+    q, lifecycle_ref, tick_ref = fixtures(tmp_path)
+    value = json.loads(lifecycle_ref[0].read_text())
     value["reconciliations"][0]["event_at"] = (NOW + timedelta(days=4)).isoformat()
-    l = write(l[0], value)
+    lifecycle_ref = write(lifecycle_ref[0], value)
     with pytest.raises(ValueError, match="event time"):
-        compile_partial_historical_metadata(q[0], q[1], l[0], l[1], t[0], t[1])
+        compile_partial_historical_metadata(q[0], q[1], lifecycle_ref[0], lifecycle_ref[1], tick_ref[0], tick_ref[1])
 
-    q, l, t = fixtures(tmp_path / "final")
+    q, lifecycle_ref, tick_ref = fixtures(tmp_path / "final")
     value = json.loads(q[0].read_text())
     value["results"][0]["available_at"] = "2025-07-01T00:00:00+00:00"
     q = write(q[0], value)
     with pytest.raises(ValueError, match="Final Test"):
-        compile_partial_historical_metadata(q[0], q[1], l[0], l[1], t[0], t[1])
+        compile_partial_historical_metadata(q[0], q[1], lifecycle_ref[0], lifecycle_ref[1], tick_ref[0], tick_ref[1])
