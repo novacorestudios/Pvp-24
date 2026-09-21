@@ -96,7 +96,9 @@ def load_inventory(root, report_path, *, expected_sha256):
         raise ValueError("Candidate inventory content hash mismatch")
 
     source_reports = report.get("source_reports")
-    if not isinstance(source_reports, list) or [row.get("catalog_id") for row in source_reports] != [
+    if not isinstance(source_reports, list) or [
+        row.get("catalog_id") for row in source_reports
+    ] != [
         48,
         161,
     ]:
@@ -171,7 +173,12 @@ def qualify_candidate(candidate, raw):
             raise ValueError("Announcement identity differs from candidate catalog row")
         publish_ms = data.get("publishDate")
         update_ms = data.get("lastUpdateTime")
-        if type(publish_ms) is not int or publish_ms < 0 or type(update_ms) is not int or update_ms < 0:
+        if (
+            type(publish_ms) is not int
+            or publish_ms < 0
+            or type(update_ms) is not int
+            or update_ms < 0
+        ):
             raise ValueError("Explicit integer publication/update clocks required")
         published = milliseconds(str(publish_ms))
         updated = milliseconds(str(update_ms)) if update_ms else None
@@ -202,7 +209,11 @@ def qualify_candidate(candidate, raw):
 
     body = data.get("body")
     if not isinstance(body, str):
-        return {**chronology, "status": IDENTITY_REJECTED, "reason": "Rich-text body string required"}
+        return {
+            **chronology,
+            "status": IDENTITY_REJECTED,
+            "reason": "Rich-text body string required",
+        }
     body_sha256 = hashlib.sha256(body.encode()).hexdigest()
     try:
         facts = extract_facts(kind, strict_json(body))
