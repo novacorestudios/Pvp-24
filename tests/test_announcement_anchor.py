@@ -1,3 +1,4 @@
+import hashlib
 import json
 import urllib.error
 from datetime import UTC, datetime
@@ -5,7 +6,11 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
-from pvb24.data.announcement_anchor import CatalogAnchor, review_anchor_start
+from pvb24.data.announcement_anchor import (
+    CatalogAnchor,
+    load_anchor_review,
+    review_anchor_start,
+)
 
 
 def ms(value):
@@ -217,4 +222,92 @@ def test_review_rejects_cross_page_order_drift(tmp_path):
             tmp_path,
             fetch=fetch,
             page_size=2,
+        )
+
+
+
+def test_anchor_review_loader_replays_and_binds_source_chain(tmp_path):
+    code = "a" * 32
+    when = datetime(2025, 6, 30, 7, 0, tzinfo=UTC)
+    page3 = [
+        article("3" * 32, datetime(2024, 1, 2, tzinfo=UTC), article_id=6),
+        article("4" * 32, datetime(2024, 1, 1, tzinfo=UTC), article_id=5),
+    ]
+    page2 = [
+        article(code, when, article_id=4),
+        article("5" * 32, datetime(2025, 6, 1, tzinfo=UTC), article_id=3),
+    ]
+
+    def fetch(url):
+        page = int(parse_qs(urlsplit(url).query)["pageNo"][0])
+        if page == 4:
+            raise http_400(url)
+        if page == 3:
+            return payload(48, page3, 6)
+        if page == 2:
+            return payload(48, page2, 6)
+        raise AssertionError(page)
+
+    custom = anchor(code, when)
+    report, path = review_anchor_start(custom, tmp_path, fetch=fetch, page_size=2)
+
+    # Loader binds to the repository-reviewed anchor registry, so temporarily use its exact identity.
+    from pvb24.data import announcement_anchor as module
+
+    original = module.REVIEWED_ANCHORS[48]
+    module.REVIEWED_ANCHORS[48] = custom
+    try:
+        sha = hashlib.sha256(path.read_bytes()).hexdigest()
+        checked = load_anchor_review(
+            tmp_path,
+            path.relative_to(tmp_path),
+            expected_report_sha256=sha,
+        )
+        assert checked["safe_start_page"] == report["safe_start_page"]
+        source = tmp_path / "objects" / checked["pages"][0]["object"]
+        source.write_bytes(b"corrupt")
+        with pytest.raises(ValueError, match="source page changed"):
+            load_anchor_review(
+                tmp_path,
+                path.relative_to(tmp_path),
+                expected_report_sha256=sha,
+            )
+    finally:
+        module.REVIEWED_ANCHORS[48] = original
+
+
+def test_anchor_review_loader_rejects_wrong_report_pin(tmp_path):
+    reviewed = REVIEWED_ANCHORS[48]
+
+    def fetch(url):
+        page = int(parse_qs(urlsplit(url).query)["pageNo"][0])
+        rows = [
+            article(
+                reviewed.code,
+                reviewed.released_at,
+                article_id=page,
+            )
+        ]
+        return payload(48, rows, page)
+
+    report, path = review_anchor_start(
+        CatalogAnchor(
+            reviewed.catalog_id,
+            reviewed.code,
+            reviewed.released_at,
+            reviewed.source_url,
+            1,
+            reviewed.hint_source_url,
+            reviewed.hint_ui_pages,
+        ),
+        tmp_path,
+        fetch=fetch,
+        page_size=1,
+    )
+    assert report["safe_start_page"] == 1
+    with pytest.raises(ValueError, match="report changed"):
+        load_anchor_review(
+            tmp_path,
+            path.relative_to(tmp_path),
+            expected_report_sha256="0" * 64,
         )

@@ -45,3 +45,17 @@ Official source pages:
 - https://www.binance.com/en/support/announcement/list/161
 - https://www.binance.com/en/support/announcement/detail/cd4d635399374a68ace90874ce8b9eb2
 - https://www.binance.com/en/support/announcement/detail/85c046a0853b43c2b791ffc3343ed7f0
+
+## Replay-bound acquisition path
+
+The production-safe acquisition entrypoint is now
+`scripts/acquire_reviewed_announcement_catalog.py`. It never accepts a manually supplied
+`start_page`: it first creates the reviewed anchor report, replays every retained source page from
+its content-addressed objects, verifies the report SHA-256, and only then derives
+`safe_start_page` for the older-page acquisition.
+
+The resulting binding summary deliberately reports
+`requested_window_complete=false` and `upper_boundary_coverage_proven=false`. Reaching the lower
+boundary from a safe retained anchor proves only that selected older page chain; it does **not**
+fill the newer gap between that anchor and 2025-07-01. Those gaps remain blockers for complete
+historical lifecycle/universe evidence. Final Test remains LOCKED.

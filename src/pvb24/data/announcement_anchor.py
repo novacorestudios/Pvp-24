@@ -12,6 +12,8 @@ from pvb24.data.acquisition import object_write
 from pvb24.data.announcement_catalog import (
     CATALOGS,
     DEFAULT_PAGE_SIZE,
+    _strict_json,
+    catalog_time,
     decode_page,
     page_url,
     public_page,
@@ -218,6 +220,146 @@ def review_anchor_start(
         page_no -= 1
 
     raise ValueError("Reviewed anchor not found within bounded pre-Final catalog walk")
+
+
+def load_anchor_review(root: Path, report_path: Path, *, expected_report_sha256: str):
+    """Replay and verify a content-addressed reviewed anchor report and its source pages."""
+
+    root, path = Path(root), Path(report_path)
+    if (
+        not isinstance(expected_report_sha256, str)
+        or not re.fullmatch(r"[0-9a-f]{64}", expected_report_sha256)
+        or path.as_posix() != "reports/" + expected_report_sha256 + ".json"
+    ):
+        raise ValueError("Owned pinned announcement anchor report changed/path invalid")
+    raw = (root / path).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != expected_report_sha256:
+        raise ValueError("Pinned announcement anchor report changed")
+
+    report = _strict_json(raw)
+    if (
+        report.get("schema") != "PVB24_ANNOUNCEMENT_CATALOG_ANCHOR_REVIEW_V2"
+        or report.get("quality") != "PRELIMINARY"
+        or report.get("final_test_access") != "LOCKED"
+        or any(
+            report.get(key) is not False
+            for key in (
+                "historical_universe_complete",
+                "security_master_complete",
+                "lifecycle_complete",
+                "performance_run",
+                "operational_ready",
+                "live_enabled",
+            )
+        )
+    ):
+        raise ValueError("Locked preliminary reviewed announcement anchor required")
+
+    catalog_id = report.get("catalog_id")
+    if catalog_id not in REVIEWED_ANCHORS:
+        raise ValueError("Reviewed announcement anchor catalog required")
+    anchor = _validated(REVIEWED_ANCHORS[catalog_id])
+    if report.get("catalog_scope") != CATALOGS[catalog_id]:
+        raise ValueError("Reviewed announcement anchor catalog scope changed")
+
+    page_size = report.get("page_size")
+    if type(page_size) is not int:
+        raise ValueError("Exact reviewed announcement page size required")
+    page_url(catalog_id, 1, page_size)
+
+    hint = report.get("hint")
+    if not isinstance(hint, dict):
+        raise ValueError("Reviewed announcement anchor hint required")
+    if (
+        hint.get("source_url") != anchor.hint_source_url
+        or hint.get("ui_pages_observed") != anchor.hint_ui_pages
+        or hint.get("cms_start_page_hint") != anchor.start_page_hint
+        or type(hint.get("backoff_pages")) is not int
+        or type(hint.get("first_valid_page")) is not int
+        or hint["backoff_pages"] < 0
+        or hint["first_valid_page"] < 1
+        or hint["first_valid_page"] != anchor.start_page_hint - hint["backoff_pages"]
+    ):
+        raise ValueError("Reviewed announcement anchor hint binding changed")
+
+    started = catalog_time(report.get("started_at"))
+    completed = catalog_time(report.get("completed_at"))
+    if completed < started:
+        raise ValueError("Reviewed announcement anchor completion precedes start")
+
+    pages = report.get("pages")
+    if not isinstance(pages, list) or not 1 <= len(pages) <= 500:
+        raise ValueError("Nonempty bounded reviewed announcement page chain required")
+
+    expected_total = report.get("catalog_total_observed")
+    if type(expected_total) is not int or expected_total < 0:
+        raise ValueError("Exact reviewed announcement catalog total required")
+
+    previous_newest = None
+    matches = []
+    first_valid = hint["first_valid_page"]
+    for offset, page in enumerate(pages):
+        expected_page = first_valid - offset
+        if expected_page < 1:
+            raise ValueError("Reviewed announcement page chain escaped positive pages")
+        expected_url = page_url(catalog_id, expected_page, page_size)
+        if page.get("page_no") != expected_page or page.get("url") != expected_url:
+            raise ValueError("Reviewed announcement page sequence/URL changed")
+
+        name = page.get("object")
+        if not isinstance(name, str) or not re.fullmatch(r"[0-9a-f]{64}\.json", name):
+            raise ValueError("Content-addressed reviewed announcement source page required")
+        source = (root / "objects" / name).read_bytes()
+        if hashlib.sha256(source).hexdigest() + ".json" != name:
+            raise ValueError("Reviewed announcement source page changed")
+
+        total, rows = decode_page(source, catalog_id, expected_page, page_size)
+        if total != expected_total or len(rows) != _expected_count(total, expected_page, page_size):
+            raise ValueError("Reviewed announcement page total/length changed")
+        if any(row["released_at"] >= FINAL_START for row in rows):
+            raise ValueError("Reviewed announcement replay reached the locked Final Test")
+        if not rows:
+            raise ValueError("Nonempty reviewed announcement source page required")
+
+        oldest = min(row["released_at"] for row in rows)
+        newest = max(row["released_at"] for row in rows)
+        if previous_newest is not None and oldest < previous_newest:
+            raise ValueError("Reviewed announcement ordering changed across retained pages")
+        previous_newest = newest
+        if (
+            catalog_time(page.get("oldest_at")) != oldest
+            or catalog_time(page.get("newest_at")) != newest
+        ):
+            raise ValueError("Reviewed announcement page time bounds changed")
+
+        for row in rows:
+            if row["code"] == anchor.code:
+                matches.append((offset, row))
+
+    if len(matches) != 1 or matches[0][0] != len(pages) - 1:
+        raise ValueError("Exact reviewed announcement anchor must terminate retained page chain")
+    matched = matches[0][1]
+    if matched["released_at"] != anchor.released_at:
+        raise ValueError("Reviewed announcement anchor release time changed")
+
+    safe_start_page = report.get("safe_start_page")
+    if (
+        safe_start_page != pages[-1]["page_no"]
+        or report.get("safe_start_url") != page_url(catalog_id, safe_start_page, page_size)
+    ):
+        raise ValueError("Reviewed announcement safe start page changed")
+
+    recorded_anchor = report.get("anchor")
+    if (
+        not isinstance(recorded_anchor, dict)
+        or recorded_anchor.get("code") != anchor.code
+        or catalog_time(recorded_anchor.get("released_at")) != anchor.released_at
+        or recorded_anchor.get("source_url") != anchor.source_url
+        or recorded_anchor.get("catalog_page") != safe_start_page
+        or canonical(recorded_anchor.get("row")) != canonical(matched)
+    ):
+        raise ValueError("Reviewed announcement anchor identity changed")
+    return report
 
 
 def report_sha256(path: Path) -> str:

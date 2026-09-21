@@ -6,7 +6,17 @@ on:
     paths:
       - ".github/workflows/catalog-anchor-review.yml"
       - "src/pvb24/data/announcement_anchor.py"
+      - "src/pvb24/data/announcement_catalog.py"
       - "scripts/review_announcement_catalog_anchor.py"
+      - "scripts/acquire_reviewed_announcement_catalog.py"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/catalog-anchor-review.yml"
+      - "src/pvb24/data/announcement_anchor.py"
+      - "src/pvb24/data/announcement_catalog.py"
+      - "scripts/review_announcement_catalog_anchor.py"
+      - "scripts/acquire_reviewed_announcement_catalog.py"
   workflow_dispatch:
 
 permissions:
@@ -26,15 +36,16 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install -e '.[dev]'
       - run: python scripts/verify_provenance.py
-      - name: Review pre-Final catalog anchor
+      - name: Acquire replay-verified retained pre-Final catalog slice
         run: |
-          python scripts/review_announcement_catalog_anchor.py \
+          python scripts/acquire_reviewed_announcement_catalog.py \
             --catalog-id ${{ matrix.catalog }} \
-            --output artifacts/catalog-anchor-review/${{ matrix.catalog }}
+            --window-start 2020-01-01T00:00:00Z \
+            --output artifacts/catalog-evidence/${{ matrix.catalog }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: catalog-anchor-review-${{ matrix.catalog }}
-          path: artifacts/catalog-anchor-review/${{ matrix.catalog }}
+          name: catalog-evidence-${{ matrix.catalog }}
+          path: artifacts/catalog-evidence/${{ matrix.catalog }}
           if-no-files-found: warn
           retention-days: 14
