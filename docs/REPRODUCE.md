@@ -167,3 +167,19 @@ The real announcement review is a factual, non-executable annotation, not a comp
 ```
 
 All 93 Regular rows matched archive time/rate exactly, with no unsupported types or missing settlement Mark prices. The single API page SHA-256 is `7b8419572ab8cd68087d392fe2d205e49e008991aef260e13bee15771463c94f`. The committed comparison and original page are in docs/data/11e-funding-comparison.json and docs/data/11e-funding-pages. Each rerun retains its own response/revision metadata. Thirteen new tests cover inclusive same-time pagination, decimal/source identity checks, missing Mark and unknown rate types, changed or stalled pages, explicit Final locking and exact comparison without rounding. No FundingCoverage or account cashflow was inferred.
+
+
+## Milestone 11F — Reviewed announcement sources
+
+441 tests passed, with Ruff lint/format and provenance verification. Actual acquisition completed 3/3 articles with 17 factual rows:
+
+```bash
+.venv/bin/python scripts/acquire_announcements.py \
+  --review docs/data/11f-announcement-review.json \
+  --review-hash b26195c289208da47aacf9b6aa18f18be55090e2ac696df6c3d5ba6db78e99ec \
+  --output data/announcements-11f
+```
+
+The summary is data/announcements-11f/summaries/e6793b51221e5e59d54b2cc698d40d146d228b00168d587c890a1183751aecb5.json, with its factual content committed as docs/data/11f-announcement-coverage.json. The summary identifies each immutable report and raw object. Use announcements.delisting_events(root, report_path, expected_report_hash=..., through=...) to reverify that source and select only available pre-Final events. Actual normalization produced five notice events, hash 0904a9bdc632a9682338fd1db1ea7e0e1d798ea195afe39428aab33b5a31b50c, and no events one microsecond before each modeled availability. Tick-change reports produce no executable lifecycle events.
+
+Reacquisition cannot silently accept a changed body or different reviewed facts. Current raw CMS recommendations may change independently, so preserve original source objects for exact reproduction or explicitly select a newly acquired report. This source normalization is not a performance run, original historical availability verification or full contract-rule reconstruction.

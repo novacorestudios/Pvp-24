@@ -1,0 +1,26 @@
+{
+  "schema": "PVB24_ANNOUNCEMENT_REVIEW_V1",
+  "requests": [
+    {
+      "code": "673183dd8eea4e3cba1596dcec7565d1",
+      "published_day": "2024-03-19",
+      "kind": "DELISTING",
+      "body_sha256": "2c3567d2e3532190c4019a8a85ac3dd8b2f4380be8d7f9d8b881056b5ad56aca",
+      "facts_hash": "5b8bcd978088ed2f8e7366f2cf2bae17bac3f10a321550ecb38ec07ecacf3ad6"
+    },
+    {
+      "code": "cfe97d52a8c840d3ba631835b637e9e7",
+      "published_day": "2024-11-29",
+      "kind": "DELISTING",
+      "body_sha256": "ca1269120ae985607005686a0e74f54f85c30e5c4ad6a4047792f210b88f45bc",
+      "facts_hash": "a5a772172f402b0c9362f9a44c3b701f46877ce9d28533917c38411d9e12221c"
+    },
+    {
+      "code": "98e6086608424b21a5a385f30ffebd15",
+      "published_day": "2024-03-18",
+      "kind": "TICK_CHANGE",
+      "body_sha256": "9a98fe2d979f5d6061cdc1db5d4348e6d0c356277f12988c844d3ca013fbc7eb",
+      "facts_hash": "d9bf3a257ac3f4102bacae0d6104237c40de3897a7fbd4f6c7b0134bb53572e7"
+    }
+  ]
+}

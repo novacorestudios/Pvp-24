@@ -46,3 +46,10 @@ Two official pre-Final notices covering five symbols demonstrate distinct public
 ## Funding source comparison (11E)
 
 The official historical funding endpoint returned 93 Regular BTCUSDT January 2024 records, all with settlement Mark prices. All 93 match the archive exactly on timestamp and rate; no rounding, missing rows or rate mismatches in this sample comparison. Continuous interval qualification and historical availability remain unresolved, and funding_schedule_complete remains false. Raw API evidence and complete diagnostics are committed. No position eligibility or cashflow is inferred.
+
+
+## 11F — Partial metadata qualification
+
+Three reviewed articles provide five delisting facts (BLUEBIRDUSDT, FOOTBALLUSDT, LOOMUSDT, ORBSUSDT, XEMUSDT) and twelve tick changes effective 2024-03-19 06:30 UTC. Exact source publication times are 2024-03-19 05:05:02.006 UTC, 2024-11-29 04:00:01.809 UTC and 2024-03-18 09:55:15.279 UTC respectively. The twenty-four-hour publication display is no longer used to infer timezone or truncate milliseconds.
+
+The machine-readable 17-row report data/11f-announcement-coverage.json enumerates symbol, dates, source, raw hash and partial facts; it explicitly records missing full security records, full rules and actual settlement fills. Coverage start/end remain null, not an invented continuous range. Two USDC-quoted tick rows are retained as observed data, not admitted to the USDT universe. Known tick-before values do not prove all older rule periods. Delisting cutoffs do not replace PVB-24's immediate announcement-based entry block. All inputs remain PRELIMINARY; three selected articles are not a complete historical metadata catalog.

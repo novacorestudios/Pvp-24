@@ -1,0 +1,605 @@
+{
+  "acquired_articles": 3,
+  "articles": [
+    {
+      "actual_received_at_historical": null,
+      "availability_policy": "PRELIMINARY_CMS_REVIEWED_REVISION_PUBLICATION_OR_KNOWN_UPDATE_PLUS_2S_V1",
+      "available_at": "2024-03-19T05:05:04.006000Z",
+      "body_sha256": "2c3567d2e3532190c4019a8a85ac3dd8b2f4380be8d7f9d8b881056b5ad56aca",
+      "cms_version": "1",
+      "code": "673183dd8eea4e3cba1596dcec7565d1",
+      "contract_rules_complete": false,
+      "decoder_sha256": "290d966b8eb92f749e63b78f2ae63813b50b8e09643c1c8fcb02625fbcc87a75",
+      "facts": [
+        {
+          "entry_cutoff_at": "2024-03-26T08:30:00.000000Z",
+          "scheduled_settlement_at": "2024-03-26T09:00:00.000000Z",
+          "symbol": "BLUEBIRDUSDT"
+        },
+        {
+          "entry_cutoff_at": "2024-03-26T08:30:00.000000Z",
+          "scheduled_settlement_at": "2024-03-26T09:00:00.000000Z",
+          "symbol": "FOOTBALLUSDT"
+        }
+      ],
+      "facts_hash": "5b8bcd978088ed2f8e7366f2cf2bae17bac3f10a321550ecb38ec07ecacf3ad6",
+      "final_test_access": "LOCKED",
+      "historical_verified": false,
+      "kind": "DELISTING",
+      "known_updated_at": null,
+      "original_revision_as_published_verified": false,
+      "published_at": "2024-03-19T05:05:02.006000Z",
+      "quality": "PRELIMINARY",
+      "received_at": "2026-09-21T04:54:31.927122Z",
+      "report_hash": "e05f0051c6128f7110563a24ba468c17857b67b638cce15c39fb4a5a84377b79",
+      "report_path": "reports/e05f0051c6128f7110563a24ba468c17857b67b638cce15c39fb4a5a84377b79.json",
+      "request": {
+        "body_sha256": "2c3567d2e3532190c4019a8a85ac3dd8b2f4380be8d7f9d8b881056b5ad56aca",
+        "code": "673183dd8eea4e3cba1596dcec7565d1",
+        "facts_hash": "5b8bcd978088ed2f8e7366f2cf2bae17bac3f10a321550ecb38ec07ecacf3ad6",
+        "kind": "DELISTING",
+        "published_day": "2024-03-19"
+      },
+      "revision_id": "378049a572e463adf9ab836296c27ce2c96420ee178424ab138a0a38e2c60683",
+      "schema": "PVB24_ANNOUNCEMENT_ACQUISITION_V1",
+      "security_master_complete": false,
+      "settlement_execution_proven": false,
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=673183dd8eea4e3cba1596dcec7565d1",
+      "source_object": "objects/ae8c5ec1cb0363f411540e48efc94e81f26018027bd23011fb35e51a2c5de91a.json",
+      "source_sha256": "ae8c5ec1cb0363f411540e48efc94e81f26018027bd23011fb35e51a2c5de91a"
+    },
+    {
+      "actual_received_at_historical": null,
+      "availability_policy": "PRELIMINARY_CMS_REVIEWED_REVISION_PUBLICATION_OR_KNOWN_UPDATE_PLUS_2S_V1",
+      "available_at": "2024-11-29T04:00:03.809000Z",
+      "body_sha256": "ca1269120ae985607005686a0e74f54f85c30e5c4ad6a4047792f210b88f45bc",
+      "cms_version": "1",
+      "code": "cfe97d52a8c840d3ba631835b637e9e7",
+      "contract_rules_complete": false,
+      "decoder_sha256": "290d966b8eb92f749e63b78f2ae63813b50b8e09643c1c8fcb02625fbcc87a75",
+      "facts": [
+        {
+          "entry_cutoff_at": "2024-12-09T08:30:00.000000Z",
+          "scheduled_settlement_at": "2024-12-09T09:00:00.000000Z",
+          "symbol": "LOOMUSDT"
+        },
+        {
+          "entry_cutoff_at": "2024-12-09T08:30:00.000000Z",
+          "scheduled_settlement_at": "2024-12-09T09:00:00.000000Z",
+          "symbol": "ORBSUSDT"
+        },
+        {
+          "entry_cutoff_at": "2024-12-09T08:30:00.000000Z",
+          "scheduled_settlement_at": "2024-12-09T09:00:00.000000Z",
+          "symbol": "XEMUSDT"
+        }
+      ],
+      "facts_hash": "a5a772172f402b0c9362f9a44c3b701f46877ce9d28533917c38411d9e12221c",
+      "final_test_access": "LOCKED",
+      "historical_verified": false,
+      "kind": "DELISTING",
+      "known_updated_at": null,
+      "original_revision_as_published_verified": false,
+      "published_at": "2024-11-29T04:00:01.809000Z",
+      "quality": "PRELIMINARY",
+      "received_at": "2026-09-21T04:54:42.125009Z",
+      "report_hash": "89e239789a0a3a891b1712adb91c4ee7abcc4798cf36b6d2156e684085a1eb33",
+      "report_path": "reports/89e239789a0a3a891b1712adb91c4ee7abcc4798cf36b6d2156e684085a1eb33.json",
+      "request": {
+        "body_sha256": "ca1269120ae985607005686a0e74f54f85c30e5c4ad6a4047792f210b88f45bc",
+        "code": "cfe97d52a8c840d3ba631835b637e9e7",
+        "facts_hash": "a5a772172f402b0c9362f9a44c3b701f46877ce9d28533917c38411d9e12221c",
+        "kind": "DELISTING",
+        "published_day": "2024-11-29"
+      },
+      "revision_id": "18da60c9a6cabd1b8fb5c4d6b191d1af8d544ed2625998bfa57c8bcee6a8467d",
+      "schema": "PVB24_ANNOUNCEMENT_ACQUISITION_V1",
+      "security_master_complete": false,
+      "settlement_execution_proven": false,
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=cfe97d52a8c840d3ba631835b637e9e7",
+      "source_object": "objects/7e85266c30cbec4174ee7a18a48d946ee2125964c95d6dd880c5197f9a224e53.json",
+      "source_sha256": "7e85266c30cbec4174ee7a18a48d946ee2125964c95d6dd880c5197f9a224e53"
+    },
+    {
+      "actual_received_at_historical": null,
+      "availability_policy": "PRELIMINARY_CMS_REVIEWED_REVISION_PUBLICATION_OR_KNOWN_UPDATE_PLUS_2S_V1",
+      "available_at": "2024-03-18T09:55:17.279000Z",
+      "body_sha256": "9a98fe2d979f5d6061cdc1db5d4348e6d0c356277f12988c844d3ca013fbc7eb",
+      "cms_version": "1",
+      "code": "98e6086608424b21a5a385f30ffebd15",
+      "contract_rules_complete": false,
+      "decoder_sha256": "290d966b8eb92f749e63b78f2ae63813b50b8e09643c1c8fcb02625fbcc87a75",
+      "facts": [
+        {
+          "effective_at": "2024-03-19T06:30:00.000000Z",
+          "symbol": "AEVOUSDT",
+          "tick_after": "0.001",
+          "tick_before": "0.01"
+        },
+        {
+          "effective_at": "2024-03-19T06:30:00.000000Z",
+          "symbol": "AUCTIONUSDT",
+          "tick_after": "0.001",
+          "tick_before": "0.01"
+        },
+        {
+          "effective_at": "2024-03-19T06:30:00.000000Z",
+          "symbol": "CFXUSDT",
+          "tick_after": "0.00001",
+          "tick_before": "0.0001"
+        },
+        {
+          "effective_at": "2024-03-19T06:30:00.000000Z",
+          "symbol": "ONGUSDT",
+          "tick_after": "0.00001",
+          "tick_before": "0.0001"
+        },
+        {
+          "effective_at": "2024-03-19T06:30:00.000000Z",
+          "symbol": "RADUSDT",
+          "tick_after": "0.0001",
+          "tick_before": "0.001"
+        },
+        {
+          "effective_at": "2024-03-19T06:30:00.000000Z",
+          "symbol": "RDNTUSDT",
+          "tick_after": "0.00001",
+          "tick_before": "0.0001"
+        },
+        {
+          "effective_at": "2024-03-19T06:30:00.000000Z",
+          "symbol": "RONINUSDT",
+          "tick_after": "0.0001",
+          "tick_before": "0.001"
+        },
+        {
+          "effective_at": "2024-03-19T06:30:00.000000Z",
+          "symbol": "STEEMUSDT",
+          "tick_after": "0.00001",
+          "tick_before": "0.0001"
+        },
+        {
+          "effective_at": "2024-03-19T06:30:00.000000Z",
+          "symbol": "SUIUSDC",
+          "tick_after": "0.00001",
+          "tick_before": "0.0001"
+        },
+        {
+          "effective_at": "2024-03-19T06:30:00.000000Z",
+          "symbol": "USDCUSDT",
+          "tick_after": "0.000001",
+          "tick_before": "0.00001"
+        },
+        {
+          "effective_at": "2024-03-19T06:30:00.000000Z",
+          "symbol": "VETUSDT",
+          "tick_after": "0.000001",
+          "tick_before": "0.00001"
+        },
+        {
+          "effective_at": "2024-03-19T06:30:00.000000Z",
+          "symbol": "WLDUSDC",
+          "tick_after": "0.00001",
+          "tick_before": "0.0001"
+        }
+      ],
+      "facts_hash": "d9bf3a257ac3f4102bacae0d6104237c40de3897a7fbd4f6c7b0134bb53572e7",
+      "final_test_access": "LOCKED",
+      "historical_verified": false,
+      "kind": "TICK_CHANGE",
+      "known_updated_at": null,
+      "original_revision_as_published_verified": false,
+      "published_at": "2024-03-18T09:55:15.279000Z",
+      "quality": "PRELIMINARY",
+      "received_at": "2026-09-21T04:54:52.431878Z",
+      "report_hash": "5b0b43917220b4367bc34825a2807920395c62214a2ff49e9e6e4de9e8d1be2c",
+      "report_path": "reports/5b0b43917220b4367bc34825a2807920395c62214a2ff49e9e6e4de9e8d1be2c.json",
+      "request": {
+        "body_sha256": "9a98fe2d979f5d6061cdc1db5d4348e6d0c356277f12988c844d3ca013fbc7eb",
+        "code": "98e6086608424b21a5a385f30ffebd15",
+        "facts_hash": "d9bf3a257ac3f4102bacae0d6104237c40de3897a7fbd4f6c7b0134bb53572e7",
+        "kind": "TICK_CHANGE",
+        "published_day": "2024-03-18"
+      },
+      "revision_id": "c71361898d702faf3b7aff9c50f1012544cec847d68903e6fa4750521baf8e9e",
+      "schema": "PVB24_ANNOUNCEMENT_ACQUISITION_V1",
+      "security_master_complete": false,
+      "settlement_execution_proven": false,
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=98e6086608424b21a5a385f30ffebd15",
+      "source_object": "objects/f6a8925f312ee8320bf6f8e2be72406207d3e08a594f7a326195f6c755c7b56a.json",
+      "source_sha256": "f6a8925f312ee8320bf6f8e2be72406207d3e08a594f7a326195f6c755c7b56a"
+    }
+  ],
+  "code_sha": "75efc038d8478862de32f663dc5e2e5646cff8e8",
+  "config_hash": "6d267edbcde56081012bc7b93d46f2c7f345aceb0e3bc769095ba53ef00b5be7",
+  "coverage": [
+    {
+      "actual_settlement_fill": "NOT_PROVEN",
+      "available_at": "2024-03-19T05:05:04.006000Z",
+      "eligibility": "NOT_INFERRED_FROM_ANNOUNCEMENT",
+      "facts": {
+        "entry_cutoff_at": "2024-03-26T08:30:00.000000Z",
+        "scheduled_settlement_at": "2024-03-26T09:00:00.000000Z",
+        "symbol": "BLUEBIRDUSDT"
+      },
+      "full_contract_rules": "MISSING",
+      "full_security_record": "MISSING",
+      "history_coverage_end": null,
+      "history_coverage_start": null,
+      "kind": "DELISTING",
+      "published_at": "2024-03-19T05:05:02.006000Z",
+      "quality": "PRELIMINARY",
+      "revision_id": "378049a572e463adf9ab836296c27ce2c96420ee178424ab138a0a38e2c60683",
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=673183dd8eea4e3cba1596dcec7565d1",
+      "source_sha256": "ae8c5ec1cb0363f411540e48efc94e81f26018027bd23011fb35e51a2c5de91a",
+      "symbol": "BLUEBIRDUSDT"
+    },
+    {
+      "actual_settlement_fill": "NOT_PROVEN",
+      "available_at": "2024-03-19T05:05:04.006000Z",
+      "eligibility": "NOT_INFERRED_FROM_ANNOUNCEMENT",
+      "facts": {
+        "entry_cutoff_at": "2024-03-26T08:30:00.000000Z",
+        "scheduled_settlement_at": "2024-03-26T09:00:00.000000Z",
+        "symbol": "FOOTBALLUSDT"
+      },
+      "full_contract_rules": "MISSING",
+      "full_security_record": "MISSING",
+      "history_coverage_end": null,
+      "history_coverage_start": null,
+      "kind": "DELISTING",
+      "published_at": "2024-03-19T05:05:02.006000Z",
+      "quality": "PRELIMINARY",
+      "revision_id": "378049a572e463adf9ab836296c27ce2c96420ee178424ab138a0a38e2c60683",
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=673183dd8eea4e3cba1596dcec7565d1",
+      "source_sha256": "ae8c5ec1cb0363f411540e48efc94e81f26018027bd23011fb35e51a2c5de91a",
+      "symbol": "FOOTBALLUSDT"
+    },
+    {
+      "actual_settlement_fill": "NOT_PROVEN",
+      "available_at": "2024-11-29T04:00:03.809000Z",
+      "eligibility": "NOT_INFERRED_FROM_ANNOUNCEMENT",
+      "facts": {
+        "entry_cutoff_at": "2024-12-09T08:30:00.000000Z",
+        "scheduled_settlement_at": "2024-12-09T09:00:00.000000Z",
+        "symbol": "LOOMUSDT"
+      },
+      "full_contract_rules": "MISSING",
+      "full_security_record": "MISSING",
+      "history_coverage_end": null,
+      "history_coverage_start": null,
+      "kind": "DELISTING",
+      "published_at": "2024-11-29T04:00:01.809000Z",
+      "quality": "PRELIMINARY",
+      "revision_id": "18da60c9a6cabd1b8fb5c4d6b191d1af8d544ed2625998bfa57c8bcee6a8467d",
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=cfe97d52a8c840d3ba631835b637e9e7",
+      "source_sha256": "7e85266c30cbec4174ee7a18a48d946ee2125964c95d6dd880c5197f9a224e53",
+      "symbol": "LOOMUSDT"
+    },
+    {
+      "actual_settlement_fill": "NOT_PROVEN",
+      "available_at": "2024-11-29T04:00:03.809000Z",
+      "eligibility": "NOT_INFERRED_FROM_ANNOUNCEMENT",
+      "facts": {
+        "entry_cutoff_at": "2024-12-09T08:30:00.000000Z",
+        "scheduled_settlement_at": "2024-12-09T09:00:00.000000Z",
+        "symbol": "ORBSUSDT"
+      },
+      "full_contract_rules": "MISSING",
+      "full_security_record": "MISSING",
+      "history_coverage_end": null,
+      "history_coverage_start": null,
+      "kind": "DELISTING",
+      "published_at": "2024-11-29T04:00:01.809000Z",
+      "quality": "PRELIMINARY",
+      "revision_id": "18da60c9a6cabd1b8fb5c4d6b191d1af8d544ed2625998bfa57c8bcee6a8467d",
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=cfe97d52a8c840d3ba631835b637e9e7",
+      "source_sha256": "7e85266c30cbec4174ee7a18a48d946ee2125964c95d6dd880c5197f9a224e53",
+      "symbol": "ORBSUSDT"
+    },
+    {
+      "actual_settlement_fill": "NOT_PROVEN",
+      "available_at": "2024-11-29T04:00:03.809000Z",
+      "eligibility": "NOT_INFERRED_FROM_ANNOUNCEMENT",
+      "facts": {
+        "entry_cutoff_at": "2024-12-09T08:30:00.000000Z",
+        "scheduled_settlement_at": "2024-12-09T09:00:00.000000Z",
+        "symbol": "XEMUSDT"
+      },
+      "full_contract_rules": "MISSING",
+      "full_security_record": "MISSING",
+      "history_coverage_end": null,
+      "history_coverage_start": null,
+      "kind": "DELISTING",
+      "published_at": "2024-11-29T04:00:01.809000Z",
+      "quality": "PRELIMINARY",
+      "revision_id": "18da60c9a6cabd1b8fb5c4d6b191d1af8d544ed2625998bfa57c8bcee6a8467d",
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=cfe97d52a8c840d3ba631835b637e9e7",
+      "source_sha256": "7e85266c30cbec4174ee7a18a48d946ee2125964c95d6dd880c5197f9a224e53",
+      "symbol": "XEMUSDT"
+    },
+    {
+      "actual_settlement_fill": "NOT_PROVEN",
+      "available_at": "2024-03-18T09:55:17.279000Z",
+      "eligibility": "NOT_INFERRED_FROM_ANNOUNCEMENT",
+      "facts": {
+        "effective_at": "2024-03-19T06:30:00.000000Z",
+        "symbol": "AEVOUSDT",
+        "tick_after": "0.001",
+        "tick_before": "0.01"
+      },
+      "full_contract_rules": "MISSING",
+      "full_security_record": "MISSING",
+      "history_coverage_end": null,
+      "history_coverage_start": null,
+      "kind": "TICK_CHANGE",
+      "published_at": "2024-03-18T09:55:15.279000Z",
+      "quality": "PRELIMINARY",
+      "revision_id": "c71361898d702faf3b7aff9c50f1012544cec847d68903e6fa4750521baf8e9e",
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=98e6086608424b21a5a385f30ffebd15",
+      "source_sha256": "f6a8925f312ee8320bf6f8e2be72406207d3e08a594f7a326195f6c755c7b56a",
+      "symbol": "AEVOUSDT"
+    },
+    {
+      "actual_settlement_fill": "NOT_PROVEN",
+      "available_at": "2024-03-18T09:55:17.279000Z",
+      "eligibility": "NOT_INFERRED_FROM_ANNOUNCEMENT",
+      "facts": {
+        "effective_at": "2024-03-19T06:30:00.000000Z",
+        "symbol": "AUCTIONUSDT",
+        "tick_after": "0.001",
+        "tick_before": "0.01"
+      },
+      "full_contract_rules": "MISSING",
+      "full_security_record": "MISSING",
+      "history_coverage_end": null,
+      "history_coverage_start": null,
+      "kind": "TICK_CHANGE",
+      "published_at": "2024-03-18T09:55:15.279000Z",
+      "quality": "PRELIMINARY",
+      "revision_id": "c71361898d702faf3b7aff9c50f1012544cec847d68903e6fa4750521baf8e9e",
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=98e6086608424b21a5a385f30ffebd15",
+      "source_sha256": "f6a8925f312ee8320bf6f8e2be72406207d3e08a594f7a326195f6c755c7b56a",
+      "symbol": "AUCTIONUSDT"
+    },
+    {
+      "actual_settlement_fill": "NOT_PROVEN",
+      "available_at": "2024-03-18T09:55:17.279000Z",
+      "eligibility": "NOT_INFERRED_FROM_ANNOUNCEMENT",
+      "facts": {
+        "effective_at": "2024-03-19T06:30:00.000000Z",
+        "symbol": "CFXUSDT",
+        "tick_after": "0.00001",
+        "tick_before": "0.0001"
+      },
+      "full_contract_rules": "MISSING",
+      "full_security_record": "MISSING",
+      "history_coverage_end": null,
+      "history_coverage_start": null,
+      "kind": "TICK_CHANGE",
+      "published_at": "2024-03-18T09:55:15.279000Z",
+      "quality": "PRELIMINARY",
+      "revision_id": "c71361898d702faf3b7aff9c50f1012544cec847d68903e6fa4750521baf8e9e",
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=98e6086608424b21a5a385f30ffebd15",
+      "source_sha256": "f6a8925f312ee8320bf6f8e2be72406207d3e08a594f7a326195f6c755c7b56a",
+      "symbol": "CFXUSDT"
+    },
+    {
+      "actual_settlement_fill": "NOT_PROVEN",
+      "available_at": "2024-03-18T09:55:17.279000Z",
+      "eligibility": "NOT_INFERRED_FROM_ANNOUNCEMENT",
+      "facts": {
+        "effective_at": "2024-03-19T06:30:00.000000Z",
+        "symbol": "ONGUSDT",
+        "tick_after": "0.00001",
+        "tick_before": "0.0001"
+      },
+      "full_contract_rules": "MISSING",
+      "full_security_record": "MISSING",
+      "history_coverage_end": null,
+      "history_coverage_start": null,
+      "kind": "TICK_CHANGE",
+      "published_at": "2024-03-18T09:55:15.279000Z",
+      "quality": "PRELIMINARY",
+      "revision_id": "c71361898d702faf3b7aff9c50f1012544cec847d68903e6fa4750521baf8e9e",
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=98e6086608424b21a5a385f30ffebd15",
+      "source_sha256": "f6a8925f312ee8320bf6f8e2be72406207d3e08a594f7a326195f6c755c7b56a",
+      "symbol": "ONGUSDT"
+    },
+    {
+      "actual_settlement_fill": "NOT_PROVEN",
+      "available_at": "2024-03-18T09:55:17.279000Z",
+      "eligibility": "NOT_INFERRED_FROM_ANNOUNCEMENT",
+      "facts": {
+        "effective_at": "2024-03-19T06:30:00.000000Z",
+        "symbol": "RADUSDT",
+        "tick_after": "0.0001",
+        "tick_before": "0.001"
+      },
+      "full_contract_rules": "MISSING",
+      "full_security_record": "MISSING",
+      "history_coverage_end": null,
+      "history_coverage_start": null,
+      "kind": "TICK_CHANGE",
+      "published_at": "2024-03-18T09:55:15.279000Z",
+      "quality": "PRELIMINARY",
+      "revision_id": "c71361898d702faf3b7aff9c50f1012544cec847d68903e6fa4750521baf8e9e",
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=98e6086608424b21a5a385f30ffebd15",
+      "source_sha256": "f6a8925f312ee8320bf6f8e2be72406207d3e08a594f7a326195f6c755c7b56a",
+      "symbol": "RADUSDT"
+    },
+    {
+      "actual_settlement_fill": "NOT_PROVEN",
+      "available_at": "2024-03-18T09:55:17.279000Z",
+      "eligibility": "NOT_INFERRED_FROM_ANNOUNCEMENT",
+      "facts": {
+        "effective_at": "2024-03-19T06:30:00.000000Z",
+        "symbol": "RDNTUSDT",
+        "tick_after": "0.00001",
+        "tick_before": "0.0001"
+      },
+      "full_contract_rules": "MISSING",
+      "full_security_record": "MISSING",
+      "history_coverage_end": null,
+      "history_coverage_start": null,
+      "kind": "TICK_CHANGE",
+      "published_at": "2024-03-18T09:55:15.279000Z",
+      "quality": "PRELIMINARY",
+      "revision_id": "c71361898d702faf3b7aff9c50f1012544cec847d68903e6fa4750521baf8e9e",
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=98e6086608424b21a5a385f30ffebd15",
+      "source_sha256": "f6a8925f312ee8320bf6f8e2be72406207d3e08a594f7a326195f6c755c7b56a",
+      "symbol": "RDNTUSDT"
+    },
+    {
+      "actual_settlement_fill": "NOT_PROVEN",
+      "available_at": "2024-03-18T09:55:17.279000Z",
+      "eligibility": "NOT_INFERRED_FROM_ANNOUNCEMENT",
+      "facts": {
+        "effective_at": "2024-03-19T06:30:00.000000Z",
+        "symbol": "RONINUSDT",
+        "tick_after": "0.0001",
+        "tick_before": "0.001"
+      },
+      "full_contract_rules": "MISSING",
+      "full_security_record": "MISSING",
+      "history_coverage_end": null,
+      "history_coverage_start": null,
+      "kind": "TICK_CHANGE",
+      "published_at": "2024-03-18T09:55:15.279000Z",
+      "quality": "PRELIMINARY",
+      "revision_id": "c71361898d702faf3b7aff9c50f1012544cec847d68903e6fa4750521baf8e9e",
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=98e6086608424b21a5a385f30ffebd15",
+      "source_sha256": "f6a8925f312ee8320bf6f8e2be72406207d3e08a594f7a326195f6c755c7b56a",
+      "symbol": "RONINUSDT"
+    },
+    {
+      "actual_settlement_fill": "NOT_PROVEN",
+      "available_at": "2024-03-18T09:55:17.279000Z",
+      "eligibility": "NOT_INFERRED_FROM_ANNOUNCEMENT",
+      "facts": {
+        "effective_at": "2024-03-19T06:30:00.000000Z",
+        "symbol": "STEEMUSDT",
+        "tick_after": "0.00001",
+        "tick_before": "0.0001"
+      },
+      "full_contract_rules": "MISSING",
+      "full_security_record": "MISSING",
+      "history_coverage_end": null,
+      "history_coverage_start": null,
+      "kind": "TICK_CHANGE",
+      "published_at": "2024-03-18T09:55:15.279000Z",
+      "quality": "PRELIMINARY",
+      "revision_id": "c71361898d702faf3b7aff9c50f1012544cec847d68903e6fa4750521baf8e9e",
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=98e6086608424b21a5a385f30ffebd15",
+      "source_sha256": "f6a8925f312ee8320bf6f8e2be72406207d3e08a594f7a326195f6c755c7b56a",
+      "symbol": "STEEMUSDT"
+    },
+    {
+      "actual_settlement_fill": "NOT_PROVEN",
+      "available_at": "2024-03-18T09:55:17.279000Z",
+      "eligibility": "NOT_INFERRED_FROM_ANNOUNCEMENT",
+      "facts": {
+        "effective_at": "2024-03-19T06:30:00.000000Z",
+        "symbol": "SUIUSDC",
+        "tick_after": "0.00001",
+        "tick_before": "0.0001"
+      },
+      "full_contract_rules": "MISSING",
+      "full_security_record": "MISSING",
+      "history_coverage_end": null,
+      "history_coverage_start": null,
+      "kind": "TICK_CHANGE",
+      "published_at": "2024-03-18T09:55:15.279000Z",
+      "quality": "PRELIMINARY",
+      "revision_id": "c71361898d702faf3b7aff9c50f1012544cec847d68903e6fa4750521baf8e9e",
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=98e6086608424b21a5a385f30ffebd15",
+      "source_sha256": "f6a8925f312ee8320bf6f8e2be72406207d3e08a594f7a326195f6c755c7b56a",
+      "symbol": "SUIUSDC"
+    },
+    {
+      "actual_settlement_fill": "NOT_PROVEN",
+      "available_at": "2024-03-18T09:55:17.279000Z",
+      "eligibility": "NOT_INFERRED_FROM_ANNOUNCEMENT",
+      "facts": {
+        "effective_at": "2024-03-19T06:30:00.000000Z",
+        "symbol": "USDCUSDT",
+        "tick_after": "0.000001",
+        "tick_before": "0.00001"
+      },
+      "full_contract_rules": "MISSING",
+      "full_security_record": "MISSING",
+      "history_coverage_end": null,
+      "history_coverage_start": null,
+      "kind": "TICK_CHANGE",
+      "published_at": "2024-03-18T09:55:15.279000Z",
+      "quality": "PRELIMINARY",
+      "revision_id": "c71361898d702faf3b7aff9c50f1012544cec847d68903e6fa4750521baf8e9e",
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=98e6086608424b21a5a385f30ffebd15",
+      "source_sha256": "f6a8925f312ee8320bf6f8e2be72406207d3e08a594f7a326195f6c755c7b56a",
+      "symbol": "USDCUSDT"
+    },
+    {
+      "actual_settlement_fill": "NOT_PROVEN",
+      "available_at": "2024-03-18T09:55:17.279000Z",
+      "eligibility": "NOT_INFERRED_FROM_ANNOUNCEMENT",
+      "facts": {
+        "effective_at": "2024-03-19T06:30:00.000000Z",
+        "symbol": "VETUSDT",
+        "tick_after": "0.000001",
+        "tick_before": "0.00001"
+      },
+      "full_contract_rules": "MISSING",
+      "full_security_record": "MISSING",
+      "history_coverage_end": null,
+      "history_coverage_start": null,
+      "kind": "TICK_CHANGE",
+      "published_at": "2024-03-18T09:55:15.279000Z",
+      "quality": "PRELIMINARY",
+      "revision_id": "c71361898d702faf3b7aff9c50f1012544cec847d68903e6fa4750521baf8e9e",
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=98e6086608424b21a5a385f30ffebd15",
+      "source_sha256": "f6a8925f312ee8320bf6f8e2be72406207d3e08a594f7a326195f6c755c7b56a",
+      "symbol": "VETUSDT"
+    },
+    {
+      "actual_settlement_fill": "NOT_PROVEN",
+      "available_at": "2024-03-18T09:55:17.279000Z",
+      "eligibility": "NOT_INFERRED_FROM_ANNOUNCEMENT",
+      "facts": {
+        "effective_at": "2024-03-19T06:30:00.000000Z",
+        "symbol": "WLDUSDC",
+        "tick_after": "0.00001",
+        "tick_before": "0.0001"
+      },
+      "full_contract_rules": "MISSING",
+      "full_security_record": "MISSING",
+      "history_coverage_end": null,
+      "history_coverage_start": null,
+      "kind": "TICK_CHANGE",
+      "published_at": "2024-03-18T09:55:15.279000Z",
+      "quality": "PRELIMINARY",
+      "revision_id": "c71361898d702faf3b7aff9c50f1012544cec847d68903e6fa4750521baf8e9e",
+      "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=98e6086608424b21a5a385f30ffebd15",
+      "source_sha256": "f6a8925f312ee8320bf6f8e2be72406207d3e08a594f7a326195f6c755c7b56a",
+      "symbol": "WLDUSDC"
+    }
+  ],
+  "coverage_scope": "REVIEWED_ARTICLES_ONLY_NOT_MARKET_COMPLETE",
+  "data_hash": "a65da1c1b329ed60c8dfc1ef726299874859ee2403cbeb4998c733a8a9be6195",
+  "failures": [],
+  "final_test_access": "LOCKED",
+  "historical_contract_rules_complete": false,
+  "historical_universe_complete": false,
+  "implementation_hashes": {
+    "scripts/acquire_announcements.py": "5ebef0acb5c88e35d43e8dc1bc7da521bf98822f5ba91a70684f2cb34e263d24",
+    "src/pvb24/data/announcements.py": "290d966b8eb92f749e63b78f2ae63813b50b8e09643c1c8fcb02625fbcc87a75"
+  },
+  "live_enabled": false,
+  "operational_ready": false,
+  "performance_run": false,
+  "report_hash": "5430199b5e2930bba17b75d9d6385b4f496e95af0dbe7867a37b3201c2de47a2",
+  "requested_articles": 3,
+  "review_hash": "b26195c289208da47aacf9b6aa18f18be55090e2ac696df6c3d5ba6db78e99ec",
+  "schema": "PVB24_ANNOUNCEMENT_SOURCE_COVERAGE_V1",
+  "source_sha256": "098a3ca390bce81d506bdec011fc3a936ecbb793f46c2f117f337998bfc1c5d8",
+  "worktree_dirty": true
+}

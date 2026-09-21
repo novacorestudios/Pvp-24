@@ -289,3 +289,10 @@ SignalService supplies the latch as an eligibility rejection; EntryPlanner reche
 ## Funding-history evidence (Milestone 11E)
 
 The funding-history adapter permits only explicit pre-Final monthly requests to the official public fundingRate endpoint. It retains immutable raw pages and provenance, decodes exact Decimal economics and distinguishes missing settlement Mark/unknown rate types. Pagination starts the next page inclusively at the last returned timestamp, deduplicates identical records and rejects revised boundary rows or non-progress. Exhausting the page budget leaves the report INCOMPLETE. Exact archive comparison reports missing/time-shifted/rate-mismatched records without rounding or interpolation. Neither response completion nor cross-source agreement creates FundingCoverage or proves position eligibility.
+
+
+## Historical announcement adapter (Milestone 11F)
+
+AnnouncementRequest pins the reviewed code/date/kind and independent body/fact hashes. Acquisition uses only the official read-only CMS endpoint with bounded responses and no redirects. The whole CLI selection is validated before I/O. Integer publication/update clocks and strict rich-text parsing produce partial factual records. Raw source and canonical acquisition reports are content-addressed; replay rechecks report pin, decoder, raw bytes and derived facts. Unrelated current recommendation fields do not affect semantic revision.
+
+Delisting events retain original source publication time and modeled availability after a known update or publication plus two seconds. Retrospective revisions are always PRELIMINARY; missing update metadata remains unknown. The existing lifecycle core receives these observations, while tick deltas remain non-executable partial metadata. No historical security/rule completion, classification, settlement fill or unlimited validity interval is inferred.
