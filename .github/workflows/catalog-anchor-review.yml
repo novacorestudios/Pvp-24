@@ -130,3 +130,42 @@ jobs:
           path: artifacts/announcement-body-qualification
           if-no-files-found: warn
           retention-days: 14
+
+  lifecycle-archive-reconciliation:
+    needs: body-qualification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e '.[dev]'
+      - run: python scripts/verify_provenance.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: announcement-inventory-evidence
+          path: artifacts/announcement-inventory
+      - uses: actions/download-artifact@v4
+        with:
+          name: announcement-body-qualification-evidence
+          path: artifacts/announcement-body-qualification
+      - name: Reconcile lifecycle pins with official daily LAST activity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t REPORTS < <(find artifacts/announcement-body-qualification/reports -maxdepth 1 -type f -name '*.json' | sort)
+          test "${#REPORTS[@]}" -eq 1
+          HQ="$(basename "${REPORTS[0]}" .json)"
+          python scripts/reconcile_lifecycle_activity.py \
+            --inventory-root artifacts/announcement-inventory \
+            --qualification-root artifacts/announcement-body-qualification \
+            --qualification-report "reports/$HQ.json" \
+            --qualification-sha256 "$HQ" \
+            --output artifacts/lifecycle-archive-reconciliation
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lifecycle-archive-reconciliation-evidence
+          path: artifacts/lifecycle-archive-reconciliation
+          if-no-files-found: warn
+          retention-days: 14
