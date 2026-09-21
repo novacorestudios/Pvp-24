@@ -1,5 +1,4 @@
 import hashlib
-import json
 from datetime import UTC, datetime
 from pathlib import Path
 

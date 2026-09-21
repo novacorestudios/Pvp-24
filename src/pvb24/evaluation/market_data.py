@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from pvb24.data.acquisition import load_acquired
-from pvb24.data.archive import FINAL_START, ArchiveRequest
+from pvb24.data.archive import ArchiveRequest
 from pvb24.data.dataset import dataset_hash
 from pvb24.evaluation.readiness import ATTESTATION_SCHEMA, WINDOW_END, WINDOW_START
 from pvb24.ids import canonical, digest
