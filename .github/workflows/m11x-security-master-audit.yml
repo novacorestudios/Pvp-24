@@ -25,6 +25,9 @@ jobs:
       CONFLICT_RUN_ID: "35665991519"
       CONFLICT_RESOLUTION_SHA256: "981f173085c0099e2f085a8e3e74255228361eafdf6f2804e78b58dd136951dc"
       CONFLICT_ACTIVITY_SHA256: "381927b6a9b90b15ba7f80482288e7f8527d50bc24e08cbc9f0a885b228f9f1d"
+      REVIEWED_RUN_ID: "35667218255"
+      REVIEWED_FACTS_SHA256: "0cd6f41b7ec45838a12dc443f570aeafef4fbbd5c815206fc8dd6f44b873947e"
+      REVIEWED_ACTIVITY_SHA256: "0fbee461092fbce785b5358d217de0a64e778fe427dc446866a99630de326bc2"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -33,7 +36,7 @@ jobs:
       - run: python -m pip install -e '.[dev]'
       - name: Restore pinned M11X lifecycle recovery
         run: |
-          mkdir -p artifacts/m11x/recovery artifacts/m11x/conflict
+          mkdir -p artifacts/m11x/recovery artifacts/m11x/conflict artifacts/m11x/reviewed
           gh run download "$RECOVERY_RUN_ID" \
             --repo "${{ github.repository }}" \
             --name m11x-retained-listing-recovery \
@@ -45,6 +48,12 @@ jobs:
             --dir artifacts/m11x/conflict
           test "$(sha256sum artifacts/m11x/conflict/11x-listing-conflict-resolution.json | cut -d' ' -f1)" = "$CONFLICT_RESOLUTION_SHA256"
           test "$(sha256sum artifacts/m11x/conflict/11x-listing-conflict-activity.json | cut -d' ' -f1)" = "$CONFLICT_ACTIVITY_SHA256"
+          gh run download "$REVIEWED_RUN_ID" \
+            --repo "${{ github.repository }}" \
+            --name m11x-reviewed-listing-facts \
+            --dir artifacts/m11x/reviewed
+          test "$(sha256sum artifacts/m11x/reviewed/11x-reviewed-listing-facts.json | cut -d' ' -f1)" = "$REVIEWED_FACTS_SHA256"
+          test "$(sha256sum artifacts/m11x/reviewed/11x-reviewed-listing-activity.json | cut -d' ' -f1)" = "$REVIEWED_ACTIVITY_SHA256"
       - name: Verify repository provenance
         run: python scripts/verify_provenance.py
       - name: Compile integrated Security Master obligations
@@ -59,6 +68,10 @@ jobs:
             --conflict-resolution-sha256 "$CONFLICT_RESOLUTION_SHA256" \
             --conflict-activity artifacts/m11x/conflict/11x-listing-conflict-activity.json \
             --conflict-activity-sha256 "$CONFLICT_ACTIVITY_SHA256" \
+            --reviewed-facts artifacts/m11x/reviewed/11x-reviewed-listing-facts.json \
+            --reviewed-facts-sha256 "$REVIEWED_FACTS_SHA256" \
+            --reviewed-activity artifacts/m11x/reviewed/11x-reviewed-listing-activity.json \
+            --reviewed-activity-sha256 "$REVIEWED_ACTIVITY_SHA256" \
             --output artifacts/m11x/security-master/11x-security-master-obligations.json
           sha256sum artifacts/m11x/security-master/11x-security-master-obligations.json
       - uses: actions/upload-artifact@v4

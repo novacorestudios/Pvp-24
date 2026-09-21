@@ -20,7 +20,8 @@ INPUT_SCHEMA = "PVB24_PARTIAL_HISTORICAL_METADATA_EVIDENCE_V1"
 RECOVERY_SCHEMA = "PVB24_RETAINED_ANNOUNCEMENT_RECOVERY_V2"
 CONFLICT_RESOLUTION_SCHEMA = "PVB24_LISTING_CONFLICT_RESOLUTION_V1"
 CONFLICT_ACTIVITY_SCHEMA = "PVB24_LISTING_CONFLICT_ACTIVITY_V1"
-OUTPUT_SCHEMA = "PVB24_SECURITY_MASTER_OBLIGATION_AUDIT_V3"
+REVIEWED_FACTS_SCHEMA = "PVB24_REVIEWED_LISTING_FACTS_V1"
+OUTPUT_SCHEMA = "PVB24_SECURITY_MASTER_OBLIGATION_AUDIT_V4"
 CONSISTENT = "CONSISTENT_EVENT_BOUNDARY_ONLY"
 UNKNOWN = "UNKNOWN"
 
@@ -140,6 +141,36 @@ def _load_conflict_activity(path, expected_sha256):
     return report
 
 
+def _load_reviewed_facts(path, expected_sha256):
+    raw = Path(path).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != expected_sha256:
+        raise ValueError("Pinned reviewed listing facts hash changed")
+    report = json.loads(raw)
+    if (
+        report.get("schema") != REVIEWED_FACTS_SCHEMA
+        or report.get("final_test_access") != "LOCKED"
+        or report.get("quality") != "PRELIMINARY"
+        or report.get("security_rows_emitted") != 0
+        or report.get("security_history_complete") is not False
+        or report.get("historical_universe_complete") is not False
+    ):
+        raise ValueError("Locked PRELIMINARY reviewed listing facts required")
+    rows = report.get("results")
+    if (
+        not isinstance(rows, list)
+        or len(rows) != report.get("fact_count")
+        or len(rows) != report.get("source_count")
+        or sorted(row.get("target") for row in rows) != report.get("target_symbols")
+    ):
+        raise ValueError("Reviewed listing fact inventory changed")
+    recorded = report.get("facts_hash")
+    unhashed = dict(report)
+    unhashed.pop("facts_hash", None)
+    if recorded != digest(unhashed):
+        raise ValueError("Reviewed listing facts content hash changed")
+    return report
+
+
 def _revision(code, source_sha256, fact):
     return digest(["M11X_RETAINED_LIFECYCLE_RECOVERY_V2", code, source_sha256, fact])
 
@@ -214,6 +245,10 @@ def compile_security_master_obligations(
     conflict_resolution_sha256=None,
     conflict_activity_path=None,
     conflict_activity_sha256=None,
+    reviewed_facts_path=None,
+    reviewed_facts_sha256=None,
+    reviewed_activity_path=None,
+    reviewed_activity_sha256=None,
 ):
     """Compile only source-backed partial transitions and explicit completion obligations."""
     source = _load_m11v(path, expected_sha256)
@@ -249,6 +284,29 @@ def compile_security_master_obligations(
             raise ValueError("Conflict resolution/recovery SHA-256 pins disagree")
         if resolution["inputs"].get("recovery_hash") != recovery["recovery_hash"]:
             raise ValueError("Conflict resolution/recovery content identities disagree")
+
+    reviewed_args = (
+        reviewed_facts_path,
+        reviewed_facts_sha256,
+        reviewed_activity_path,
+        reviewed_activity_sha256,
+    )
+    if any(value is not None for value in reviewed_args) and not all(
+        value is not None for value in reviewed_args
+    ):
+        raise ValueError(
+            "Reviewed listing facts/activity paths and SHA-256 pins must be supplied together"
+        )
+    reviewed_facts = (
+        _load_reviewed_facts(reviewed_facts_path, reviewed_facts_sha256)
+        if reviewed_facts_path is not None
+        else None
+    )
+    reviewed_activity = (
+        _load_conflict_activity(reviewed_activity_path, reviewed_activity_sha256)
+        if reviewed_activity_path is not None
+        else None
+    )
 
     listings = source.get("listing_candidates")
     unresolved = source.get("unresolved_listings")
@@ -482,6 +540,80 @@ def compile_security_master_obligations(
                     )
             listing_evidence[symbol] = retained
 
+    reviewed_exact = []
+    reviewed_unknown = []
+    reviewed_contradicted = []
+    reviewed_prior_epoch_symbols = set()
+    reviewed_classification_hints = {}
+    if reviewed_facts is not None:
+        activity_by_identity = {}
+        for item in reviewed_activity["candidates"]:
+            key = (
+                item.get("symbol"),
+                _time(item.get("effective_from")),
+                item.get("revision_id"),
+            )
+            if key in activity_by_identity:
+                raise ValueError("Duplicate reviewed listing activity identity")
+            activity_by_identity[key] = item
+
+        for item in reviewed_facts["results"]:
+            fact = item.get("fact")
+            if (
+                not isinstance(fact, dict)
+                or fact.get("symbol") != item.get("target")
+                or fact.get("contract_type") != "PERPETUAL"
+                or fact.get("quote_asset") != "USDT"
+                or item.get("historical_verified") is not False
+                or item.get("universe_eligible") is not False
+            ):
+                raise ValueError("Reviewed listing fact flags changed")
+            symbol = fact["symbol"]
+            effective = _time(fact["launch_at"])
+            key = (symbol, effective, item.get("revision_id"))
+            activity_item = activity_by_identity.pop(key, None)
+            if activity_item is None:
+                raise ValueError("Reviewed listing fact lacks exact activity candidate")
+            status = activity_item.get("archive_boundary_status")
+            if status == CONSISTENT:
+                reconciled = True
+                reviewed_exact.append({"symbol": symbol, "effective_from": effective})
+            elif status == UNKNOWN:
+                reconciled = False
+                reviewed_unknown.append({"symbol": symbol, "effective_from": effective})
+            elif status == "CONTRADICTED_BY_ARCHIVE_ACTIVITY":
+                reviewed_contradicted.append(
+                    {
+                        "symbol": symbol,
+                        "effective_from": effective,
+                        "blocking_obligation": "REJECT_CONTRADICTED_LISTING_START",
+                    }
+                )
+                continue
+            else:
+                raise ValueError("Unsupported reviewed listing activity state")
+
+            _append_listing(
+                listing_evidence,
+                symbol=symbol,
+                effective=fact["launch_at"],
+                available=item["available_at"],
+                source=item["source"],
+                revision=item["revision_id"],
+                reconciled=reconciled,
+            )
+            if fact.get("prior_epoch_disclosed") is True:
+                reviewed_prior_epoch_symbols.add(symbol)
+            hint = fact.get("classification_hint")
+            if hint is not None:
+                prior_hint = reviewed_classification_hints.get(symbol)
+                if prior_hint is not None and prior_hint != hint:
+                    raise ValueError("Conflicting reviewed classification hints")
+                reviewed_classification_hints[symbol] = hint
+
+        if activity_by_identity:
+            raise ValueError("Reviewed listing activity contains unmatched candidates")
+
     listing_evidence = {symbol: _dedupe(rows) for symbol, rows in listing_evidence.items()}
     delisting_evidence = {symbol: _dedupe(rows) for symbol, rows in delisting_evidence.items()}
 
@@ -530,6 +662,8 @@ def compile_security_master_obligations(
                 "available_at": min(row["available_at"] for row in selected),
                 "trading_start": effective,
                 "classification": "UNKNOWN",
+                "classification_evidence_hint": reviewed_classification_hints.get(symbol),
+                "prior_epoch_disclosed": symbol in reviewed_prior_epoch_symbols,
                 "evidence_count": len(selected),
                 "boundary_reconciled": any(row["boundary_reconciled"] for row in selected),
                 "sources": [
@@ -605,6 +739,10 @@ def compile_security_master_obligations(
             obligations.append("RESOLVE_LISTING_BOUNDARY")
         if symbol in conflict_symbols:
             obligations.append("RESOLVE_RELISTING_OR_DUPLICATE_START_SEMANTICS")
+        if symbol in reviewed_prior_epoch_symbols:
+            obligations.append("RESOLVE_PRIOR_SECURITY_EPOCH")
+        if symbol in reviewed_classification_hints:
+            obligations.append("QUALIFY_REVIEWED_CLASSIFICATION_HINT")
         if symbol in delisting_evidence and symbol not in delisted_symbols:
             obligations.append("PAIR_DELISTING_WITH_UNAMBIGUOUS_TRADING_START")
         by_symbol.append(
@@ -636,7 +774,35 @@ def compile_security_master_obligations(
             ),
             "conflict_activity_sha256": conflict_activity_sha256,
             "conflict_activity_hash": activity["activity_hash"] if activity is not None else None,
+            "reviewed_facts_sha256": reviewed_facts_sha256,
+            "reviewed_facts_hash": (
+                reviewed_facts["facts_hash"] if reviewed_facts is not None else None
+            ),
+            "reviewed_activity_sha256": reviewed_activity_sha256,
+            "reviewed_activity_hash": (
+                reviewed_activity["activity_hash"] if reviewed_activity is not None else None
+            ),
         },
+        "reviewed_listing_fact_count": (
+            reviewed_facts["fact_count"] if reviewed_facts is not None else 0
+        ),
+        "reviewed_exact_boundary_count": len(reviewed_exact),
+        "reviewed_exact_boundaries": sorted(
+            reviewed_exact, key=lambda row: (row["symbol"], row["effective_from"])
+        ),
+        "reviewed_unknown_boundary_count": len(reviewed_unknown),
+        "reviewed_unknown_boundaries": sorted(
+            reviewed_unknown, key=lambda row: (row["symbol"], row["effective_from"])
+        ),
+        "reviewed_contradicted_boundary_count": len(reviewed_contradicted),
+        "reviewed_contradicted_boundaries": sorted(
+            reviewed_contradicted, key=lambda row: (row["symbol"], row["effective_from"])
+        ),
+        "reviewed_prior_epoch_symbols": sorted(reviewed_prior_epoch_symbols),
+        "reviewed_classification_hints": [
+            {"symbol": symbol, "hint": hint}
+            for symbol, hint in sorted(reviewed_classification_hints.items())
+        ],
         "applied_cancellation_count": len(applied_cancellations),
         "applied_cancellations": sorted(
             applied_cancellations, key=lambda row: (row["symbol"], row["effective_from"])
