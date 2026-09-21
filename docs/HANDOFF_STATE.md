@@ -1,4 +1,4 @@
-# Handoff — Milestone 11I (fail-closed historical metadata snapshot qualification)
+# Handoff — Milestone 11J (legacy Binance listing evidence path)
 
 - Repository: novacorestudios/Pvp-24; branch build/pvb24-v1.
 - Exact current HEAD: read the Git branch ref; main remains initialization only.
@@ -6,7 +6,7 @@
 - Milestone 0 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35422954155 — SUCCESS.
 - Public-disclosure authorization: user explicitly approved publishing these files and will change visibility later. Do not request this approval again.
 - Milestone 1: official Freqtrade 2026.8 / 9f10e357a93c1dcf10c2a2b367659214d89c073e installed; repeat locked install and offline dry-run config smoke passed.
-- Local tests/CI: 492 passed; Ruff lint/format passed. Milestone 11I CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35593905942 — SUCCESS.
+- Local tests/CI: 499 passed; Ruff lint/format passed. Milestone 11J CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35595263337 — SUCCESS.
 - Milestone 1 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423197873 — SUCCESS.
 - Milestone 2 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423500106 — SUCCESS.
 - Milestone 3 final CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423929247 — SUCCESS.
@@ -53,7 +53,8 @@
 - Milestone 11G: 24b27298a2efd467e12fa4d1c6a5c8b763280da9; CI 35585717177 — SUCCESS.
 - Milestone 11H: a4ced999e35b5deeaea69050f177f9216ab8a662; CI 35587289088 — SUCCESS.
 - Milestone 11I final: a5e7cdaa838846a2ba9099924ea5a2340ea26d5f; CI 35593905942 — SUCCESS.
-- Next: qualify actual historical contract/security source captures using the new pinned offline path, or retain explicit gaps when no qualified evidence exists; then continue funding schedule/position-eligibility qualification and historical-evaluation readiness. Do not treat current exchangeInfo as historical proof, do not repeat the 67-month funding audit, and do not use OHLC as settlement evidence. Full historical rules/security coverage, funding schedule/eligibility and historical evaluation remain incomplete. Final Test LOCKED; operational_ready=false; LIVE DISABLED.
+- Milestone 11J final: 8fd34b0c80f5372b60da3ada403588da9b9032ab; CI 35595263337 — SUCCESS.
+- Next: build exact-source funding-settlement usability/eligibility qualification without inventing a funding schedule or filling missing settlement Marks. Legacy listing pages are acquisition candidates only until raw CMS bodies and reviewed hashes are pinned. Full historical rules/security coverage, funding schedule/eligibility and historical evaluation remain incomplete. Final Test LOCKED; operational_ready=false; LIVE DISABLED.
 - Code: immutable Fill/Side types, precision-34 Decimal helpers, canonical IDs, SQLite WAL events/snapshots/write-ahead intents, fail-closed paper guard. Causal Timing/Candle/Mark/rule/security models, as-of revision selection, 30-day gap warmup, deterministic historical Top-20 and stale-universe grace implemented. Streaming Wilder ATR, channel/RVOL, exact long/short transitions, restartable indicator checkpoints, cooldown/status gates and timed simultaneous batch ranking implemented. Risk foundations now include rounded protective-stop costs, separate arrival shortfall gate, causal funding reserve with explicit coverage, immutable open/pending portfolio reservations and proportional confirmed-exit release. Descending quantity-step sizing, 1..5x minimum feasible leverage, isolated tier-consistent liquidation reconstruction, reduce-only post-fill action interface and transactional reservation+ENTRY intent are implemented. Execution market models now include sequence-consistent L2, consumed-depth replay, strict IOC caps and gates, partial sweep previews, and labelled preliminary OHLC proxies. Confirmed-fill protection lifecycle and transactional evidence/state/action-intent persistence now exist. Open-position reconciliation is now implemented; execution adapter and integrated backtest remain unimplemented. Exchange liquidation validation is still absent; actual post-fill collateral must come from the adapter, not a hypothetical newly opened smaller position.
 - Data: five official BTCUSDT January 2024 archives acquired and SHA-256/CSV verified: LAST/Mark 1m (44640 rows each), LAST/Mark 1h (744 each), raw funding (93). Candle grids complete for this sample only; funding has 28 millisecond interval discrepancies and no schedule attestation. PRELIMINARY availability model; no historical rules/security master/L2. See DATA_COVERAGE.md and data/11a-source-manifest.json. No backtest evidence.
 - PAPER: NOT READY. LIVE: DISABLED. No orders sent.
@@ -338,3 +339,14 @@ The parser extracts only fields actually present in the retained source: onboard
 exchangeInfo is not promoted into a complete historical rule/security master. Classification stays UNKNOWN and historical_verified=false; contract-size semantics, historical maintenance/leverage tiers, LAST-stop capability and change-stream completeness remain explicit gaps. Qualification remains PRELIMINARY with security_history_complete=false, contract_rule_history_complete=false, liquidation_tiers_complete=false and operational_ready=false. The implementation and CLI are documented in docs/HISTORICAL_METADATA_SNAPSHOTS.md.
 
 Eighteen new tests cover source hashing, causal availability, revision leakage, retroactive-time rejection, holdout locking, missing-field gaps and ambiguity. Full CI passes 492 tests with Ruff, provenance, reference smoke and the pinned Freqtrade lifecycle smoke. No external orders were sent and no strategy Alpha/risk/config value changed.
+
+
+## Legacy Binance listing evidence path (Milestone 11J)
+
+The reviewed announcement adapter now accepts either modern 32-hex CMS article codes or the 12-digit numeric identifiers used by early Binance Futures support announcements. A new LISTING parser is intentionally narrow: one explicit Binance Futures USDT perpetual symbol, one explicit UTC launch time and one announced maximum leverage. It emits only symbol, launch_at, max_leverage, contract_type=PERPETUAL and quote_asset=USDT.
+
+Listing facts are never promoted into a full Security or ContractRules record. Classification, current/continuous activity, tick/quantity/notional rules, contract-size semantics, maintenance tiers, LAST-stop capability and later rule changes remain missing. LISTING also produces no delisting/replay event and therefore cannot make a historical universe eligible by itself.
+
+Eight official early-2020 Binance support pages were retained as reviewed acquisition candidates in docs/data/11j-legacy-listing-source-review.json. Their page text exposes useful launch facts, but raw CMS bytes/body hashes and original historical receipt evidence were not acquired in this milestone. The candidates therefore remain execution_eligible=false and cannot enter replay. Final remains LOCKED; no Alpha/risk/config value changed and no order was sent.
+
+CI 35595263337 passes 499 tests plus Ruff, provenance, reference smoke and pinned Freqtrade lifecycle/parity checks.
