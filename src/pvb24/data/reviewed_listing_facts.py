@@ -130,7 +130,7 @@ def _modern_single(body):
     match = re.search(
         r"Binance Futures will launch the USDⓈ-M (?P<base>[A-Z0-9]+) "
         r"perpetual contract at (?P<day>\d{4}-\d{2}-\d{2}) "
-        r"(?P<clock>\d{2}:\d{2}) \(UTC\), with up to (?P<lev>\d+)x leverage\.",
+        r"(?P<clock>\d{2}:\d{2})\s+\(UTC\), with up to (?P<lev>\d+)x leverage\.",
         body,
         flags=re.IGNORECASE,
     )
@@ -149,7 +149,7 @@ def _legacy_single(body):
     match = re.search(
         r"Binance Futures will launch USDⓈ-M (?P<base>[A-Z0-9]+) perpetual contracts "
         r"with up to (?P<lev>\d+)x leverage on (?P<day>\d{4}-\d{2}-\d{2}) "
-        r"at (?P<clock>\d{2}:\d{2}) \(UTC\)\.",
+        r"at (?P<clock>\d{2}:\d{2})\s+\(UTC\)\.",
         body,
         flags=re.IGNORECASE,
     )
@@ -169,7 +169,7 @@ def _bluebird(body):
         r"Binance Futures will launch USDⓈ-M Binance Bluebird Index perpetual contracts "
         r"\([“\"](?P<symbol>[A-Z0-9]+USDT) Perpetual Contracts[”\"]\) "
         r"with up to (?P<lev>\d+)x leverage on (?P<day>\d{4}-\d{2}-\d{2}) "
-        r"at (?P<clock>\d{2}:\d{2}) \(UTC\)\.",
+        r"at (?P<clock>\d{2}:\d{2})\s+\(UTC\)\.",
         body,
         flags=re.IGNORECASE,
     )
@@ -200,7 +200,7 @@ def _paired(body):
         if token.upper() != "AND"
     ]
     times = re.findall(
-        r"(\d{4}-\d{2}-\d{2}) at (\d{2}:\d{2}) \(UTC\)",
+        r"(\d{4}-\d{2}-\d{2}) at (\d{2}:\d{2})\s+\(UTC\)",
         match.group("schedule"),
     )
     if len(names) != len(times) or len(names) < 2 or len(names) != len(set(names)):
@@ -228,7 +228,7 @@ def _multi_after(body):
         if token.upper() != "AND"
     ]
     times = re.findall(
-        r"(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}) \(UTC\)",
+        r"(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})\s+\(UTC\)",
         match.group("schedule"),
     )
     if len(names) != len(times) or len(names) < 2 or len(names) != len(set(names)):
@@ -266,7 +266,7 @@ def extract_target_listing_fact(body, target):
 
     prior = re.search(
         r"old\s+" + re.escape(symbol) + r"\s+contract, which was previously delisted at "
-        r"(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}) \(UTC\)",
+        r"(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})\s+\(UTC\)",
         body,
         flags=re.IGNORECASE,
     )
