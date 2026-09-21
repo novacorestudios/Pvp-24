@@ -341,7 +341,7 @@ def test_legacy_numeric_article_listing_extracts_only_announced_partial_facts():
     assert report["facts"] == [
         {
             "symbol": "VETUSDT",
-            "launch_at": "2020-02-14T08:00:00.000000Z",
+            "launch_at": LEGACY_LAUNCH,
             "max_leverage": 50,
             "contract_type": "PERPETUAL",
             "quote_asset": "USDT",
