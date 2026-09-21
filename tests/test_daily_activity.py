@@ -19,9 +19,14 @@ def ms(value):
     return int(value.timestamp() * 1000)
 
 
-def source(request, starts):
+def source(request, starts, *, inactive_starts=()):
+    inactive_starts = set(inactive_starts)
     rows = []
     for start in starts:
+        active = start not in inactive_starts
+        volume = "1" if active else "0"
+        trades = "1" if active else "0"
+        taker = "0.5" if active else "0"
         rows.append(
             ",".join(
                 [
@@ -30,12 +35,12 @@ def source(request, starts):
                     "1",
                     "1",
                     "1",
-                    "1",
+                    volume,
                     str(ms(start + timedelta(minutes=1)) - 1),
-                    "1",
-                    "1",
-                    "0.5",
-                    "0.5",
+                    volume,
+                    trades,
+                    taker,
+                    taker,
                     "0",
                 ]
             )
@@ -78,8 +83,8 @@ def qualification(kind, event):
     }
 
 
-def add_source(objects, request, starts):
-    archive, checksum = source(request, starts)
+def add_source(objects, request, starts, *, inactive_starts=()):
+    archive, checksum = source(request, starts, inactive_starts=inactive_starts)
     objects[request.url] = archive
     objects[request.checksum_url] = checksum
 
@@ -90,6 +95,9 @@ def test_contiguous_minute_rows_are_valid_and_gap_free():
     archive, checksum = source(request, [first, first + timedelta(minutes=1)])
     activity = decode_daily_activity(request, archive, checksum)
     assert activity["rows"] == 2
+    assert activity["active_rows"] == 2
+    assert activity["first_active_interval_start"] == first
+    assert activity["last_active_interval_end"] == first + timedelta(minutes=2)
     assert activity["first_interval_start"] == first
     assert activity["last_interval_end"] == first + timedelta(minutes=2)
     assert activity["internal_gaps"] == []
@@ -148,6 +156,53 @@ def test_delisting_exact_end_is_consistent_but_next_day_absence_is_not_proof(tmp
     assert row["event_day"]["last_interval_end"] == expected_end
     assert row["boundary_day"]["status"] == "UNAVAILABLE"
     assert not report["historical_lifecycle_verified"]
+
+
+
+def test_delisting_zero_volume_tail_does_not_count_as_post_settlement_activity(tmp_path):
+    event = datetime(2024, 3, 26, 9, tzinfo=UTC)
+    event_request = DailyKlineRequest("TESTUSDT", "2024-03-26")
+    next_request = DailyKlineRequest("TESTUSDT", "2024-03-27")
+    objects = {}
+    add_source(
+        objects,
+        event_request,
+        [event - timedelta(minutes=1), event, event + timedelta(minutes=1)],
+        inactive_starts=[event + timedelta(minutes=1)],
+    )
+    next_start = datetime(2024, 3, 27, tzinfo=UTC)
+    add_source(objects, next_request, [next_start], inactive_starts=[next_start])
+
+    report, _ = reconcile_qualification_activity(
+        qualification("DELISTING", event), tmp_path, fetch=fetcher(objects)
+    )
+    row = report["reconciliations"][0]
+    assert row["status"] == "CONSISTENT_EVENT_BOUNDARY_ONLY"
+    assert row["event_day"]["active_rows"] == 2
+    expected_event = event.isoformat(timespec="microseconds").replace("+00:00", "Z")
+    assert row["event_day"]["last_active_interval_start"] == expected_event
+    assert "EVENT_MINUTE_ACTIVITY_MAY_REFLECT_SETTLEMENT" in row["notes"]
+    assert row["boundary_day"]["active_rows"] == 0
+    assert "NEXT_DAY_ACTIVITY_PRESENT" not in row["contradictions"]
+
+
+def test_delisting_nonzero_activity_after_event_remains_a_contradiction(tmp_path):
+    event = datetime(2024, 3, 26, 9, tzinfo=UTC)
+    request = DailyKlineRequest("TESTUSDT", "2024-03-26")
+    objects = {}
+    add_source(
+        objects,
+        request,
+        [event - timedelta(minutes=1), event + timedelta(minutes=1)],
+    )
+
+    report, _ = reconcile_qualification_activity(
+        qualification("DELISTING", event), tmp_path, fetch=fetcher(objects)
+    )
+    row = report["reconciliations"][0]
+    assert row["status"] == "CONTRADICTED_BY_ARCHIVE_ACTIVITY"
+    assert "EVENT_DAY_ACTIVITY_CONTINUES_AFTER_SCHEDULED_SETTLEMENT" in row["contradictions"]
+
 
 
 def test_delisting_next_day_activity_is_a_contradiction(tmp_path):

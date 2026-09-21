@@ -26,7 +26,7 @@ from pvb24.types import utc
 BASE = "https://data.binance.vision/data/futures/um/daily/klines/"
 MAX_ARCHIVE = 32 * 1024 * 1024
 MAX_CHECKSUM = 4096
-SCHEMA = "PVB24_LIFECYCLE_ARCHIVE_ACTIVITY_V1"
+SCHEMA = "PVB24_LIFECYCLE_ARCHIVE_ACTIVITY_V2"
 
 
 @dataclass(frozen=True)
@@ -94,7 +94,9 @@ def _validate_row(row, request, index):
         raise ValueError("Taker volume exceeds total source volume")
     if (D(row[5]) == 0) != (D(row[7]) == 0):
         raise ValueError("Base and quote zero-volume fields disagree")
-    return event, end, D(row[7]) == 0
+    volume_active = D(row[7]) > 0
+    trade_active = int(row[8]) > 0
+    return event, end, volume_active or trade_active
 
 
 def decode_daily_activity(request, archive, checksum):
@@ -104,7 +106,8 @@ def decode_daily_activity(request, archive, checksum):
         raise ValueError("Daily archive SHA-256 does not match official checksum")
     expected = request.filename[:-4] + ".csv"
     first = last = previous = None
-    rows = zero_volume = 0
+    first_active = last_active_start = last_active_end = None
+    rows = active_rows = zero_volume = 0
     gaps = []
     with zipfile.ZipFile(io.BytesIO(archive)) as zipped:
         members = zipped.infolist()
@@ -120,7 +123,7 @@ def decode_daily_activity(request, archive, checksum):
             for index, row in enumerate(reader, start=1):
                 if index == 1 and tuple(row) == KLINE_HEADER:
                     continue
-                start, end, is_zero = _validate_row(row, request, index)
+                start, end, is_active = _validate_row(row, request, index)
                 if previous is not None:
                     if start < previous:
                         raise ValueError("Overlapping/backwards daily kline timestamp")
@@ -129,11 +132,21 @@ def decode_daily_activity(request, archive, checksum):
                 first = start if first is None else first
                 last = previous = end
                 rows += 1
-                zero_volume += int(is_zero)
+                if is_active:
+                    first_active = start if first_active is None else first_active
+                    last_active_start = start
+                    last_active_end = end
+                    active_rows += 1
+                else:
+                    zero_volume += 1
     return {
         "rows": rows,
+        "active_rows": active_rows,
         "first_interval_start": first,
         "last_interval_end": last,
+        "first_active_interval_start": first_active,
+        "last_active_interval_start": last_active_start,
+        "last_active_interval_end": last_active_end,
         "internal_gaps": gaps,
         "zero_volume_last_bars": zero_volume,
         "source_day": request.day,
@@ -262,9 +275,14 @@ def _observation(result, attempt):
         "url": result["url"],
         "attempt": attempt,
         "rows": activity.get("rows"),
+        "active_rows": activity.get("active_rows"),
         "first_interval_start": activity.get("first_interval_start"),
         "last_interval_end": activity.get("last_interval_end"),
+        "first_active_interval_start": activity.get("first_active_interval_start"),
+        "last_active_interval_start": activity.get("last_active_interval_start"),
+        "last_active_interval_end": activity.get("last_active_interval_end"),
         "internal_gaps": activity.get("internal_gaps"),
+        "zero_volume_last_bars": activity.get("zero_volume_last_bars"),
         "missing_object_means_inactive": False,
     }
 
@@ -275,34 +293,58 @@ def _reconcile(kind, fact, event_observation, boundary_observation):
     notes = []
     exact = False
     if event_observation["status"] == "ACQUIRED":
-        if kind == "LISTING":
-            first = utc(datetime.fromisoformat(event_observation["first_interval_start"]))
-            if first < event:
-                contradictions.append("EVENT_DAY_ACTIVITY_PRECEDES_ANNOUNCED_LAUNCH")
-            elif first == event:
-                exact = True
+        active_rows = event_observation.get("active_rows")
+        if type(active_rows) is not int or active_rows < 0:
+            raise ValueError("Explicit nonnegative active-row count required")
+        if active_rows:
+            first_active = utc(
+                datetime.fromisoformat(event_observation["first_active_interval_start"])
+            )
+            last_active_start = utc(
+                datetime.fromisoformat(event_observation["last_active_interval_start"])
+            )
+            last_active_end = utc(
+                datetime.fromisoformat(event_observation["last_active_interval_end"])
+            )
+            if kind == "LISTING":
+                if first_active < event:
+                    contradictions.append("EVENT_DAY_ACTIVITY_PRECEDES_ANNOUNCED_LAUNCH")
+                elif first_active == event:
+                    exact = True
+                else:
+                    notes.append("EVENT_DAY_ACTIVITY_STARTS_AFTER_ANNOUNCED_LAUNCH")
             else:
-                notes.append("EVENT_DAY_ARCHIVE_STARTS_AFTER_ANNOUNCED_LAUNCH")
+                if last_active_start > event:
+                    contradictions.append(
+                        "EVENT_DAY_ACTIVITY_CONTINUES_AFTER_SCHEDULED_SETTLEMENT"
+                    )
+                elif last_active_start == event:
+                    exact = True
+                    notes.append("EVENT_MINUTE_ACTIVITY_MAY_REFLECT_SETTLEMENT")
+                elif last_active_end == event:
+                    exact = True
+                else:
+                    notes.append("EVENT_DAY_ACTIVITY_ENDS_BEFORE_SCHEDULED_SETTLEMENT")
         else:
-            last = utc(datetime.fromisoformat(event_observation["last_interval_end"]))
-            if last > event:
-                contradictions.append("EVENT_DAY_ACTIVITY_CONTINUES_AFTER_SCHEDULED_SETTLEMENT")
-            elif last == event:
-                exact = True
-            else:
-                notes.append("EVENT_DAY_ARCHIVE_ENDS_BEFORE_SCHEDULED_SETTLEMENT")
+            notes.append("EVENT_DAY_ARCHIVE_HAS_NO_NONZERO_ACTIVITY")
         if event_observation.get("internal_gaps"):
             notes.append("EVENT_DAY_ARCHIVE_HAS_INTERNAL_GAPS")
     else:
         notes.append("EVENT_DAY_ARCHIVE_NOT_ACQUIRED")
 
-    if boundary_observation["status"] == "ACQUIRED" and boundary_observation.get("rows"):
-        contradictions.append(
-            "PRIOR_DAY_ACTIVITY_PRESENT" if kind == "LISTING" else "NEXT_DAY_ACTIVITY_PRESENT"
-        )
+    if boundary_observation["status"] == "ACQUIRED":
+        boundary_active = boundary_observation.get("active_rows")
+        if type(boundary_active) is not int or boundary_active < 0:
+            raise ValueError("Explicit nonnegative boundary active-row count required")
+        if boundary_active:
+            contradictions.append(
+                "PRIOR_DAY_ACTIVITY_PRESENT" if kind == "LISTING" else "NEXT_DAY_ACTIVITY_PRESENT"
+            )
+        else:
+            notes.append("BOUNDARY_ARCHIVE_HAS_NO_NONZERO_ACTIVITY")
     elif boundary_observation["status"] == "UNAVAILABLE":
         notes.append("BOUNDARY_ARCHIVE_OBJECT_MISSING_IS_UNKNOWN")
-    elif boundary_observation["status"] != "ACQUIRED":
+    else:
         notes.append("BOUNDARY_ARCHIVE_NOT_ACQUIRED")
 
     if contradictions:
@@ -318,7 +360,6 @@ def _reconcile(kind, fact, event_observation, boundary_observation):
         "archive_absence_proves_inactivity": False,
         "historical_lifecycle_verified": False,
     }
-
 
 def reconcile_qualification_activity(qualification, output, *, fetch=public_daily_bytes):
     if qualification.get("schema") != "PVB24_ANNOUNCEMENT_BODY_QUALIFICATION_V1":
