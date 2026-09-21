@@ -1,0 +1,53 @@
+name: M11X Reviewed Listing Source Batch
+
+on:
+  push:
+    branches:
+      - build/pvb24-v1
+    paths:
+      - ".github/workflows/m11x-reviewed-listing-source.yml"
+      - "src/pvb24/data/reviewed_listing_source.py"
+      - "scripts/probe_reviewed_listing_sources.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e '.[dev]'
+      - name: Verify repository provenance
+        run: python scripts/verify_provenance.py
+      - name: Retain reviewed official listing sources
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/m11x/reviewed-listing-source
+          python scripts/probe_reviewed_listing_sources.py \
+            --root artifacts/m11x/reviewed-listing-source \
+            --code 6971c0a0c4fe43ef9969c1d6252dea74 \
+            --code d6c6c06ddb074c829d90155b0aba661b \
+            --code 521a6a71b21046f2b07b021edfd41b9f \
+            --code 155dd1d3b26d48918d75d263833a5d1d \
+            --code d7e84d0cbade4525bd55e61e7ee0f83a \
+            --code 93710257326b4f33aed7d8b7b73746d1 \
+            --code 81c80244a5fb4bfab3cea51cd2ed325b \
+            --code adabdfbc53344094808a7bea464f101b \
+            --code 2e53db8e7af34d7dae7310e4a4336cdd \
+            --code bd18df283ead40d09fd60c8eab984e41 \
+            --code 5d8c7476197344d087b5af436bfc74ae \
+            > artifacts/m11x/reviewed-listing-source-summary.json
+          cat artifacts/m11x/reviewed-listing-source-summary.json
+          test -s artifacts/m11x/reviewed-listing-source-summary.json
+          test "$(find artifacts/m11x/reviewed-listing-source -path '*/objects/*.json' -type f | wc -l)" -eq 11
+          test "$(find artifacts/m11x/reviewed-listing-source -path '*/reports/*.json' -type f | wc -l)" -eq 11
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m11x-reviewed-listing-source
+          path: artifacts/m11x
+          if-no-files-found: error
