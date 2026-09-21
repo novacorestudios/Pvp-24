@@ -7,16 +7,20 @@ on:
       - ".github/workflows/catalog-anchor-review.yml"
       - "src/pvb24/data/announcement_anchor.py"
       - "src/pvb24/data/announcement_catalog.py"
+      - "src/pvb24/data/announcement_qualification.py"
       - "scripts/review_announcement_catalog_anchor.py"
       - "scripts/acquire_reviewed_announcement_catalog.py"
+      - "scripts/qualify_announcement_inventory.py"
   pull_request:
     branches: [main]
     paths:
       - ".github/workflows/catalog-anchor-review.yml"
       - "src/pvb24/data/announcement_anchor.py"
       - "src/pvb24/data/announcement_catalog.py"
+      - "src/pvb24/data/announcement_qualification.py"
       - "scripts/review_announcement_catalog_anchor.py"
       - "scripts/acquire_reviewed_announcement_catalog.py"
+      - "scripts/qualify_announcement_inventory.py"
   workflow_dispatch:
 
 permissions:
@@ -91,4 +95,38 @@ jobs:
           name: announcement-inventory-evidence
           path: artifacts/announcement-inventory
           if-no-files-found: error
+          retention-days: 14
+
+  body-qualification:
+    needs: candidate-inventory
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e '.[dev]'
+      - run: python scripts/verify_provenance.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: announcement-inventory-evidence
+          path: artifacts/announcement-inventory
+      - name: Acquire and semantically qualify candidate bodies
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t REPORTS < <(find artifacts/announcement-inventory/reports -maxdepth 1 -type f -name '*.json' | sort)
+          test "${#REPORTS[@]}" -eq 1
+          HINV="$(basename "${REPORTS[0]}" .json)"
+          python scripts/qualify_announcement_inventory.py \
+            --inventory-root artifacts/announcement-inventory \
+            --inventory-report "reports/$HINV.json" \
+            --inventory-sha256 "$HINV" \
+            --output artifacts/announcement-body-qualification
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: announcement-body-qualification-evidence
+          path: artifacts/announcement-body-qualification
+          if-no-files-found: warn
           retention-days: 14
