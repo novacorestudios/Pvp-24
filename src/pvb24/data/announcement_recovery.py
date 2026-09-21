@@ -260,6 +260,12 @@ def _apply_cutoffs(facts, body_text):
         )
     )
     if not cutoff_matches:
+        if re.search(
+            r"Users are not allowed to open new positions",
+            body_text,
+            flags=re.IGNORECASE,
+        ):
+            raise ValueError("Malformed retained new-position cutoff statement")
         return facts
     if len(cutoff_matches) != 1:
         raise ValueError("One explicit retained new-position cutoff statement required")
