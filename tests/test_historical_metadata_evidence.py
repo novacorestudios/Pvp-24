@@ -15,6 +15,7 @@ NOW = datetime(2024, 1, 1, tzinfo=UTC)
 
 def write(path, value):
     raw = canonical(value).encode()
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(raw)
     return path, hashlib.sha256(raw).hexdigest()
 
