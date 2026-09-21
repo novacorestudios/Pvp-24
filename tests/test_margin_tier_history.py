@@ -61,7 +61,8 @@ def response(*, effective="2024-05-28 10:30", published=1716790000000, affected=
             "5,000 < Position ≤ 10,000",
             "2.00%",
         ],
-        ["NA", "11 - 20x", "10,000 < Position ≤ 50,000", "2.50%"],
+        ["NA", "11 - 20x", "10,000 < Position ≤ 25,000", "2.50%"],
+        ["10x", "25,000 < Position ≤ 50,000", "5.00%"],
     ]
     body = canonical(
         {
@@ -134,7 +135,7 @@ def test_compiler_extracts_complete_source_tier_sides_without_emitting_rules(tmp
     assert [row["symbol"] for row in article["usd_m_symbols"]] == ["AAAUSDT", "BBBUSDT"]
     schedule = article["usd_m_symbols"][0]
     assert len(schedule["previous_tiers"]) == 2
-    assert len(schedule["new_tiers"]) == 3
+    assert len(schedule["new_tiers"]) == 4
     assert schedule["new_tiers"][1]["notional_floor"] == "5000"
     assert schedule["new_tiers"][1]["notional_cap"] == "10000"
     assert schedule["new_tiers"][1]["maintenance_margin_rate"] == "0.02"
@@ -153,6 +154,12 @@ def test_existing_position_policy_is_explicit_and_changes_cohort_requirement(tmp
     other = tmp_path / "affected"
     result = compile_one(other, response(affected=True))
     assert not result["articles"][0]["position_cohort_selection_required"]
+
+
+def test_effective_time_phrase_without_the_following_is_supported(tmp_path):
+    raw = response().replace(b"of the following USD", b"of USD")
+    result = compile_one(tmp_path, raw)
+    assert result["articles"][0]["effective_at"] == "2024-05-28T10:30:00.000000Z"
 
 
 def test_post_effective_publication_is_retrospective_not_causal(tmp_path):

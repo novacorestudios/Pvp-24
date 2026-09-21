@@ -34,7 +34,7 @@ LEVERAGE_RANGE_RE = re.compile(r"(?P<low>\d+)\s*-\s*(?P<high>\d+)x")
 LEVERAGE_SINGLE_RE = re.compile(r"(?P<value>\d+)x")
 EFFECTIVE_RE = re.compile(
     r"Binance Futures (?:has updated|will update) the leverage and margin tiers "
-    r"of the following .+? at (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) \(UTC\)"
+    r"of (?:the following )?.+? at (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) \(UTC\)"
 )
 NOT_AFFECTED = "existing positions opened before the update will not be affected"
 AFFECTED = "existing positions opened before the update will be affected"
@@ -142,14 +142,22 @@ def _parse_table(table):
     if not cells or cells[0] != HEADER:
         raise ValueError("Unsupported USD-M leverage/margin table header")
     previous, new = [], []
+    continuation_side = None
     for row in cells[1:]:
         if len(row) == 6:
+            continuation_side = None
             previous.append(_tier(row[:3]))
             new.append(_tier(row[3:]))
         elif len(row) == 4 and row[0] in ("NA", "N/A"):
+            continuation_side = "NEW"
             new.append(_tier(row[1:]))
         elif len(row) == 4 and row[-1] in ("NA", "N/A"):
+            continuation_side = "PREVIOUS"
             previous.append(_tier(row[:3]))
+        elif len(row) == 3 and continuation_side == "NEW":
+            new.append(_tier(row))
+        elif len(row) == 3 and continuation_side == "PREVIOUS":
+            previous.append(_tier(row))
         else:
             raise ValueError("Ambiguous leverage/margin table row")
     return _validate_schedule(previous), _validate_schedule(new)
