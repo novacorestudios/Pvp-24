@@ -49,3 +49,46 @@ jobs:
           path: artifacts/catalog-evidence/${{ matrix.catalog }}
           if-no-files-found: warn
           retention-days: 14
+
+  candidate-inventory:
+    needs: reviewed-anchor
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e '.[dev]'
+      - run: python scripts/verify_provenance.py
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: catalog-evidence-*
+          path: artifacts/catalog-input
+          merge-multiple: false
+      - name: Revalidate pinned slices and build candidate inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="artifacts/announcement-inventory"
+          mkdir -p "$OUT/source"
+          cp -a artifacts/catalog-input/catalog-evidence-48/slice "$OUT/source/catalog-48"
+          cp -a artifacts/catalog-input/catalog-evidence-161/slice "$OUT/source/catalog-161"
+
+          mapfile -t R48 < <(find "$OUT/source/catalog-48/reports" -maxdepth 1 -type f -name '*.json' | sort)
+          mapfile -t R161 < <(find "$OUT/source/catalog-161/reports" -maxdepth 1 -type f -name '*.json' | sort)
+          test "${#R48[@]}" -eq 1
+          test "${#R161[@]}" -eq 1
+          H48="$(basename "${R48[0]}" .json)"
+          H161="$(basename "${R161[0]}" .json)"
+
+          python scripts/build_announcement_inventory.py \
+            --slice "$OUT/source/catalog-48" "reports/$H48.json" "$H48" \
+            --slice "$OUT/source/catalog-161" "reports/$H161.json" "$H161" \
+            --output "$OUT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: announcement-inventory-evidence
+          path: artifacts/announcement-inventory
+          if-no-files-found: error
+          retention-days: 14

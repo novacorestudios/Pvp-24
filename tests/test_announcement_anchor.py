@@ -251,7 +251,8 @@ def test_anchor_review_loader_replays_and_binds_source_chain(tmp_path):
     custom = anchor(code, when)
     report, path = review_anchor_start(custom, tmp_path, fetch=fetch, page_size=2)
 
-    # Loader binds to the repository-reviewed anchor registry, so temporarily use its exact identity.
+    # Loader binds to the repository-reviewed anchor registry, so temporarily
+    # use its exact identity.
     from pvb24.data import announcement_anchor as module
 
     original = module.REVIEWED_ANCHORS[48]
