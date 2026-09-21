@@ -84,7 +84,6 @@ def add_source(objects, request, starts):
     objects[request.checksum_url] = checksum
 
 
-
 def test_contiguous_minute_rows_are_valid_and_gap_free():
     request = DailyKlineRequest("TESTUSDT", "2024-01-01")
     first = datetime(2024, 1, 1, tzinfo=UTC)
@@ -98,7 +97,6 @@ def test_contiguous_minute_rows_are_valid_and_gap_free():
         timespec="microseconds"
     ).replace("+00:00", "Z")
     assert activity["internal_gaps"] == []
-
 
 
 def test_listing_exact_event_start_is_consistent_but_missing_prior_day_is_unknown(tmp_path):
