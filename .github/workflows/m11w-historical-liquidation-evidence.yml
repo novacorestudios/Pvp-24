@@ -1,0 +1,52 @@
+name: M11W Historical Liquidation Evidence
+
+on:
+  push:
+    branches:
+      - build/pvb24-v1
+    paths:
+      - ".github/workflows/m11w-historical-liquidation-evidence.yml"
+      - "src/pvb24/data/margin_tier_history.py"
+      - "scripts/compile_historical_liquidation_evidence.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN_ID: "35650220174"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e '.[dev]'
+      - name: Restore pinned M11W source probe
+        run: |
+          mkdir -p artifacts/m11w
+          gh run download "$SOURCE_RUN_ID" \
+            --repo "${{ github.repository }}" \
+            --name m11w-margin-tier-source-probe \
+            --dir artifacts/m11w
+      - name: Verify repository provenance
+        run: python scripts/verify_provenance.py
+      - name: Compile historical liquidation evidence
+        run: |
+          mkdir -p artifacts/m11w/evidence
+          python scripts/compile_historical_liquidation_evidence.py \
+            --root artifacts/m11w/source-probe \
+            --source aa735cd2d8bd4e7bb092179cf086e486:a22749659d24719f55d321dc57bef318e4cb445b9443a48b80c857bee695d05d \
+            --source 2efd086c96a7435fb89b3392d5eb6df9:11af3df822e8c6b4fa6b617a31db84cc6ed85256a86dd55124f9304db0055b31 \
+            --source f9e6ea2d58ce4de5bf9ecadea5170526:2b809598c051204e5575467a44903792fa797506e74c4188fa934f75199ea609 \
+            --output artifacts/m11w/evidence/11w-historical-liquidation-evidence.json
+          sha256sum artifacts/m11w/evidence/11w-historical-liquidation-evidence.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m11w-historical-liquidation-evidence
+          path: artifacts/m11w/evidence/11w-historical-liquidation-evidence.json
+          if-no-files-found: error
