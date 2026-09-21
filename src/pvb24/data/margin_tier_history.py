@@ -32,9 +32,7 @@ HEADER = [
     "Maintenance Margin Rate After Change",
 ]
 SUPER_HEADER = ["Previous Leverage and Margin Tiers", "New Leverage and Margin Tiers"]
-POSITION_RE = re.compile(
-    r"(?P<floor>[0-9][0-9,.]*) < Position ≤ (?P<cap>[0-9][0-9,.]*)"
-)
+POSITION_RE = re.compile(r"(?P<floor>[0-9][0-9,.]*) < Position ≤ (?P<cap>[0-9][0-9,.]*)")
 LEVERAGE_RANGE_RE = re.compile(r"(?P<low>\d+)\s*-\s*(?P<high>\d+)x")
 LEVERAGE_SINGLE_RE = re.compile(r"(?P<value>\d+)x")
 EFFECTIVE_RE = re.compile(

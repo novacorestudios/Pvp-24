@@ -29,10 +29,7 @@ def heading(value):
 def table(rows):
     return element(
         "table",
-        [
-            element("tr", [element("td", [text_node(cell)]) for cell in row])
-            for row in rows
-        ],
+        [element("tr", [element("td", [text_node(cell)]) for cell in row]) for row in rows],
     )
 
 
@@ -56,7 +53,15 @@ def response(*, effective="2024-05-28 10:30", published=1716790000000, affected=
         ["Previous Leverage and Margin Tiers", "New Leverage and Margin Tiers"],
         HEADER,
         ["21 - 50x", "0 < Position ≤ 5,000", "1.00%", "26 - 50x", "0 < Position ≤ 5,000", "1.00%"],
-        ["11 - 20x", "5,000 < Position ≤ 50,000", "2.50%", "NA", "21 - 25x", "5,000 < Position ≤ 10,000", "2.00%"],
+        [
+            "11 - 20x",
+            "5,000 < Position ≤ 50,000",
+            "2.50%",
+            "NA",
+            "21 - 25x",
+            "5,000 < Position ≤ 10,000",
+            "2.00%",
+        ],
         ["NA", "11 - 20x", "10,000 < Position ≤ 50,000", "2.50%"],
     ]
     body = canonical(
