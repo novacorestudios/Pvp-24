@@ -158,7 +158,6 @@ def test_delisting_exact_end_is_consistent_but_next_day_absence_is_not_proof(tmp
     assert not report["historical_lifecycle_verified"]
 
 
-
 def test_delisting_zero_volume_tail_does_not_count_as_post_settlement_activity(tmp_path):
     event = datetime(2024, 3, 26, 9, tzinfo=UTC)
     event_request = DailyKlineRequest("TESTUSDT", "2024-03-26")
@@ -202,7 +201,6 @@ def test_delisting_nonzero_activity_after_event_remains_a_contradiction(tmp_path
     row = report["reconciliations"][0]
     assert row["status"] == "CONTRADICTED_BY_ARCHIVE_ACTIVITY"
     assert "EVENT_DAY_ACTIVITY_CONTINUES_AFTER_SCHEDULED_SETTLEMENT" in row["contradictions"]
-
 
 
 def test_delisting_next_day_activity_is_a_contradiction(tmp_path):

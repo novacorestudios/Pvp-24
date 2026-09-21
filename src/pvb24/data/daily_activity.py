@@ -315,9 +315,7 @@ def _reconcile(kind, fact, event_observation, boundary_observation):
                     notes.append("EVENT_DAY_ACTIVITY_STARTS_AFTER_ANNOUNCED_LAUNCH")
             else:
                 if last_active_start > event:
-                    contradictions.append(
-                        "EVENT_DAY_ACTIVITY_CONTINUES_AFTER_SCHEDULED_SETTLEMENT"
-                    )
+                    contradictions.append("EVENT_DAY_ACTIVITY_CONTINUES_AFTER_SCHEDULED_SETTLEMENT")
                 elif last_active_start == event:
                     exact = True
                     notes.append("EVENT_MINUTE_ACTIVITY_MAY_REFLECT_SETTLEMENT")
