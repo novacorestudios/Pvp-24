@@ -136,7 +136,7 @@ def test_full_required_month_is_verified_from_retained_objects_before_attestatio
 
 @pytest.mark.parametrize("case", ["missing", "gap"])
 def test_missing_or_incomplete_month_never_becomes_complete(case, tmp_path):
-    report = qualify(tmp_path, **{case if case == "missing" else "gap": "MARK_1M"})
+    report = qualify(tmp_path, **{"omit" if case == "missing" else "gap": "MARK_1M"})
     row = report["capabilities"]["MARK_1M"]
     assert not row["complete"] and row["gaps"]
     assert "MARK_1M" not in complete_attestations(report)
