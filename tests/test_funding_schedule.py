@@ -12,6 +12,7 @@ from pvb24.ids import canonical
 def selection(tmp_path, **pair_kwargs):
     monthly, name = pair(tmp_path, **pair_kwargs)
     summary = summarize((REQ,), ((monthly, name),))
+    summary["config_hash"] = "f" * 64
     path = tmp_path / "schedule-summary.json"
     path.write_text(canonical(summary))
     return path, hashlib.sha256(path.read_bytes()).hexdigest()
