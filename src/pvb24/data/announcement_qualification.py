@@ -25,7 +25,7 @@ from pvb24.data.announcements import (
     ARTICLE_CODE,
     MAX_BYTES,
     POLICY,
-    extract_facts,
+    extract_body_facts,
     public_announcement,
     strict_json,
 )
@@ -216,7 +216,7 @@ def qualify_candidate(candidate, raw):
         }
     body_sha256 = hashlib.sha256(body.encode()).hexdigest()
     try:
-        facts = extract_facts(kind, strict_json(body))
+        facts = extract_body_facts(kind, body)
         effective_key = "launch_at" if kind == "LISTING" else "scheduled_settlement_at"
         if any(fact[effective_key] <= published for fact in facts):
             raise ValueError("Announcement must precede its scheduled lifecycle change")

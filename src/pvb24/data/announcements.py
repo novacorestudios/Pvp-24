@@ -11,6 +11,7 @@ import json
 import re
 import urllib.request
 from dataclasses import asdict, dataclass
+from html.parser import HTMLParser
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
@@ -106,10 +107,197 @@ def explicit_time(value):
 
 
 def legacy_listing_time(value):
-    result = datetime.strptime(value, "%Y/%m/%d %I:%M %p").replace(tzinfo=UTC)
-    if result >= FINAL_START:
+    parsed = None
+    for fmt in ("%Y/%m/%d %I:%M %p", "%Y-%m-%d %I:%M %p"):
+        try:
+            parsed = datetime.strptime(value, fmt).replace(tzinfo=UTC)
+            break
+        except ValueError:
+            continue
+    if parsed is None:
+        raise ValueError("Unsupported legacy listing timestamp")
+    if parsed >= FINAL_START:
         raise ValueError("Final-period metadata facts remain LOCKED")
-    return result
+    return parsed
+
+
+class _LegacyHTMLText(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.parts = []
+        self.nodes_seen = 0
+        self.skip_depth = 0
+
+    def _seen(self):
+        self.nodes_seen += 1
+        if self.nodes_seen > 20000:
+            raise ValueError("Legacy announcement HTML exceeds node bound")
+
+    def handle_starttag(self, tag, attrs):
+        self._seen()
+        if tag.lower() in ("script", "style"):
+            self.skip_depth += 1
+
+    def handle_endtag(self, tag):
+        self._seen()
+        if tag.lower() in ("script", "style") and self.skip_depth:
+            self.skip_depth -= 1
+
+    def handle_data(self, data):
+        self._seen()
+        if not self.skip_depth and data:
+            self.parts.append(data)
+
+
+def legacy_html_text(body):
+    if not isinstance(body, str) or not body.lstrip().startswith("<") or "\x00" in body:
+        raise ValueError("Explicit bounded legacy HTML body required")
+    parser = _LegacyHTMLText()
+    parser.feed(body)
+    parser.close()
+    rendered = " ".join(" ".join(parser.parts).split())
+    if not rendered:
+        raise ValueError("Nonempty legacy HTML text required")
+    return rendered
+
+
+def _symbol_group(value):
+    tokens = re.findall(r"\b[A-Z0-9]+\b", value.upper())
+    residual = re.sub(r"\b[A-Z0-9]+\b|\band\b|[,&\s]", "", value, flags=re.IGNORECASE)
+    if residual or not tokens or len(tokens) != len(set(tokens)):
+        raise ValueError("Explicit unique USDT-margined listing symbols required")
+    return tokens
+
+
+def _listing_facts_from_text(body_text):
+    postponements = re.findall(
+        r"The ([A-Z0-9]+) USDT-margined perpetual contract trading start time "
+        r"will be delayed to "
+        r"(\d{4}/\d{2}/\d{2}\s+\d{1,2}:\d{2}\s+(?:AM|PM))\s*\(UTC\)\. "
+        r"Please note that the previous start time was at "
+        r"(\d{4}/\d{2}/\d{2}\s+\d{1,2}:\d{2}\s+(?:AM|PM))\s*\(UTC\)",
+        body_text,
+        flags=re.IGNORECASE,
+    )
+    if postponements:
+        if len(postponements) != 1:
+            raise ValueError("One unambiguous perpetual-contract listing postponement required")
+        base, replacement_text, previous_text = postponements[0]
+        launch_at = legacy_listing_time(replacement_text)
+        previous_launch_at = legacy_listing_time(previous_text)
+        if previous_launch_at >= launch_at:
+            raise ValueError("Listing postponement must move launch strictly later")
+        return [
+            {
+                "symbol": base.upper() + "USDT",
+                "launch_at": launch_at,
+                "previous_launch_at": previous_launch_at,
+                "revision_type": "POSTPONEMENT",
+                "contract_type": "PERPETUAL",
+                "quote_asset": "USDT",
+            }
+        ]
+
+    if (
+        "binance futures will launch" not in body_text.lower()
+        or "perpetual contract" not in body_text.lower()
+    ):
+        raise ValueError("Explicit Binance Futures perpetual launch statement required")
+
+    scheduled = re.findall(
+        r"USDT-Margined\s+([A-Z0-9, &]+?)\s+(\d+)X\s+Perpetual Contracts? at\s+"
+        r"(\d{4}[/-]\d{2}[/-]\d{2}\s+\d{1,2}:\d{2}\s+(?:AM|PM))\s*\(UTC\)",
+        body_text,
+        flags=re.IGNORECASE,
+    )
+    if scheduled:
+        facts = []
+        for names, maximum_text, launch_text in scheduled:
+            maximum = int(maximum_text)
+            if not 1 <= maximum <= 125:
+                raise ValueError("Unsupported announced maximum leverage")
+            launch_at = legacy_listing_time(launch_text)
+            for base in _symbol_group(names):
+                facts.append(
+                    {
+                        "symbol": base + "USDT",
+                        "launch_at": launch_at,
+                        "max_leverage": maximum,
+                        "contract_type": "PERPETUAL",
+                        "quote_asset": "USDT",
+                    }
+                )
+        if not facts or len({fact["symbol"] for fact in facts}) != len(facts):
+            raise ValueError("Unique scheduled USDT perpetual listings required")
+        return sorted(facts, key=lambda fact: fact["symbol"])
+
+    launches = re.findall(
+        r"(?:trading opening at|trading opens on|open trading at)\s*"
+        r"(\d{4}[/-]\d{2}[/-]\d{2}\s+\d{1,2}:\d{2}\s+(?:AM|PM))\s*\(UTC\)",
+        body_text,
+        flags=re.IGNORECASE,
+    )
+    leverages = re.findall(
+        r"(?:select between 1-|up to )(\d+)x leverage",
+        body_text,
+        flags=re.IGNORECASE,
+    )
+    slash_symbols = sorted(set(re.findall(r"\b([A-Z0-9]+)/USDT\b", body_text)))
+    compact_symbols = sorted(
+        set(re.findall(r"\b([A-Z0-9]+)USDT\s+perpetual contracts?\b", body_text, re.IGNORECASE))
+    )
+    symbols = slash_symbols or [symbol.upper() for symbol in compact_symbols]
+    if symbols and len(launches) == 1 and len(set(leverages)) == 1:
+        maximum = int(leverages[0])
+        if not 1 <= maximum <= 125:
+            raise ValueError("Unsupported announced maximum leverage")
+        launch_at = legacy_listing_time(launches[0])
+        return [
+            {
+                "symbol": symbol + "USDT",
+                "launch_at": launch_at,
+                "max_leverage": maximum,
+                "contract_type": "PERPETUAL",
+                "quote_asset": "USDT",
+            }
+            for symbol in symbols
+        ]
+
+    direct = re.findall(
+        r"Binance Futures will launch USDT-margined\s+([A-Z0-9]+)\s+perpetual contracts? "
+        r"with up to (\d+)x leverage at\s+"
+        r"(\d{4}[/-]\d{2}[/-]\d{2}\s+\d{1,2}:\d{2}\s+(?:AM|PM))\s*\(UTC\)",
+        body_text,
+        flags=re.IGNORECASE,
+    )
+    if len(direct) == 1:
+        base, maximum_text, launch_text = direct[0]
+        maximum = int(maximum_text)
+        if not 1 <= maximum <= 125:
+            raise ValueError("Unsupported announced maximum leverage")
+        return [
+            {
+                "symbol": base.upper() + "USDT",
+                "launch_at": legacy_listing_time(launch_text),
+                "max_leverage": maximum,
+                "contract_type": "PERPETUAL",
+                "quote_asset": "USDT",
+            }
+        ]
+    raise ValueError("One unambiguous legacy USDT perpetual listing required")
+
+
+def extract_body_facts(kind, body):
+    if not isinstance(body, str) or not body:
+        raise ValueError("Announcement body string required")
+    stripped = body.lstrip()
+    if stripped.startswith("{"):
+        return extract_facts(kind, strict_json(body))
+    if stripped.startswith("<"):
+        if kind != "LISTING":
+            raise ValueError("Legacy HTML body is supported only for listing evidence")
+        return _listing_facts_from_text(legacy_html_text(body))
+    raise ValueError("Unsupported announcement body encoding")
 
 
 def extract_facts(kind, body):
@@ -175,62 +363,7 @@ def extract_facts(kind, body):
             for symbol in sorted(symbols)
         ]
     if kind == "LISTING":
-        body_text = text(body)
-        postponements = re.findall(
-            r"The ([A-Z0-9]+) USDT-margined perpetual contract trading start time "
-            r"will be delayed to "
-            r"(\d{4}/\d{2}/\d{2}\s+\d{1,2}:\d{2}\s+(?:AM|PM))\s*\(UTC\)\. "
-            r"Please note that the previous start time was at "
-            r"(\d{4}/\d{2}/\d{2}\s+\d{1,2}:\d{2}\s+(?:AM|PM))\s*\(UTC\)",
-            body_text,
-            flags=re.IGNORECASE,
-        )
-        if postponements:
-            if len(postponements) != 1:
-                raise ValueError("One unambiguous perpetual-contract listing postponement required")
-            base, replacement_text, previous_text = postponements[0]
-            launch_at = legacy_listing_time(replacement_text)
-            previous_launch_at = legacy_listing_time(previous_text)
-            if previous_launch_at >= launch_at:
-                raise ValueError("Listing postponement must move launch strictly later")
-            return [
-                {
-                    "symbol": base.upper() + "USDT",
-                    "launch_at": launch_at,
-                    "previous_launch_at": previous_launch_at,
-                    "revision_type": "POSTPONEMENT",
-                    "contract_type": "PERPETUAL",
-                    "quote_asset": "USDT",
-                }
-            ]
-
-        if "Binance Futures will launch" not in body_text or "perpetual contract" not in body_text:
-            raise ValueError("Explicit Binance Futures perpetual launch statement required")
-        symbols = sorted(set(re.findall(r"\b([A-Z0-9]+)/USDT\b", body_text)))
-        launches = re.findall(
-            r"(?:trading opening at|trading opens on|open trading at)\s*"
-            r"(\d{4}/\d{2}/\d{2}\s+\d{1,2}:\d{2}\s+(?:AM|PM))\s*\(UTC\)",
-            body_text,
-        )
-        leverages = re.findall(
-            r"(?:select between 1-|up to )(\d+)x leverage",
-            body_text,
-            flags=re.IGNORECASE,
-        )
-        if len(symbols) != 1 or len(launches) != 1 or len(leverages) != 1:
-            raise ValueError("One unambiguous legacy USDT perpetual listing required")
-        maximum = int(leverages[0])
-        if not 1 <= maximum <= 125:
-            raise ValueError("Unsupported announced maximum leverage")
-        return [
-            {
-                "symbol": symbols[0] + "USDT",
-                "launch_at": legacy_listing_time(launches[0]),
-                "max_leverage": maximum,
-                "contract_type": "PERPETUAL",
-                "quote_asset": "USDT",
-            }
-        ]
+        return _listing_facts_from_text(text(body))
     if kind != "TICK_CHANGE":
         raise ValueError("Unsupported announcement kind")
     effective = re.findall(r"perpetual futures contracts at " + UTC_TEXT, text(body))
@@ -290,7 +423,7 @@ def decode(request, raw):
         or hashlib.sha256(body.encode()).hexdigest() != request.body_sha256
     ):
         raise ValueError("Announcement body changed; explicit review required")
-    facts = extract_facts(request.kind, strict_json(body))
+    facts = extract_body_facts(request.kind, body)
     if digest(facts) != request.facts_hash:
         raise ValueError("Extracted facts differ from independently reviewed facts")
     effective_key = {
