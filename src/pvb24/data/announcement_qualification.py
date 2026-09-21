@@ -16,8 +16,8 @@ from pathlib import Path
 
 from pvb24.data.acquisition import object_write
 from pvb24.data.announcement_catalog import FINAL_START, catalog_time
+from pvb24.data.announcement_inventory import SCHEMA as INVENTORY_SCHEMA
 from pvb24.data.announcement_inventory import (
-    SCHEMA as INVENTORY_SCHEMA,
     CatalogSlice,
     build_candidate_inventory,
 )
