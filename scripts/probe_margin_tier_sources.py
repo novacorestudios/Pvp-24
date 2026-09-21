@@ -10,8 +10,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from pvb24.data.acquisition import NoRedirect  # noqa: E402
-from pvb24.data.margin_tier_source import retain_probe  # noqa: E402
 from pvb24.data.announcements import BASE, MAX_BYTES  # noqa: E402
+from pvb24.data.margin_tier_source import retain_probe  # noqa: E402
 
 
 def fetch(code):

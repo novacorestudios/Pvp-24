@@ -7,7 +7,6 @@ maintenance deductions, and never marks liquidation validation complete.
 import hashlib
 import json
 import re
-from datetime import datetime
 from pathlib import Path
 
 from pvb24.data.announcements import ARTICLE_CODE, BASE, nodes, strict_json, text
