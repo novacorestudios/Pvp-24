@@ -1,0 +1,309 @@
+{
+  "schema": "PVB24_HISTORICAL_EVALUATION_READINESS_V1",
+  "profile": "PRELIMINARY_PRE_FINAL_V1",
+  "window_start": "2020-01-01T00:00:00.000000Z",
+  "window_end": "2025-07-01T00:00:00.000000Z",
+  "final_test_access": "LOCKED",
+  "performance_run": false,
+  "operational_ready": false,
+  "capabilities": [
+    {
+      "name": "HISTORICAL_UNIVERSE",
+      "status": "PARTIAL",
+      "gaps": [
+        "Full causal USDT-linear active-contract universe and daily eligibility history are not reconstructed for 2020-01-01 through 2025-06-30."
+      ],
+      "evidence": {
+        "path": "docs/data/11g-funding-qualification.json",
+        "git_blob_sha": "40eb70b9f6a13f4edffd1c4441fa0f717094480e",
+        "schema": "PVB24_FUNDING_QUALIFICATION_SUMMARY_V1",
+        "checks": [
+          {
+            "path": [
+              "source_coverage_data_hash"
+            ],
+            "equals": "7cede73083b59738ce753df2efbac6fd6ffed1e3fad03d9613eece00197a94d4"
+          },
+          {
+            "path": [
+              "historical_universe_complete"
+            ],
+            "equals": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "SECURITY_MASTER",
+      "status": "PARTIAL",
+      "gaps": [
+        "Reviewed announcements are not a complete listing/delisting/rename/classification security master."
+      ],
+      "evidence": {
+        "path": "docs/data/11f-announcement-coverage.json",
+        "git_blob_sha": "98c8483118d618727bb32d6f20a6095d371c0bca",
+        "schema": "PVB24_ANNOUNCEMENT_SOURCE_COVERAGE_V1",
+        "checks": [
+          {
+            "path": [
+              "report_hash"
+            ],
+            "equals": "5430199b5e2930bba17b75d9d6385b4f496e95af0dbe7867a37b3201c2de47a2"
+          },
+          {
+            "path": [
+              "historical_universe_complete"
+            ],
+            "equals": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "CONTRACT_RULES",
+      "status": "PARTIAL",
+      "gaps": [
+        "Historical tick/step/minimums, contract semantics and rule change stream are incomplete."
+      ],
+      "evidence": {
+        "path": "docs/data/11f-announcement-coverage.json",
+        "git_blob_sha": "98c8483118d618727bb32d6f20a6095d371c0bca",
+        "schema": "PVB24_ANNOUNCEMENT_SOURCE_COVERAGE_V1",
+        "checks": [
+          {
+            "path": [
+              "report_hash"
+            ],
+            "equals": "5430199b5e2930bba17b75d9d6385b4f496e95af0dbe7867a37b3201c2de47a2"
+          },
+          {
+            "path": [
+              "historical_contract_rules_complete"
+            ],
+            "equals": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "LIFECYCLE",
+      "status": "PARTIAL",
+      "gaps": [
+        "Only three reviewed announcement articles are qualified; market-wide lifecycle coverage is incomplete."
+      ],
+      "evidence": {
+        "path": "docs/data/11f-announcement-coverage.json",
+        "git_blob_sha": "98c8483118d618727bb32d6f20a6095d371c0bca",
+        "schema": "PVB24_ANNOUNCEMENT_SOURCE_COVERAGE_V1",
+        "checks": [
+          {
+            "path": [
+              "report_hash"
+            ],
+            "equals": "5430199b5e2930bba17b75d9d6385b4f496e95af0dbe7867a37b3201c2de47a2"
+          },
+          {
+            "path": [
+              "coverage_scope"
+            ],
+            "equals": "REVIEWED_ARTICLES_ONLY_NOT_MARKET_COMPLETE"
+          }
+        ]
+      }
+    },
+    {
+      "name": "LAST_1H",
+      "status": "PARTIAL",
+      "gaps": [
+        "Normalized complete LAST 1h evidence is pinned only for BTCUSDT January 2024, not the pre-Final universe/window."
+      ],
+      "evidence": {
+        "path": "docs/data/11b-normalization-summary.json",
+        "git_blob_sha": "f7fde42620b249e9b41f67f9960754365b2b74b5",
+        "schema": "PVB24_CAUSAL_ARCHIVE_NORMALIZATION_V1",
+        "checks": [
+          {
+            "path": [
+              "normalization_hash"
+            ],
+            "equals": "a7af2112f560a461015b016fe3d80d7ad1efae761efb1f94765a4f65ccd5c60a"
+          },
+          {
+            "path": [
+              "month"
+            ],
+            "equals": "2024-01"
+          },
+          {
+            "path": [
+              "symbol"
+            ],
+            "equals": "BTCUSDT"
+          }
+        ]
+      }
+    },
+    {
+      "name": "LAST_1M",
+      "status": "PARTIAL",
+      "gaps": [
+        "Official LAST 1m archive evidence is acquired only for BTCUSDT January 2024."
+      ],
+      "evidence": {
+        "path": "docs/data/11a-source-manifest.json",
+        "git_blob_sha": "d4b742b2d6f46ac8726fef2a9ba3e240cadd81b5",
+        "schema": "PVB24_ARCHIVE_ACQUISITION_V1",
+        "checks": [
+          {
+            "path": [
+              "dataset_hash"
+            ],
+            "equals": "985453a92d0283cd4fd6fc60b55296bfe65110b7c8f07baa99ffda3d280bb0a6"
+          },
+          {
+            "path": [
+              "acquired_archives"
+            ],
+            "equals": 5
+          }
+        ]
+      }
+    },
+    {
+      "name": "MARK_1M",
+      "status": "PARTIAL",
+      "gaps": [
+        "Official Mark 1m archive evidence is acquired only for BTCUSDT January 2024; full causal equity/liquidation coverage is absent."
+      ],
+      "evidence": {
+        "path": "docs/data/11a-source-manifest.json",
+        "git_blob_sha": "d4b742b2d6f46ac8726fef2a9ba3e240cadd81b5",
+        "schema": "PVB24_ARCHIVE_ACQUISITION_V1",
+        "checks": [
+          {
+            "path": [
+              "dataset_hash"
+            ],
+            "equals": "985453a92d0283cd4fd6fc60b55296bfe65110b7c8f07baa99ffda3d280bb0a6"
+          },
+          {
+            "path": [
+              "acquired_archives"
+            ],
+            "equals": 5
+          }
+        ]
+      }
+    },
+    {
+      "name": "FUNDING_SETTLEMENT_PRICING",
+      "status": "PARTIAL",
+      "gaps": [
+        "4,291 source settlement Marks remain missing before November 2023."
+      ],
+      "evidence": {
+        "path": "docs/data/11g-funding-qualification.json",
+        "git_blob_sha": "40eb70b9f6a13f4edffd1c4441fa0f717094480e",
+        "schema": "PVB24_FUNDING_QUALIFICATION_SUMMARY_V1",
+        "checks": [
+          {
+            "path": [
+              "source_coverage_data_hash"
+            ],
+            "equals": "7cede73083b59738ce753df2efbac6fd6ffed1e3fad03d9613eece00197a94d4"
+          },
+          {
+            "path": [
+              "source_mark_missing_rows"
+            ],
+            "equals": 4291
+          },
+          {
+            "path": [
+              "settlement_pricing_complete"
+            ],
+            "equals": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "FUNDING_SCHEDULE",
+      "status": "PARTIAL",
+      "gaps": [
+        "Cross-month interval continuity and complete historical funding schedule are not qualified."
+      ],
+      "evidence": {
+        "path": "docs/data/11g-funding-qualification.json",
+        "git_blob_sha": "40eb70b9f6a13f4edffd1c4441fa0f717094480e",
+        "schema": "PVB24_FUNDING_QUALIFICATION_SUMMARY_V1",
+        "checks": [
+          {
+            "path": [
+              "source_coverage_data_hash"
+            ],
+            "equals": "7cede73083b59738ce753df2efbac6fd6ffed1e3fad03d9613eece00197a94d4"
+          },
+          {
+            "path": [
+              "funding_schedule_complete"
+            ],
+            "equals": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "FUNDING_RESERVE",
+      "status": "PARTIAL",
+      "gaps": [
+        "The 30-day causal funding-reserve calendar remains unqualified despite exact-source settlement usability."
+      ],
+      "evidence": {
+        "path": "docs/data/11k-funding-usability-control.json",
+        "git_blob_sha": "959637b30306983e1ab7d2e9c7b907329020ea95",
+        "schema": "PVB24_FUNDING_SETTLEMENT_USABILITY_CONTROL_V1",
+        "checks": [
+          {
+            "path": [
+              "source_comparison_report_hash"
+            ],
+            "equals": "21eb9014863c43a749f7210e732a559f4b9b63d8a0c26b4afd7fad788ca66ba8"
+          },
+          {
+            "path": [
+              "funding_reserve_coverage_qualified"
+            ],
+            "equals": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "LIQUIDATION_RULES",
+      "status": "PARTIAL",
+      "gaps": [
+        "Historical maintenance-margin/leverage tiers and liquidation qualification remain incomplete."
+      ],
+      "evidence": {
+        "path": "docs/data/11g-funding-qualification.json",
+        "git_blob_sha": "40eb70b9f6a13f4edffd1c4441fa0f717094480e",
+        "schema": "PVB24_FUNDING_QUALIFICATION_SUMMARY_V1",
+        "checks": [
+          {
+            "path": [
+              "source_coverage_data_hash"
+            ],
+            "equals": "7cede73083b59738ce753df2efbac6fd6ffed1e3fad03d9613eece00197a94d4"
+          },
+          {
+            "path": [
+              "historical_rules_complete"
+            ],
+            "equals": false
+          }
+        ]
+      }
+    }
+  ]
+}
