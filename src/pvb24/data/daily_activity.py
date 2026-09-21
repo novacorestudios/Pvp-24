@@ -443,6 +443,7 @@ def _reconcile(kind, fact, event_observation, boundary_observation):
         "historical_lifecycle_verified": False,
     }
 
+
 def reconcile_qualification_activity(qualification, output, *, fetch=public_daily_bytes):
     if qualification.get("schema") != QUALIFICATION_SCHEMA:
         raise ValueError("Pinned body qualification report required")
