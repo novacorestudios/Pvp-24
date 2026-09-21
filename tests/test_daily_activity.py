@@ -207,7 +207,6 @@ def test_delisting_nonzero_activity_after_event_remains_a_contradiction(tmp_path
     assert "EVENT_DAY_ACTIVITY_CONTINUES_AFTER_SCHEDULED_SETTLEMENT" in row["contradictions"]
 
 
-
 def test_postponement_supersedes_old_schedule_only_when_causally_available(tmp_path):
     old_event = datetime(2024, 12, 16, 9, tzinfo=UTC)
     revised_event = datetime(2024, 12, 30, 9, tzinfo=UTC)
@@ -247,7 +246,6 @@ def test_postponement_supersedes_old_schedule_only_when_causally_available(tmp_p
     superseded = report["superseded_facts"][0]
     assert superseded["superseded_article_code"] == "a" * 32
     assert superseded["superseded_by_article_code"] == "c" * 32
-
 
 
 def test_delisting_next_day_activity_is_a_contradiction(tmp_path):

@@ -295,8 +295,7 @@ def _effective_lifecycle_records(qualification):
     superseded = []
     for record in _qualified_lifecycle_records(qualification):
         is_postponement = (
-            record["kind"] == "DELISTING"
-            and record["fact"].get("revision_type") == "POSTPONEMENT"
+            record["kind"] == "DELISTING" and record["fact"].get("revision_type") == "POSTPONEMENT"
         )
         if is_postponement:
             candidates = [
@@ -472,9 +471,7 @@ def reconcile_qualification_activity(qualification, output, *, fetch=public_dail
             else event.date() + timedelta(days=1)
         )
         event_result, event_attempt = attempts[(record["symbol"], event.date().isoformat())]
-        boundary_result, boundary_attempt = attempts[
-            (record["symbol"], boundary.isoformat())
-        ]
+        boundary_result, boundary_attempt = attempts[(record["symbol"], boundary.isoformat())]
         event_obs = _observation(event_result, event_attempt)
         boundary_obs = _observation(boundary_result, boundary_attempt)
         reconciliations.append(

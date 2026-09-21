@@ -133,7 +133,6 @@ def acquired(tmp_path, kind="DELISTING"):
     return report, path, Path(path).stem
 
 
-
 def test_postponement_extracts_only_main_causal_schedule_not_later_editor_note():
     body = {
         "node": "root",
@@ -157,7 +156,6 @@ def test_postponement_extracts_only_main_causal_schedule_not_later_editor_note()
             "revision_type": "POSTPONEMENT",
         }
     ]
-
 
 
 def test_original_clock_precision_preliminary_policy_and_no_fabricated_metadata():

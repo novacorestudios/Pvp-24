@@ -90,7 +90,6 @@ def test_listing_body_qualifies_only_from_body_semantics():
     assert result["lifecycle_fact"] is False
 
 
-
 def test_delisting_postponement_qualifies_without_fabricating_entry_cutoff():
     released = datetime(2024, 12, 14, tzinfo=UTC)
     body = canonical(
@@ -126,7 +125,6 @@ def test_delisting_postponement_qualifies_without_fabricating_entry_cutoff():
         }
     ]
     assert "entry_cutoff_at" not in result["facts"][0]
-
 
 
 def test_coin_margined_or_ambiguous_listing_is_not_promoted():
