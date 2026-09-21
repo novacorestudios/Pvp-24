@@ -88,9 +88,7 @@ def test_missing_or_nonmatching_source_evidence_never_becomes_a_payment(
     source_change, eligibility_change, match
 ):
     with pytest.raises(ValueError, match=match):
-        funding_payment_from_exact_source(
-            entry(**source_change), eligibility(**eligibility_change)
-        )
+        funding_payment_from_exact_source(entry(**source_change), eligibility(**eligibility_change))
 
 
 def test_boundary_evidence_is_fail_closed():
@@ -160,7 +158,5 @@ def test_source_wrapper_and_record_must_be_exact_not_best_effort():
 
 def test_event_identity_changes_when_independent_eligibility_evidence_changes():
     first = funding_payment_from_exact_source(entry(), eligibility())
-    second = funding_payment_from_exact_source(
-        entry(), eligibility(revision_id="c" * 64)
-    )
+    second = funding_payment_from_exact_source(entry(), eligibility(revision_id="c" * 64))
     assert first.event_id != second.event_id
