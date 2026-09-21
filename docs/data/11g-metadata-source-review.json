@@ -1,0 +1,24 @@
+{
+  "schema": "PVB24_METADATA_SOURCE_QUALIFICATION_REVIEW_V1",
+  "reviewed_at": "2026-09-21T05:07:20.990392+00:00",
+  "primary_documentation": "https://docs.tardis.dev/api/instruments-metadata-api",
+  "probe": {
+    "url": "https://api.tardis.dev/v1/instruments/binance-futures/BTCUSDT",
+    "http_status": 401,
+    "response_sha256": "a01b54ffabc2509de51150491a5dc03d98e7d698b9b960959ae121a5bd68738e",
+    "authentication_attempted": false
+  },
+  "findings": [
+    "Access to this Binance metadata endpoint requires an active pro/business subscription; no qualified records were acquired.",
+    "The documented changes field guarantees complete contract-multiplier changes only; tick/amount increments and other field history are best-effort.",
+    "availableSince/availableTo describe provider availability, not exact exchange listing/delisting timestamps.",
+    "The active flag represents current trading status; some older or delisted instruments lack underlying classification.",
+    "The documented metadata schema does not establish complete historical maintenance-margin tier coverage."
+  ],
+  "qualification": "NOT_QUALIFIED",
+  "historical_universe_complete": false,
+  "historical_rules_complete": false,
+  "data_accessed": "HTTP_ERROR_ONLY_NO_MARKET_DATA",
+  "conclusion": "Potential partial source requiring access and independent coverage validation, not a substitute for complete historical rules/security provenance.",
+  "review_hash": "94cd3a185f06861b1096ed7f11fb50635a331a81c6b0611174efb4e3d202c634"
+}

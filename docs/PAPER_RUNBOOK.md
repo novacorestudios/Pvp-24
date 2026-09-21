@@ -28,3 +28,6 @@ Milestone 11E corroborates the sample funding timestamps/rates against the offic
 
 
 Milestone 11F resolves CMS publication-clock ambiguity for five reviewed delisting symbols and connects pinned PRELIMINARY notice events to the shared lifecycle input. Historical original revision/receipt are still unverified. Twelve tick changes remain partial facts, not full rule snapshots or evidence of tradability. Complete historical metadata and funding schedule coverage are still readiness gates. No PAPER readiness, external orders or Final access is enabled.
+
+
+Milestone 11G extends explicit Funding source auditing across pre-Final months and verifies retained REST pagination before reuse. A MATCHED_TIME_RATE result only corroborates source timestamps/rates; it does not settle the declared-interval timestamp discrepancies, prove funding eligibility, or provide complete metadata/universe coverage. All execution/readiness and holdout gates remain unchanged.

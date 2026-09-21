@@ -296,3 +296,12 @@ The funding-history adapter permits only explicit pre-Final monthly requests to 
 AnnouncementRequest pins the reviewed code/date/kind and independent body/fact hashes. Acquisition uses only the official read-only CMS endpoint with bounded responses and no redirects. The whole CLI selection is validated before I/O. Integer publication/update clocks and strict rich-text parsing produce partial factual records. Raw source and canonical acquisition reports are content-addressed; replay rechecks report pin, decoder, raw bytes and derived facts. Unrelated current recommendation fields do not affect semantic revision.
 
 Delisting events retain original source publication time and modeled availability after a known update or publication plus two seconds. Retrospective revisions are always PRELIMINARY; missing update metadata remains unknown. The existing lifecycle core receives these observations, while tick deltas remain non-executable partial metadata. No historical security/rule completion, classification, settlement fill or unlimited validity interval is inferred.
+
+
+## Multi-month funding provenance (Milestone 11G)
+
+The funding dataset reader reconstructs every pinned REST page chain from retained raw bytes, enforcing exact request cursors, inclusive overlap, terminal short-page proof, source identity, row provenance and derived Mark/type coverage. Truncation, altered pages/rows, incompatible decoders and any promotion to historical/schedule/position qualification are rejected. Final is checked before source page reads.
+
+The coverage auditor accepts an explicit bounded symbol/month selection, verifies archive objects and API pages independently and compares exact times/rates. Missing sources are kept as failed/null observations. Each completed monthly report and cumulative selection checkpoint is immutable; interrupted/not-completed months remain visible. Source agreement does not attest a continuous funding calendar or generate FundingSettlement/FundingPayment objects.
+
+Resume requires an explicit summary hash and identical frozen config/request selection. It revalidates the selected monthly reports against owned archive attempts and full REST page chains, recomputes comparisons, and reuses both successful and unavailable-source evidence. It never selects a latest local report or automatically retries a failed source under an old identity.

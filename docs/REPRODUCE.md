@@ -183,3 +183,32 @@ All 93 Regular rows matched archive time/rate exactly, with no unsupported types
 The summary is data/announcements-11f/summaries/e6793b51221e5e59d54b2cc698d40d146d228b00168d587c890a1183751aecb5.json, with its factual content committed as docs/data/11f-announcement-coverage.json. The summary identifies each immutable report and raw object. Use announcements.delisting_events(root, report_path, expected_report_hash=..., through=...) to reverify that source and select only available pre-Final events. Actual normalization produced five notice events, hash 0904a9bdc632a9682338fd1db1ea7e0e1d798ea195afe39428aab33b5a31b50c, and no events one microsecond before each modeled availability. Tick-change reports produce no executable lifecycle events.
 
 Reacquisition cannot silently accept a changed body or different reviewed facts. Current raw CMS recommendations may change independently, so preserve original source objects for exact reproduction or explicitly select a newly acquired report. This source normalization is not a performance run, original historical availability verification or full contract-rule reconstruction.
+
+
+## Milestone 11G — Pre-Final Funding coverage audit
+
+463 tests pass with Ruff format/lint and provenance. The audit validates the whole explicit range before network access and retains immutable monthly and cumulative checkpoints:
+
+```bash
+.venv/bin/python scripts/audit_funding_coverage.py \
+  --symbol BTCUSDT --first-month 2019-12 --last-month 2025-06 \
+  --workers 4 --output data/funding-11g
+```
+
+December 2019 is an explicit warmup-source request; Development/Validation cover January 2020 through June 2025. Final months are never requested. Exit code 2 means at least one requested monthly time/rate comparison is incomplete or mismatched; the coverage report remains a valid negative result and includes that period. It does not indicate a software-test failure or justify omitting the period. Raw API/ZIP objects, sidecars, attempts and monthly reports are retained separately.
+
+Funding dataset reconsumption uses load_history(root, report_name, expected_report_hash=...) and rejects altered raw pages, truncated chains, wrong cursors, changed rows and qualification promotion. Twenty-two new tests cover page-chain integrity, warmup/Final boundaries, null missing-source counts, exact comparisons, source discrepancies, incomplete batch checkpoints and selection tampering. The historical reserve/ledger equations remain unchanged.
+
+An interrupted audit can resume only from a caller-pinned summary, revalidating the selected retained evidence without network downloads for completed months:
+
+```bash
+.venv/bin/python scripts/audit_funding_coverage.py \
+  --symbol BTCUSDT --first-month 2019-12 --last-month 2025-06 \
+  --workers 4 --output data/funding-11g \
+  --resume-summary data/funding-11g/summaries/87516f8507575a2df630ff0799143d96bec815d93e9b401abfbf7f29d0756337.json \
+  --resume-hash 87516f8507575a2df630ff0799143d96bec815d93e9b401abfbf7f29d0756337
+```
+
+This checkpoint contains 48 completed months; its December 2019 archive-unavailable evidence is preserved, not silently retried. Only the 19 incomplete periods are requested on resume. A changed config, request selection, summary, monthly report or underlying source evidence fails closed. These are source-audit checkpoints, not performance or operational PAPER checkpoints.
+
+Final result: 67 completed months, 66 exact time/rate comparisons; source-selection hash 7cede73083b59738ce753df2efbac6fd6ffed1e3fad03d9613eece00197a94d4. The final immutable summary is data/funding-11g/summaries/c6b722671ce87fe68afd9ab3b261e9e7616cfb06ffe0e17114ce284d86f90920.json. Exit code 2 records the December 2019 archive's HTTP 404. All 6117 REST records were retained; 4291 have no source settlement Mark. Complete monthly Mark fields exist for only 20 months. The smaller qualification report includes exact coverage boundaries. Restore the source-evidence bundle before reconsuming pinned files on a fresh workspace; do not silently substitute a later reacquisition.

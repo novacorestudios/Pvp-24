@@ -53,3 +53,12 @@ The official historical funding endpoint returned 93 Regular BTCUSDT January 202
 Three reviewed articles provide five delisting facts (BLUEBIRDUSDT, FOOTBALLUSDT, LOOMUSDT, ORBSUSDT, XEMUSDT) and twelve tick changes effective 2024-03-19 06:30 UTC. Exact source publication times are 2024-03-19 05:05:02.006 UTC, 2024-11-29 04:00:01.809 UTC and 2024-03-18 09:55:15.279 UTC respectively. The twenty-four-hour publication display is no longer used to infer timezone or truncate milliseconds.
 
 The machine-readable 17-row report data/11f-announcement-coverage.json enumerates symbol, dates, source, raw hash and partial facts; it explicitly records missing full security records, full rules and actual settlement fills. Coverage start/end remain null, not an invented continuous range. Two USDC-quoted tick rows are retained as observed data, not admitted to the USDT universe. Known tick-before values do not prove all older rule periods. Delisting cutoffs do not replace PVB-24's immediate announcement-based entry block. All inputs remain PRELIMINARY; three selected articles are not a complete historical metadata catalog.
+
+
+## 11G — Full pre-Final BTCUSDT Funding source audit
+
+The 67 requested months are individually recorded in data/11g-funding-source-coverage.json: December 2019 warmup plus January 2020–June 2025. There are 66 exact time/rate matches comprising 6024 archived records, against 6117 REST records in all 67 months. The December 2019 archive checksum is unavailable (HTTP 404); its REST history has 93 records. No period was silently removed. This is explicit single-symbol source qualification, not historical universe coverage.
+
+The field-level summary data/11g-funding-qualification.json records 1826 available and 4291 missing settlement Mark prices. Complete monthly Mark coverage begins November 2023; two earlier marks exist on October 31 after the 00:00:00.001 record lacking a mark. No candle price or zero replaces these missing settlement observations.
+
+3503 within-month source interval discrepancies remain visible. The audit compares exact timestamps/rates without reconstructing a funding schedule from the last row or smoothing nominal/actual timestamp differences. Cross-month interval semantics and funding eligibility remain unqualified; source agreement alone cannot enable the reserve/ledger or VERIFIED evaluation. Current metadata provider documentation and an unauthenticated HTTP 401 probe are recorded separately in data/11g-metadata-source-review.json; no complete alternate security/rule history was obtained.
