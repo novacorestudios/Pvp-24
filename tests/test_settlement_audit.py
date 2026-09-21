@@ -113,7 +113,6 @@ def test_previous_close_is_diagnostic_only_even_when_exactly_available(tmp_path)
     assert result["archive_derived_settlement_prices"] == 0
 
 
-
 @pytest.mark.parametrize("change", ["hash", "request", "report", "duplicate", "final", "empty"])
 def test_selection_tampering_and_holdout_fail_closed(tmp_path, change):
     path, pin, _ = setup(tmp_path)
