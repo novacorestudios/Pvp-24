@@ -88,8 +88,7 @@ def audit_funding_schedule(root, summary_path, *, expected_summary_sha256):
 
     archive_rows.sort(key=lambda row: row.calculated_at)
     if any(
-        previous.symbol != current.symbol
-        or previous.calculated_at >= current.calculated_at
+        previous.symbol != current.symbol or previous.calculated_at >= current.calculated_at
         for previous, current in zip(archive_rows, archive_rows[1:], strict=False)
     ):
         raise ValueError("Funding archive event index is ambiguous")
