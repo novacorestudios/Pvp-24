@@ -244,16 +244,19 @@ def _listing_facts_from_text(body_text):
     )
 
     launch_segments = re.findall(
-        r"Binance Futures will launch\s+(?:a\s+|an\s+)?(.{1,240}?)\s+perpetual contracts?",
+        r"Binance Futures will launch\s+(?:a\s+|an\s+)?(.{1,240}?)\s+(perpetual contracts?)",
         body_text,
         flags=re.IGNORECASE,
     )
     contract_symbols = set()
-    for segment in launch_segments:
-        contract_symbols.update(re.findall(r"\b([A-Z0-9]+)/USDT\b", segment))
-        contract_symbols.update(
+    for segment, contract_label in launch_segments:
+        segment_symbols = set(re.findall(r"\b([A-Z0-9]+)/USDT\b", segment))
+        segment_symbols.update(
             symbol.upper() for symbol in re.findall(r"\b([A-Z0-9]+)USDT\b", segment, re.IGNORECASE)
         )
+        if len(segment_symbols) > 1 and contract_label.lower() == "perpetual contract":
+            raise ValueError("One unambiguous legacy USDT perpetual listing required")
+        contract_symbols.update(segment_symbols)
 
     post_contract = re.findall(
         r"Binance Futures will launch(?:\s+its\s+[A-Za-z0-9]+)?\s+perpetual contract,?\s*"

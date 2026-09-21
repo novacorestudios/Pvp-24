@@ -87,7 +87,7 @@ def write_report(root, rows):
         "operational_ready": False,
         "live_enabled": False,
     }
-    raw = (json.dumps(report, indent=2, default=str) + "\n").encode()
+    raw = canonical(report).encode()
     sha = hashlib.sha256(raw).hexdigest()
     (root / "reports").mkdir(parents=True)
     (root / "reports" / f"{sha}.json").write_bytes(raw)
