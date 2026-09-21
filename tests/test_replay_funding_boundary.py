@@ -226,7 +226,7 @@ def test_exact_source_replay_receipt_is_restart_idempotent(tmp_path):
 
 def test_ambiguous_same_boundary_fill_order_is_not_eligibility_evidence():
     ledger = Ledger(D(1000))
-    ledger.register(OwnedPosition("p", "BTCUSDT", Side.LONG, NOW))
+    ledger.register(OwnedPosition("signal", "BTCUSDT", Side.LONG, NOW))
     entered = record("e", "2", "100", side=Side.LONG, seconds=10)
     reduced = record(
         "x",
