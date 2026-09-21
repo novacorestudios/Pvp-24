@@ -48,9 +48,7 @@ def test_multi_symbol_shared_launch_is_recovered():
         ),
     )
     assert [fact["symbol"] for fact in facts] == ["BALUSDT", "CRVUSDT"]
-    assert {fact["launch_at"] for fact in facts} == {
-        datetime(2020, 9, 1, 7, tzinfo=UTC)
-    }
+    assert {fact["launch_at"] for fact in facts} == {datetime(2020, 9, 1, 7, tzinfo=UTC)}
 
 
 def test_compact_symbol_listing_is_recovered():
