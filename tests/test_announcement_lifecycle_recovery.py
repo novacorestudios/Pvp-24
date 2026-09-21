@@ -2,8 +2,6 @@ import hashlib
 import json
 from datetime import UTC, datetime
 
-import pytest
-
 from pvb24.data.announcement_recovery import recover_retained_lifecycle_facts
 from pvb24.ids import canonical, digest
 
