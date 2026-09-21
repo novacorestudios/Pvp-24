@@ -1,0 +1,39 @@
+name: M11X Listing Conflict Source Probe
+
+on:
+  push:
+    branches:
+      - build/pvb24-v1
+    paths:
+      - ".github/workflows/m11x-listing-conflict-source.yml"
+      - "src/pvb24/data/listing_conflict_source.py"
+      - "scripts/probe_listing_conflict_sources.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e '.[dev]'
+      - name: Verify repository provenance
+        run: python scripts/verify_provenance.py
+      - name: Retain explicit official conflict sources
+        run: |
+          mkdir -p artifacts/m11x/listing-conflict-source
+          python scripts/probe_listing_conflict_sources.py \
+            --root artifacts/m11x/listing-conflict-source \
+            --code 02d2b629c7b04786b9a76c132a3ed541 \
+            --code e59b61e52ad24b43bd1032052ea3a025 \
+            | tee artifacts/m11x/listing-conflict-source-summary.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m11x-listing-conflict-source
+          path: artifacts/m11x
+          if-no-files-found: error

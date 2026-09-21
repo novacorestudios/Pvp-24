@@ -1,0 +1,44 @@
+"""Fetch explicit official Binance CMS sources for M11X listing-conflict review."""
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from verify_provenance import verify  # noqa: E402
+
+from pvb24.data.announcements import BASE, MAX_BYTES, public_announcement  # noqa: E402
+from pvb24.data.listing_conflict_source import retain_listing_conflict_source  # noqa: E402
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--root", type=Path, required=True)
+    parser.add_argument("--code", action="append", required=True)
+    args = parser.parse_args()
+    verify(ROOT)
+
+    summaries = []
+    for code in args.code:
+        raw = public_announcement(BASE + code)
+        if len(raw) > MAX_BYTES:
+            raise ValueError("Announcement exceeds resource limit")
+        report, report_sha = retain_listing_conflict_source(args.root / code, code, raw)
+        summaries.append(
+            {
+                "code": code,
+                "published_at": report["published_at"],
+                "known_updated_at": report["known_updated_at"],
+                "source_sha256": report["source_sha256"],
+                "body_sha256": report["body_sha256"],
+                "report_sha256": report_sha,
+            }
+        )
+    print(json.dumps(summaries, indent=2))
+
+
+if __name__ == "__main__":
+    main()
