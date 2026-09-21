@@ -27,6 +27,7 @@ MAX_BYTES = 2 * 1024 * 1024
 POLICY = "PRELIMINARY_CMS_REVIEWED_REVISION_PUBLICATION_OR_KNOWN_UPDATE_PLUS_2S_V1"
 DECODER_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 UTC_TEXT = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}) \(UTC\)"
+ARTICLE_CODE = r"(?:[0-9]{12}|[0-9a-f]{32})"
 
 
 @dataclass(frozen=True)
