@@ -90,7 +90,6 @@ def test_inventory_discovers_retained_listing_delay_revision():
     assert result["candidates"][0]["lifecycle_fact"] is False
 
 
-
 def test_inventory_fails_closed_on_unpinned_or_boundary_rows():
     listing = row(
         48,

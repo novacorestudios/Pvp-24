@@ -197,7 +197,6 @@ def test_listing_postponement_extracts_explicit_old_and_new_schedule_only():
         extract_facts("LISTING", backwards)
 
 
-
 def test_original_clock_precision_preliminary_policy_and_no_fabricated_metadata():
     request, response = fixture()
     report = decode(request, canonical(response).encode())

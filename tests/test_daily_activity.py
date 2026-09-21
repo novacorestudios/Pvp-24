@@ -296,7 +296,6 @@ def test_late_listing_postponement_preserves_old_unknown_and_adds_new_boundary(t
     assert late["late_revision_after_prior_event"] is True
 
 
-
 def test_delisting_next_day_activity_is_a_contradiction(tmp_path):
     event = datetime(2024, 3, 26, 9, tzinfo=UTC)
     event_request = DailyKlineRequest("TESTUSDT", "2024-03-26")

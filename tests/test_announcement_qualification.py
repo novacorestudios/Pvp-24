@@ -166,7 +166,6 @@ def test_listing_postponement_qualifies_without_fabricating_leverage():
     assert "max_leverage" not in result["facts"][0]
 
 
-
 def test_coin_margined_or_ambiguous_listing_is_not_promoted():
     body = listing_body().replace("VET/USDT", "VET/USD")
     result = qualify_candidate(candidate(), response(body))
