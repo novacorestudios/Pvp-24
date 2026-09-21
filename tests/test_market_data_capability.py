@@ -147,11 +147,7 @@ def test_corrupt_retained_archive_blocks_attestation_even_if_manifest_claims_com
     upath, uhash = universe(tmp_path)
     opath, ohash = obligations(tmp_path, uhash)
     apath, report = acquisition(tmp_path)
-    mark = next(
-        row
-        for row in report["archives"]
-        if row["request"]["kind"] == "markPriceKlines"
-    )
+    mark = next(row for row in report["archives"] if row["request"]["kind"] == "markPriceKlines")
     (tmp_path / "objects" / mark["archive_object"]).write_bytes(b"corrupt")
     result = qualify_market_data(
         tmp_path,

@@ -146,7 +146,9 @@ def required_requests(obligations, capability):
     for obligation in obligations:
         for month in _months(obligation):
             rows.add(ArchiveRequest(obligation.symbol, kind, month, interval))
-    return tuple(sorted(rows, key=lambda row: (row.symbol, row.month, row.kind, row.interval or "")))
+    return tuple(
+        sorted(rows, key=lambda row: (row.symbol, row.month, row.kind, row.interval or ""))
+    )
 
 
 def _load_acquisition(root, report_path, expected_dataset_hash, expected_config_hash):
