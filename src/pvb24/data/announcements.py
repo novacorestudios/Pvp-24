@@ -156,14 +156,14 @@ def extract_facts(kind, body):
         body_text = text(body)
         if "Binance Futures will launch" not in body_text or "perpetual contract" not in body_text:
             raise ValueError("Explicit Binance Futures perpetual launch statement required")
-        symbols = sorted(set(re.findall(r"\\b([A-Z0-9]+)/USDT\\b", body_text)))
+        symbols = sorted(set(re.findall(r"\b([A-Z0-9]+)/USDT\b", body_text)))
         launches = re.findall(
-            r"(?:trading opening at|trading opens on|open trading at)\\s*"
-            r"(\\d{4}/\\d{2}/\\d{2}\\s+\\d{1,2}:\\d{2}\\s+(?:AM|PM))\\s*\\(UTC\\)",
+            r"(?:trading opening at|trading opens on|open trading at)\s*"
+            r"(\d{4}/\d{2}/\d{2}\s+\d{1,2}:\d{2}\s+(?:AM|PM))\s*\(UTC\)",
             body_text,
         )
         leverages = re.findall(
-            r"(?:select between 1-|up to )(\\d+)x leverage",
+            r"(?:select between 1-|up to )(\d+)x leverage",
             body_text,
             flags=re.IGNORECASE,
         )
