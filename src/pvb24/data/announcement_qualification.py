@@ -335,3 +335,106 @@ def qualify_inventory(
     encoded = canonical(report).encode()
     name = object_write(output / "reports", encoded, ".json")
     return json.loads(encoded), output / "reports" / name
+
+
+def load_qualification(root, report_path, *, expected_sha256, inventory_root):
+    """Replay retained qualified source bytes and their catalog-bound candidate inventory."""
+
+    root = Path(root)
+    path = _report_path(report_path, expected_sha256)
+    raw = (root / path).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != expected_sha256:
+        raise ValueError("Pinned announcement qualification report changed")
+    report = strict_json(raw)
+    if (
+        report.get("schema") != SCHEMA
+        or report.get("quality") != "PRELIMINARY"
+        or report.get("final_test_access") != "LOCKED"
+        or report.get("requested_window_complete") is not False
+        or report.get("upper_boundary_coverage_proven") is not False
+        or report.get("historical_publication_times_verified") is not False
+        or report.get("historical_universe_complete") is not False
+        or report.get("security_master_complete") is not False
+        or report.get("lifecycle_complete") is not False
+        or report.get("performance_run") is not False
+        or report.get("operational_ready") is not False
+        or report.get("live_enabled") is not False
+    ):
+        raise ValueError("Locked PRELIMINARY announcement qualification report required")
+    inventory = load_inventory(
+        inventory_root,
+        report.get("inventory_report"),
+        expected_sha256=report.get("inventory_report_sha256"),
+    )
+    if report.get("inventory_hash") != inventory.get("inventory_hash"):
+        raise ValueError("Qualification report inventory identity changed")
+    results = report.get("results")
+    if (
+        not isinstance(results, list)
+        or report.get("candidate_count") != len(results)
+        or digest(results) != report.get("results_hash")
+    ):
+        raise ValueError("Complete qualification result set required")
+    candidates = {row["code"]: row for row in inventory["candidates"]}
+    if len(candidates) != len(inventory["candidates"]) or set(candidates) != {
+        row.get("code") for row in results
+    }:
+        raise ValueError("Qualification candidates differ from pinned inventory")
+
+    for result in results:
+        candidate = candidates[result["code"]]
+        expected_identity = {
+            "catalog_id": candidate["catalog_id"],
+            "catalog_scope": candidate["catalog_scope"],
+            "code": candidate["code"],
+            "title": candidate["title"],
+            "catalog_released_at": candidate["released_at"],
+            "article_url": candidate["article_url"],
+            "kind": _kind(candidate),
+        }
+        if any(
+            canonical(result.get(key)) != canonical(value)
+            for key, value in expected_identity.items()
+        ):
+            raise ValueError("Qualification result identity differs from candidate inventory")
+        retained = result.get("source_retained")
+        if type(retained) is not bool:
+            raise ValueError("Explicit source-retention state required")
+        source_object = result.get("source_object")
+        if not retained:
+            if source_object is not None or result.get("status") in (
+                QUALIFIED,
+                SEMANTIC_UNQUALIFIED,
+            ):
+                raise ValueError("Qualified/semantic source bytes must remain replayable")
+            continue
+        source_sha256 = result.get("source_sha256")
+        if (
+            not isinstance(source_sha256, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", source_sha256)
+            or source_object != "objects/" + source_sha256 + ".json"
+        ):
+            raise ValueError("Content-addressed retained announcement source required")
+        source = (root / source_object).read_bytes()
+        if hashlib.sha256(source).hexdigest() != source_sha256:
+            raise ValueError("Retained announcement source bytes changed")
+        replayed = qualify_candidate(candidate, source)
+        recorded = {
+            key: value
+            for key, value in result.items()
+            if key not in ("retrieved_at", "source_object")
+        }
+        if canonical(replayed) != canonical(recorded):
+            raise ValueError("Announcement semantic qualification differs on source replay")
+
+    counts = Counter(row["status"] for row in results)
+    if dict(sorted(counts.items())) != report.get("status_counts"):
+        raise ValueError("Qualification status counts differ from result rows")
+    requests = [row["review_request"] for row in results if row["status"] == QUALIFIED]
+    if (
+        canonical(requests) != canonical(report.get("review_requests"))
+        or digest(requests) != report.get("review_requests_hash")
+        or report.get("source_fetch_complete") is not (counts[SOURCE_ERROR] == 0)
+    ):
+        raise ValueError("Qualification summary differs from replayed source results")
+    return report
