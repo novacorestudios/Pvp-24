@@ -1,4 +1,4 @@
-# Handoff — Milestone 11T (UNKNOWN listing boundary audit)
+# Handoff — Milestone 11U (funding settlement-price and schedule evidence audit)
 
 - Repository: novacorestudios/Pvp-24; branch build/pvb24-v1.
 - Exact current HEAD: read the Git branch ref; main remains initialization only.
@@ -10,6 +10,8 @@
 - M11S corrected source-evidence workflow: Actions 35633393635 — SUCCESS on 9df9dc626eb98258c7d89ae231929bb608355099. The later commits through 8351633d5f14238642c0e3cbe64a039cc2fad16d are formatting/test-lint-only; production lifecycle semantics are unchanged. Catalog 48/161 anchors, pinned inventory, qualification V2 and lifecycle reconciliation V2 all succeeded.
 - M11T code checkpoint: c7a1fe4d3b51ad0ac0e0f94ae76da9c647029ddb. Actions 35637293211 — SUCCESS: Ruff format/check, 633 tests, provenance, reference smoke, Freqtrade smoke/parity/framework parity all passed.
 - M11T source-evidence workflow: Actions 35636682664 — SUCCESS on c51a89b15030a5d5996a6fc3877969bcf112d757. Catalog 48 listing-delay discovery now captures the retained DOT postponement article causally; later commits through c7a1fe4d3b51ad0ac0e0f94ae76da9c647029ddb are test-formatting-only.
+- M11U funding code checkpoint: 6450091cb26ef80365740690a64be2ae83b3ea37. Actions 35640860553 — SUCCESS: Ruff format/lint, 638 tests, provenance, reference smoke and Freqtrade smoke/parity/framework parity all passed. M11U hardens settlement-Mark diagnostics and adds a fail-closed funding schedule audit; no strategy/risk/execution/config file changed.
+- M11U retained 11G evidence audit: PVB24-source-evidence-11G.zip SHA-256 85206d50a6148bbbafb285c69eece7fa1a1c8ebd592cb485bdb5448286f7baeb; all 508 manifest files reverified with zero byte/hash/size failures. The selected 67-month BTCUSDT funding evidence has 6024 archive settlement rows across 66 matched months, with 2019-12 archive unavailable. Across 6023 adjacent archive pairs, 2486 equal the declared 8h duration exactly and 3537 preserve millisecond jitter; differences range -45ms to +47ms, with zero pairs large enough for another whole declared interval and no timestamp rounding. This corroborates an ex-post event index only: causal_next_settlement_time_verified=false, funding_schedule_complete=false, no FundingCoverage emitted and funding_reserve_coverage_qualified=false. The existing 4291 missing source-associated settlement Marks remain missing; OHLC current-open and previous-close are diagnostics only and never settlement-price substitutes. Report docs/data/11u-funding-schedule-audit.json SHA-256 327861b288769e17854aff80f10ce641124de2cbf074cab21999f8b63e855541; audit hash e774d7d89ff81042cb89ad338c3816122b34d25fdcbafb246c5a528bcd68cc9c. Final Test LOCKED; operational_ready=false; PAPER NOT READY; LIVE DISABLED.
 - Milestone 1 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423197873 — SUCCESS.
 - Milestone 2 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423500106 — SUCCESS.
 - Milestone 3 final CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423929247 — SUCCESS.
@@ -71,7 +73,7 @@
 - PAPER: NOT READY. LIVE: DISABLED. No orders sent.
 - Original source and baseline config hashes unchanged. See config/manifest.json.
 - Deviation: existing repository display capitalization Pvp-24 retained. No alpha changes.
-- Post-M11P scope audit: comparison from ca5acbfb6d80d721e58c18462f9d6c02b23f9f5d through c7a1fe4d3b51ad0ac0e0f94ae76da9c647029ddb remains confined to data acquisition/provenance, scripts, tests, docs and workflow files. The M11T delta from 29bf6fee787cf8912d552ee81eebfba20fefe9b5 through c7a1fe4d3b51ad0ac0e0f94ae76da9c647029ddb changes only announcement/lifecycle data modules, scripts and tests. No strategy, risk, execution, baseline config or frozen Alpha threshold file changed.
+- Post-M11P scope audit: comparison from ca5acbfb6d80d721e58c18462f9d6c02b23f9f5d through 6450091cb26ef80365740690a64be2ae83b3ea37 remains confined to data acquisition/provenance, scripts, tests, docs and workflow files. The M11U delta from 1e6b0091d41640da0c5d3c9bbe66980f8f59b08a through 6450091cb26ef80365740690a64be2ae83b3ea37 changes only settlement/funding audit modules, one audit script and tests. No strategy, risk, execution, baseline config or frozen Alpha threshold file changed.
 - Artifacts: local artifacts/freqtrade-smoke.log and install logs; successful commands in docs/REPRODUCE.md.
 - No automated background restart is configured or claimed.
 

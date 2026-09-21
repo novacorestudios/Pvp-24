@@ -1,0 +1,39 @@
+{
+  "schema": "PVB24_FUNDING_SCHEDULE_AUDIT_V1",
+  "source_summary_sha256": "c6b722671ce87fe68afd9ab3b261e9e7616cfb06ffe0e17114ce284d86f90920",
+  "source_data_hash": "7cede73083b59738ce753df2efbac6fd6ffed1e3fad03d9613eece00197a94d4",
+  "requested_months": 67,
+  "revalidated_months": 67,
+  "time_rate_matched_months": 66,
+  "archive_unavailable_months": [
+    "2019-12"
+  ],
+  "archive_settlement_rows": 6024,
+  "adjacent_archive_pairs": 6023,
+  "first_archive_settlement": "2020-01-01T00:00:00.000000Z",
+  "last_archive_settlement": "2025-06-30T16:00:00.002000Z",
+  "declared_interval_hours": [
+    "8"
+  ],
+  "exact_declared_elapsed_pairs": 2486,
+  "nonexact_declared_elapsed_pairs": 3537,
+  "minimum_difference_microseconds": -45000,
+  "maximum_difference_microseconds": 47000,
+  "maximum_absolute_difference_microseconds": 47000,
+  "possible_missing_declared_interval_pairs": 0,
+  "actual_interval_index_hash": "37a8169130caf79a09a25e84071385acacc42efd77a3ef72980c8bab9b25c120",
+  "timestamp_rounding_applied": false,
+  "source_query_reconsumption_complete": true,
+  "source_time_rate_comparison_complete": false,
+  "ex_post_settlement_index_corroborated": true,
+  "causal_next_settlement_time_verified": false,
+  "funding_schedule_complete": false,
+  "funding_coverage_attestation_emitted": false,
+  "funding_reserve_coverage_qualified": false,
+  "reason": "EX_POST_EVENT_INDEX_DOES_NOT_PROVE_CAUSAL_INTER_SETTLEMENT_WATERMARK",
+  "quality": "PRELIMINARY",
+  "operational_ready": false,
+  "live_enabled": false,
+  "final_test_access": "LOCKED",
+  "audit_hash": "e774d7d89ff81042cb89ad338c3816122b34d25fdcbafb246c5a528bcd68cc9c"
+}
