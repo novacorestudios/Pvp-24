@@ -1,0 +1,62 @@
+name: M11X Listing Conflict Resolution
+
+on:
+  push:
+    branches:
+      - build/pvb24-v1
+    paths:
+      - ".github/workflows/m11x-listing-conflict-resolution.yml"
+      - "src/pvb24/data/listing_conflict_resolution.py"
+      - "src/pvb24/data/listing_conflict_activity.py"
+      - "scripts/resolve_listing_conflicts.py"
+      - "scripts/audit_listing_conflict_activity.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RECOVERY_RUN_ID: "35664842397"
+      RECOVERY_SHA256: "6e11a4bcd8b4d1f2e69d855e98a69bd95d2cb857cb53d7b5997b8a5f8bce5918"
+      SOURCE_RUN_ID: "35665202158"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e '.[dev]'
+      - name: Restore pinned recovery and conflict sources
+        run: |
+          mkdir -p artifacts/m11x/recovery artifacts/m11x/conflict-source
+          gh run download "$RECOVERY_RUN_ID" --repo "${{ github.repository }}" \
+            --name m11x-retained-listing-recovery --dir artifacts/m11x/recovery
+          gh run download "$SOURCE_RUN_ID" --repo "${{ github.repository }}" \
+            --name m11x-listing-conflict-source --dir artifacts/m11x/conflict-source
+          test "$(sha256sum artifacts/m11x/recovery/11x-retained-listing-recovery.json | cut -d' ' -f1)" = "$RECOVERY_SHA256"
+      - name: Verify repository provenance
+        run: python scripts/verify_provenance.py
+      - name: Compile semantic conflict resolution
+        run: |
+          mkdir -p artifacts/m11x/conflict-resolution
+          python scripts/resolve_listing_conflicts.py \
+            --recovery artifacts/m11x/recovery/11x-retained-listing-recovery.json \
+            --recovery-sha256 "$RECOVERY_SHA256" \
+            --source-root artifacts/m11x/conflict-source/listing-conflict-source \
+            --output artifacts/m11x/conflict-resolution/11x-listing-conflict-resolution.json
+          sha256sum artifacts/m11x/conflict-resolution/11x-listing-conflict-resolution.json
+      - name: Acquire checksum-verified conflict activity
+        run: |
+          python scripts/audit_listing_conflict_activity.py \
+            --root artifacts/m11x/conflict-activity \
+            --output artifacts/m11x/conflict-resolution/11x-listing-conflict-activity.json
+          sha256sum artifacts/m11x/conflict-resolution/11x-listing-conflict-activity.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m11x-listing-conflict-resolution
+          path: artifacts/m11x/conflict-resolution
+          if-no-files-found: error
