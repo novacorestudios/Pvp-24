@@ -83,9 +83,7 @@ def write_recovery(path, recovered):
         "recovered_symbol_count": len(
             {fact["symbol"] for row in recovered for fact in row["facts"]}
         ),
-        "recovered_symbols": sorted(
-            {fact["symbol"] for row in recovered for fact in row["facts"]}
-        ),
+        "recovered_symbols": sorted({fact["symbol"] for row in recovered for fact in row["facts"]}),
         "recovered_listing_article_count": sum(row["kind"] == "LISTING" for row in recovered),
         "recovered_listing_fact_count": sum(
             len(row["facts"]) for row in recovered if row["kind"] == "LISTING"
@@ -106,9 +104,7 @@ def write_recovery(path, recovered):
                 for fact in row["facts"]
             }
         ),
-        "recovered_delisting_article_count": sum(
-            row["kind"] == "DELISTING" for row in recovered
-        ),
+        "recovered_delisting_article_count": sum(row["kind"] == "DELISTING" for row in recovered),
         "recovered_delisting_fact_count": sum(
             len(row["facts"]) for row in recovered if row["kind"] == "DELISTING"
         ),

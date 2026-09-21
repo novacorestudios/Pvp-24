@@ -166,11 +166,7 @@ def compile_security_master_obligations(
     source = _load_m11v(path, expected_sha256)
     if (recovery_path is None) != (recovery_sha256 is None):
         raise ValueError("Recovery path and SHA-256 must be supplied together")
-    recovery = (
-        _load_recovery(recovery_path, recovery_sha256)
-        if recovery_path is not None
-        else None
-    )
+    recovery = _load_recovery(recovery_path, recovery_sha256) if recovery_path is not None else None
 
     listings = source.get("listing_candidates")
     unresolved = source.get("unresolved_listings")
@@ -258,7 +254,10 @@ def compile_security_master_obligations(
             kind = article.get("kind")
             if kind not in ("LISTING", "DELISTING"):
                 raise ValueError("Recovered lifecycle kind unsupported")
-            if article.get("historical_verified") is not False or article.get("source_retained") is not True:
+            if (
+                article.get("historical_verified") is not False
+                or article.get("source_retained") is not True
+            ):
                 raise ValueError("Recovered source qualification flags changed")
             available = article.get("available_at")
             source_url = article.get("article_url")
@@ -278,7 +277,10 @@ def compile_security_master_obligations(
                 symbol = fact.get("symbol")
                 revision = _revision(code, source_sha, fact)
                 if kind == "LISTING":
-                    if fact.get("contract_type") != "PERPETUAL" or fact.get("quote_asset") != "USDT":
+                    if (
+                        fact.get("contract_type") != "PERPETUAL"
+                        or fact.get("quote_asset") != "USDT"
+                    ):
                         raise ValueError("Recovered listing must be explicit USDT perpetual")
                     _append_listing(
                         listing_evidence,
@@ -312,11 +314,7 @@ def compile_security_master_obligations(
             by_time[row["effective_from"]].append(row)
         times = sorted(by_time)
         reconciled_times = sorted(
-            {
-                row["effective_from"]
-                for row in rows
-                if row["boundary_reconciled"]
-            }
+            {row["effective_from"] for row in rows if row["boundary_reconciled"]}
         )
         if len(times) == 1:
             selected = by_time[times[0]]
@@ -326,7 +324,9 @@ def compile_security_master_obligations(
                 {
                     "symbol": symbol,
                     "selected_reconciled_start": reconciled_times[0],
-                    "other_announced_starts": [time for time in times if time != reconciled_times[0]],
+                    "other_announced_starts": [
+                        time for time in times if time != reconciled_times[0]
+                    ],
                     "blocking_obligation": "RESOLVE_RELISTING_OR_DUPLICATE_START_SEMANTICS",
                 }
             )
