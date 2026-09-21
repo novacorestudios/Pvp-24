@@ -1,8 +1,9 @@
-"""Fail-closed review of pre-Final Binance announcement catalog start positions."""
+"""Fail-closed review of pre-Final Binance announcement catalog start pages."""
 
 import hashlib
 import json
 import re
+import urllib.error
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -20,8 +21,6 @@ from pvb24.data.archive import FINAL_START
 from pvb24.ids import canonical
 from pvb24.types import utc
 
-PROBE_PAGE = 1_000_000
-
 
 @dataclass(frozen=True)
 class CatalogAnchor:
@@ -29,6 +28,9 @@ class CatalogAnchor:
     code: str
     released_at: datetime
     source_url: str
+    start_page_hint: int
+    hint_source_url: str
+    hint_ui_pages: int
 
 
 REVIEWED_ANCHORS = {
@@ -36,15 +38,19 @@ REVIEWED_ANCHORS = {
         48,
         "fb8600ebb2ae4e80a0db1945e683993c",
         datetime(2025, 6, 30, 7, 0, tzinfo=UTC),
-        "https://www.binance.com/en/support/announcement/detail/"
-        "fb8600ebb2ae4e80a0db1945e683993c",
+        "https://www.binance.com/en/support/announcement/detail/fb8600ebb2ae4e80a0db1945e683993c",
+        114,
+        "https://www.binance.com/en/support/announcement/list/48",
+        227,
     ),
     161: CatalogAnchor(
         161,
         "173b2a63c03141009029407ecfebd14a",
         datetime(2025, 6, 26, 7, 0, tzinfo=UTC),
-        "https://www.binance.com/en/support/announcement/detail/"
-        "173b2a63c03141009029407ecfebd14a",
+        "https://www.binance.com/en/support/announcement/detail/173b2a63c03141009029407ecfebd14a",
+        22,
+        "https://www.binance.com/en/support/announcement/list/161",
+        44,
     ),
 }
 
@@ -60,6 +66,16 @@ def _validated(anchor: CatalogAnchor) -> CatalogAnchor:
     expected = "https://www.binance.com/en/support/announcement/detail/" + anchor.code
     if anchor.source_url != expected:
         raise ValueError("Anchor must pin its exact official Binance detail URL")
+    expected_list = f"https://www.binance.com/en/support/announcement/list/{anchor.catalog_id}"
+    if anchor.hint_source_url != expected_list:
+        raise ValueError("Start-page hint must cite the exact official Binance catalog URL")
+    if (
+        type(anchor.hint_ui_pages) is not int
+        or anchor.hint_ui_pages < 1
+        or type(anchor.start_page_hint) is not int
+        or anchor.start_page_hint < 1
+    ):
+        raise ValueError("Positive reviewed catalog page hints required")
     return anchor
 
 
@@ -67,127 +83,141 @@ def _expected_count(total: int, page_no: int, page_size: int) -> int:
     return max(0, min(page_size, total - (page_no - 1) * page_size))
 
 
+def _page(fetch, anchor, page_no, page_size):
+    url = page_url(anchor.catalog_id, page_no, page_size)
+    raw = fetch(url)
+    total, rows = decode_page(raw, anchor.catalog_id, page_no, page_size)
+    return url, raw, total, rows
+
+
 def review_anchor_start(
     anchor: CatalogAnchor,
     output: Path,
     *,
     fetch=public_page,
-    target_page_size: int = DEFAULT_PAGE_SIZE,
-    probe_page: int = PROBE_PAGE,
-    max_requests: int = 5000,
+    page_size: int = DEFAULT_PAGE_SIZE,
+    max_pages: int = 200,
+    max_hint_backoff: int = 20,
 ):
-    """Locate a safe catalog page by walking from the oldest row toward a reviewed anchor.
+    """Walk a reviewed old-page hint toward a pre-Final anchor.
 
-    The scan uses singleton pages and stops on the reviewed pre-Final anchor. It never
-    intentionally traverses newer rows to discover the anchor. The returned target page is the
-    first page at target_page_size whose first ordinal is not newer than the anchor ordinal.
+    The human-reviewed hint comes from the official catalog UI pagination and is only a bounded
+    search hint, never a completeness claim. Out-of-range HTTP 400 responses may be backed off
+    before the first valid source page. Once a valid page is found, every decoded row must remain
+    strictly pre-Final. The exact reviewed anchor code/time must be encountered before source time
+    advances past it.
     """
 
     anchor = _validated(anchor)
-    page_url(anchor.catalog_id, 1, target_page_size)
-    if type(probe_page) is not int or probe_page < 2:
-        raise ValueError("Out-of-range catalog probe page required")
-    if type(max_requests) is not int or not 1 <= max_requests <= 10000:
-        raise ValueError("Explicit bounded anchor-review request budget required")
+    page_url(anchor.catalog_id, 1, page_size)
+    if type(max_pages) is not int or not 1 <= max_pages <= 500:
+        raise ValueError("Explicit bounded catalog review page budget required")
+    if type(max_hint_backoff) is not int or not 0 <= max_hint_backoff <= 100:
+        raise ValueError("Bounded reviewed-hint backoff required")
 
     started = datetime.now(UTC)
-    probe_url = page_url(anchor.catalog_id, probe_page, 1)
-    probe_raw = fetch(probe_url)
-    total, probe_rows = decode_page(probe_raw, anchor.catalog_id, probe_page, 1)
-    if probe_rows or not 0 < total < probe_page:
-        raise ValueError("Empty out-of-range catalog probe with exact total required")
-
-    previous_time = None
-    anchor_position = None
-    anchor_raw = None
-    anchor_row = None
-    requests = 1
-    lower = max(1, total - max_requests + 2)
-    for position in range(total, lower - 1, -1):
-        url = page_url(anchor.catalog_id, position, 1)
-        raw = fetch(url)
-        requests += 1
-        observed_total, rows = decode_page(raw, anchor.catalog_id, position, 1)
-        if observed_total != total or len(rows) != 1:
-            raise ValueError("Stable singleton catalog source required during anchor review")
-        row = rows[0]
-        released = row["released_at"]
-        if released >= FINAL_START:
-            raise ValueError("Anchor review reached the locked Final Test before the anchor")
-        if previous_time is not None and released < previous_time:
-            raise ValueError("Catalog ordering changed while approaching reviewed anchor")
-        previous_time = released
-        if row["code"] == anchor.code:
-            if released != anchor.released_at:
-                raise ValueError("Reviewed anchor release time differs from catalog source")
-            anchor_position = position
-            anchor_raw = raw
-            anchor_row = row
-            break
-        if released > anchor.released_at:
-            raise ValueError("Reviewed anchor absent before source advanced past anchor time")
-    if anchor_position is None or anchor_raw is None or anchor_row is None:
-        raise ValueError("Reviewed anchor not found within bounded source review")
-
-    safe_page = 1 + (anchor_position - 1 + target_page_size - 1) // target_page_size
-    safe_url = page_url(anchor.catalog_id, safe_page, target_page_size)
-    safe_raw = fetch(safe_url)
-    requests += 1
-    safe_total, safe_rows = decode_page(
-        safe_raw, anchor.catalog_id, safe_page, target_page_size
-    )
-    expected = _expected_count(total, safe_page, target_page_size)
-    if safe_total != total or expected <= 0 or len(safe_rows) != expected:
-        raise ValueError("Safe start page position conflicts with stable catalog total")
-    if any(row["released_at"] > anchor.released_at for row in safe_rows):
-        raise ValueError("Safe start page contains a row newer than reviewed anchor")
-    if any(row["released_at"] >= FINAL_START for row in safe_rows):
-        raise ValueError("Safe start page crosses the locked Final Test")
-
     root = Path(output)
-    probe_object = object_write(root / "objects", probe_raw, ".json")
-    anchor_object = object_write(root / "objects", anchor_raw, ".json")
-    safe_object = object_write(root / "objects", safe_raw, ".json")
-    report = {
-        "schema": "PVB24_ANNOUNCEMENT_CATALOG_ANCHOR_REVIEW_V1",
-        "catalog_id": anchor.catalog_id,
-        "catalog_scope": CATALOGS[anchor.catalog_id],
-        "quality": "PRELIMINARY",
-        "started_at": started,
-        "completed_at": datetime.now(UTC),
-        "final_test_access": "LOCKED",
-        "anchor": {
-            "code": anchor.code,
-            "released_at": anchor.released_at,
-            "source_url": anchor.source_url,
-            "singleton_page": anchor_position,
-            "object": anchor_object,
-            "row": anchor_row,
-        },
-        "probe": {
-            "page_no": probe_page,
-            "url": probe_url,
-            "object": probe_object,
-            "catalog_total_observed": total,
-        },
-        "target_page_size": target_page_size,
-        "safe_start_page": safe_page,
-        "safe_start_url": safe_url,
-        "safe_start_object": safe_object,
-        "safe_start_rows": safe_rows,
-        "safe_start_newest_at": safe_rows[0]["released_at"],
-        "safe_start_oldest_at": safe_rows[-1]["released_at"],
-        "requests": requests,
-        "historical_universe_complete": False,
-        "security_master_complete": False,
-        "lifecycle_complete": False,
-        "performance_run": False,
-        "operational_ready": False,
-        "live_enabled": False,
-    }
-    encoded = canonical(report).encode()
-    name = object_write(root / "reports", encoded, ".json")
-    return json.loads(encoded), root / "reports" / name
+    pages = []
+    expected_total = None
+    previous_newest = None
+    first_valid_page = None
+    page_no = anchor.start_page_hint
+    backoff = 0
+
+    while page_no >= 1 and len(pages) < max_pages:
+        try:
+            url, raw, total, rows = _page(fetch, anchor, page_no, page_size)
+        except urllib.error.HTTPError as exc:
+            if first_valid_page is not None or exc.code != 400 or backoff >= max_hint_backoff:
+                raise
+            backoff += 1
+            page_no -= 1
+            continue
+
+        if not rows:
+            if first_valid_page is None and backoff < max_hint_backoff:
+                backoff += 1
+                page_no -= 1
+                continue
+            raise ValueError("Nonempty reviewed announcement catalog page required")
+
+        if first_valid_page is None:
+            first_valid_page = page_no
+        if expected_total is None:
+            expected_total = total
+        elif total != expected_total:
+            raise ValueError("Catalog total changed during reviewed anchor walk")
+        if len(rows) != _expected_count(total, page_no, page_size):
+            raise ValueError("Catalog page length conflicts with declared total/position")
+        if any(row["released_at"] >= FINAL_START for row in rows):
+            raise ValueError("Reviewed catalog walk reached the locked Final Test")
+
+        oldest = min(row["released_at"] for row in rows)
+        newest = max(row["released_at"] for row in rows)
+        if previous_newest is not None and oldest < previous_newest:
+            raise ValueError("Catalog ordering changed while walking toward reviewed anchor")
+        previous_newest = newest
+
+        source_name = object_write(root / "objects", raw, ".json")
+        pages.append(
+            {
+                "page_no": page_no,
+                "url": url,
+                "object": source_name,
+                "oldest_at": oldest,
+                "newest_at": newest,
+            }
+        )
+
+        matches = [row for row in rows if row["code"] == anchor.code]
+        if len(matches) > 1:
+            raise ValueError("Reviewed anchor appears more than once on one catalog page")
+        if matches:
+            if matches[0]["released_at"] != anchor.released_at:
+                raise ValueError("Reviewed anchor release time differs from catalog source")
+            report = {
+                "schema": "PVB24_ANNOUNCEMENT_CATALOG_ANCHOR_REVIEW_V2",
+                "catalog_id": anchor.catalog_id,
+                "catalog_scope": CATALOGS[anchor.catalog_id],
+                "quality": "PRELIMINARY",
+                "started_at": started,
+                "completed_at": datetime.now(UTC),
+                "final_test_access": "LOCKED",
+                "hint": {
+                    "source_url": anchor.hint_source_url,
+                    "ui_pages_observed": anchor.hint_ui_pages,
+                    "cms_start_page_hint": anchor.start_page_hint,
+                    "backoff_pages": backoff,
+                    "first_valid_page": first_valid_page,
+                },
+                "anchor": {
+                    "code": anchor.code,
+                    "released_at": anchor.released_at,
+                    "source_url": anchor.source_url,
+                    "catalog_page": page_no,
+                    "row": matches[0],
+                },
+                "catalog_total_observed": expected_total,
+                "page_size": page_size,
+                "safe_start_page": page_no,
+                "safe_start_url": url,
+                "pages": pages,
+                "historical_universe_complete": False,
+                "security_master_complete": False,
+                "lifecycle_complete": False,
+                "performance_run": False,
+                "operational_ready": False,
+                "live_enabled": False,
+            }
+            encoded = canonical(report).encode()
+            name = object_write(root / "reports", encoded, ".json")
+            return json.loads(encoded), root / "reports" / name
+
+        if newest > anchor.released_at:
+            raise ValueError("Reviewed anchor absent before catalog advanced past anchor time")
+        page_no -= 1
+
+    raise ValueError("Reviewed anchor not found within bounded pre-Final catalog walk")
 
 
 def report_sha256(path: Path) -> str:
