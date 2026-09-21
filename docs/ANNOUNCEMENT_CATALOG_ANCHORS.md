@@ -11,9 +11,22 @@ historical-universe count, or a completeness attestation.
 Reviewed pre-Final detail anchors:
 
 - Catalog 48:
-  `fb8600ebb2ae4e80a0db1945e683993c`, published `2025-06-30T07:00:00Z`.
+  `cd4d635399374a68ace90874ce8b9eb2` ("Binance Will List Conflux Network (CFX)"),
+  CMS release clock `2021-03-29T06:54:02.522000Z`. The official detail page independently
+  corroborates the article and minute-level publication time.
 - Catalog 161:
-  `173b2a63c03141009029407ecfebd14a`, published `2025-06-26T07:00:00Z`.
+  `85c046a0853b43c2b791ffc3343ed7f0` ("Notice of Removal of Spot Trading Pairs -
+  2025-01-17"), CMS release clock `2025-01-15T07:00:13.729000Z`. The official detail page
+  independently corroborates the article and minute-level publication time.
+
+Earlier near-Final anchors (2025-06-30 for catalog 48 and 2025-06-26 for catalog 161) were tested
+and deliberately **not** accepted: the walk either encountered a source-order anomaly before the
+catalog-48 anchor or reached a page containing Final-period rows before the catalog-161 anchor.
+The guard remained fail-closed. No Final row is promoted or used as lifecycle evidence.
+
+These older anchors therefore establish only bounded retained pre-Final source coverage. They do
+not close the upper gaps from the accepted anchor to `2025-07-01T00:00:00Z`. Those gaps remain
+explicitly incomplete and must be qualified separately before historical-universe completeness.
 
 The reviewer starts from a conservative old CMS page hint (114 for catalog 48, 22 for catalog 161).
 An out-of-range HTTP 400 may be backed off only before the first valid page. From the first valid
@@ -30,5 +43,5 @@ readiness, or LIVE readiness.
 Official source pages:
 - https://www.binance.com/en/support/announcement/list/48
 - https://www.binance.com/en/support/announcement/list/161
-- https://www.binance.com/en/support/announcement/detail/fb8600ebb2ae4e80a0db1945e683993c
-- https://www.binance.com/en/support/announcement/detail/173b2a63c03141009029407ecfebd14a
+- https://www.binance.com/en/support/announcement/detail/cd4d635399374a68ace90874ce8b9eb2
+- https://www.binance.com/en/support/announcement/detail/85c046a0853b43c2b791ffc3343ed7f0
