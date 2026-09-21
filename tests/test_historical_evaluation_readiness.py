@@ -20,7 +20,7 @@ def git_blob(raw):
     return hashlib.sha1(f"blob {len(raw)}\0".encode() + raw).hexdigest()
 
 
-def evidence(tmp_path, name, *, complete=True):
+def evidence(tmp_path, name, *, complete=True, suffix=""):
     payload = {
         "schema": ATTESTATION_SCHEMA,
         "capability": name,
@@ -31,7 +31,7 @@ def evidence(tmp_path, name, *, complete=True):
         "gaps": [] if complete else ["partial fixture"],
         "final_test_access": "LOCKED",
     }
-    path = tmp_path / f"{name}.json"
+    path = tmp_path / f"{name}{suffix}.json"
     raw = canonical(payload).encode()
     path.write_bytes(raw)
     return {
@@ -80,7 +80,12 @@ def test_all_complete_pinned_attestations_open_only_pre_final_performance_gate(t
 
 
 def test_partial_or_missing_capability_blocks_performance(tmp_path):
-    partial = evidence(tmp_path, "HISTORICAL_UNIVERSE", complete=False)
+    partial = evidence(
+        tmp_path,
+        "HISTORICAL_UNIVERSE",
+        complete=False,
+        suffix="-partial",
+    )
     path = manifest(
         tmp_path,
         overrides={
