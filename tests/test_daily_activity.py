@@ -90,12 +90,8 @@ def test_contiguous_minute_rows_are_valid_and_gap_free():
     archive, checksum = source(request, [first, first + timedelta(minutes=1)])
     activity = decode_daily_activity(request, archive, checksum)
     assert activity["rows"] == 2
-    assert activity["first_interval_start"] == first.isoformat(timespec="microseconds").replace(
-        "+00:00", "Z"
-    )
-    assert activity["last_interval_end"] == (first + timedelta(minutes=2)).isoformat(
-        timespec="microseconds"
-    ).replace("+00:00", "Z")
+    assert activity["first_interval_start"] == first
+    assert activity["last_interval_end"] == first + timedelta(minutes=2)
     assert activity["internal_gaps"] == []
 
 
