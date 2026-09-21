@@ -59,3 +59,24 @@ The resulting binding summary deliberately reports
 boundary from a safe retained anchor proves only that selected older page chain; it does **not**
 fill the newer gap between that anchor and 2025-07-01. Those gaps remain blockers for complete
 historical lifecycle/universe evidence. Final Test remains LOCKED.
+
+## M11R semantic body qualification
+
+Actions run `35627972105` revalidated the replay-pinned catalog evidence, rebuilt the candidate
+inventory, fetched all 146 selected official detail responses, and ran the existing strict body
+fact extractor. The content-addressed qualification report is
+`7a28155902986f143c35ded3b3f4d5c84484590d8b11b8e0ede0aa2bc600a798`; the uploaded artifact
+digest is `sha256:242b4f8a5cf3c6a1d49eb2888946de89837e476ed31831bb8774c607463ab1fa`.
+
+All 146 source fetches completed. Twenty-five current pre-Final source revisions passed strict
+semantic extraction: 21 LISTING articles and 4 DELISTING articles. The other 121 remain
+`SEMANTIC_UNQUALIFIED`; they are not converted into lifecycle facts. No missing value is replaced
+with zero and no title-only candidate is promoted. The 25 generated request-shaped pins are
+semantic extractor outputs, **not** a claim of independent human review or original-revision
+historical verification.
+
+The report keeps `historical_publication_times_verified=false`,
+`historical_universe_complete=false`, `security_master_complete=false`,
+`lifecycle_complete=false`, `requested_window_complete=false`, and
+`upper_boundary_coverage_proven=false`. The newer gaps between the retained catalog slices and the
+Final boundary therefore remain open. M11R does not unlock Final, PAPER, or LIVE.
