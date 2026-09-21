@@ -63,9 +63,7 @@ def semantic_row(root, item, raw, reason="old semantic failure"):
         "historical_verified": False,
         "original_revision_as_published_verified": False,
         "lifecycle_fact": False,
-        "published_at": datetime.fromtimestamp(
-            parsed["data"]["publishDate"] / 1000, UTC
-        ),
+        "published_at": datetime.fromtimestamp(parsed["data"]["publishDate"] / 1000, UTC),
         "known_updated_at": (
             datetime.fromtimestamp(parsed["data"]["lastUpdateTime"] / 1000, UTC)
             if parsed["data"]["lastUpdateTime"]

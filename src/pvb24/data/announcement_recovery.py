@@ -144,8 +144,7 @@ def _listing_variant_facts(body_text):
     grouped = re.compile(
         r"(?:launch\s+|,\s*|\band\s+)(?:a\s+)?"
         r"(?P<names>(?:[A-Z0-9]+/USDT(?:\s*(?:,|and)\s*)?)+)\s+"
-        r"perpetual contracts?\s+with trading opening at\s+"
-        + _LISTING_TIME.pattern,
+        r"perpetual contracts?\s+with trading opening at\s+" + _LISTING_TIME.pattern,
         flags=re.IGNORECASE,
     )
     for match in grouped.finditer(body_text):
@@ -170,8 +169,7 @@ def _listing_variant_facts(body_text):
 
     single = re.search(
         r"Binance Futures will launch\s+(?P<symbol>[A-Z0-9]+USDT)\s+"
-        r"perpetual contracts?,?\s+with trading open at\s+"
-        + _LISTING_TIME.pattern,
+        r"perpetual contracts?,?\s+with trading open at\s+" + _LISTING_TIME.pattern,
         body_text,
         flags=re.IGNORECASE,
     )
@@ -253,17 +251,19 @@ def _segment_usdt_symbols(segment):
     return result
 
 
-def _apply_cutoffs(facts, sentences):
-    cutoff_sentences = [
-        sentence
-        for sentence in sentences
-        if "not allowed to open new positions" in sentence.lower()
-    ]
-    if not cutoff_sentences:
+def _apply_cutoffs(facts, body_text):
+    cutoff_matches = list(
+        re.finditer(
+            r"Users are not allowed to open new positions[^.]{0,5000}\.",
+            body_text,
+            flags=re.IGNORECASE,
+        )
+    )
+    if not cutoff_matches:
         return facts
-    if len(cutoff_sentences) != 1:
+    if len(cutoff_matches) != 1:
         raise ValueError("One explicit retained new-position cutoff statement required")
-    sentence = cutoff_sentences[0]
+    sentence = cutoff_matches[0].group(0)
     times = _time_matches(sentence)
     if not times:
         raise ValueError("Explicit retained new-position cutoff time required")
@@ -294,16 +294,16 @@ def _apply_cutoffs(facts, sentences):
 
 
 def _delisting_variant_facts(body_text):
-    sentences = re.split(r"(?<=[.!?])\s+", body_text)
-    settlement_sentences = [
-        sentence
-        for sentence in sentences
-        if "binance futures" in sentence.lower()
-        and "automatic settlement" in sentence.lower()
-    ]
-    if len(settlement_sentences) != 1:
+    settlement_matches = list(
+        re.finditer(
+            r"Binance Futures will [^.]{0,3000}?automatic settlements?[^.]{0,3000}?\.",
+            body_text,
+            flags=re.IGNORECASE,
+        )
+    )
+    if len(settlement_matches) != 1:
         raise ValueError("One explicit Binance Futures settlement statement required")
-    sentence = settlement_sentences[0]
+    sentence = settlement_matches[0].group(0)
     if "(UTC)" not in sentence:
         raise ValueError("Explicit UTC settlement schedule required")
     times = _time_matches(sentence)
@@ -367,7 +367,7 @@ def _delisting_variant_facts(body_text):
         {"symbol": symbol, "scheduled_settlement_at": when}
         for symbol, when in sorted(by_symbol.items())
     ]
-    return _apply_cutoffs(normalized, sentences)
+    return _apply_cutoffs(normalized, body_text)
 
 
 def _effective_time(kind, fact):
@@ -390,7 +390,9 @@ def _recovered_row(row, replayed, facts, method):
     if available_at >= FINAL_START:
         raise ValueError("Recovered source availability crosses locked Final Test")
     if any(utc(_effective_time(row["kind"], fact)) < available_at for fact in facts):
-        raise ValueError("Recovered lifecycle fact was not causally available before effective time")
+        raise ValueError(
+            "Recovered lifecycle fact was not causally available before effective time"
+        )
     return {
         "kind": row["kind"],
         "code": row["code"],
@@ -494,20 +496,12 @@ def recover_retained_lifecycle_facts(root, expected_report_sha256):
     retrospective.sort(key=lambda row: (row["kind"], row["code"]))
     remaining.sort(key=lambda row: (row["kind"], row["code"]))
     listing_facts = [
-        fact
-        for row in recovered
-        if row["kind"] == "LISTING"
-        for fact in row["facts"]
+        fact for row in recovered if row["kind"] == "LISTING" for fact in row["facts"]
     ]
     delisting_facts = [
-        fact
-        for row in recovered
-        if row["kind"] == "DELISTING"
-        for fact in row["facts"]
+        fact for row in recovered if row["kind"] == "DELISTING" for fact in row["facts"]
     ]
-    all_symbols = sorted(
-        {fact["symbol"] for row in recovered for fact in row["facts"]}
-    )
+    all_symbols = sorted({fact["symbol"] for row in recovered for fact in row["facts"]})
     listing_symbols = sorted({fact["symbol"] for fact in listing_facts})
     delisting_symbols = sorted({fact["symbol"] for fact in delisting_facts})
     remaining_reasons = Counter(row["new_reason"] for row in remaining)
@@ -522,15 +516,11 @@ def recover_retained_lifecycle_facts(root, expected_report_sha256):
         "recovered_fact_count": sum(len(row["facts"]) for row in recovered),
         "recovered_symbol_count": len(all_symbols),
         "recovered_symbols": all_symbols,
-        "recovered_listing_article_count": sum(
-            row["kind"] == "LISTING" for row in recovered
-        ),
+        "recovered_listing_article_count": sum(row["kind"] == "LISTING" for row in recovered),
         "recovered_listing_fact_count": len(listing_facts),
         "recovered_listing_symbol_count": len(listing_symbols),
         "recovered_listing_symbols": listing_symbols,
-        "recovered_delisting_article_count": sum(
-            row["kind"] == "DELISTING" for row in recovered
-        ),
+        "recovered_delisting_article_count": sum(row["kind"] == "DELISTING" for row in recovered),
         "recovered_delisting_fact_count": len(delisting_facts),
         "recovered_delisting_symbol_count": len(delisting_symbols),
         "recovered_delisting_symbols": delisting_symbols,
