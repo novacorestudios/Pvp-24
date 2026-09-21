@@ -15,7 +15,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from pvb24.data.acquisition import object_write
-from pvb24.data.announcement_catalog import FINAL_START, catalog_time
+from pvb24.data.announcement_catalog import catalog_time
 from pvb24.data.announcement_inventory import SCHEMA as INVENTORY_SCHEMA
 from pvb24.data.announcement_inventory import (
     CatalogSlice,
@@ -29,7 +29,7 @@ from pvb24.data.announcements import (
     public_announcement,
     strict_json,
 )
-from pvb24.data.archive import milliseconds
+from pvb24.data.archive import FINAL_START, milliseconds
 from pvb24.ids import canonical, digest
 
 SCHEMA = "PVB24_ANNOUNCEMENT_BODY_QUALIFICATION_V1"
