@@ -6,11 +6,13 @@ acquired and semantically qualified by the announcement decoder before any attes
 """
 
 import re
+from datetime import datetime
 
 from pvb24.data.announcement_catalog import CATALOGS
 from pvb24.data.announcements import BASE as ARTICLE_BASE
-from pvb24.data.archive import FINAL_START, milliseconds
+from pvb24.data.archive import FINAL_START
 from pvb24.ids import canonical, digest
+from pvb24.types import utc
 
 SCHEMA = "PVB24_ANNOUNCEMENT_CANDIDATE_INVENTORY_V1"
 
@@ -22,6 +24,13 @@ _DELISTING_HINTS = (
     re.compile(r"\b(?:delist|delists|delisting)\b.*\b(?:futures|perpetual|contract)\b", re.I),
     re.compile(r"\b(?:futures|perpetual|contract)\b.*\b(?:delist|delisting)\b", re.I),
 )
+
+
+def _time(value):
+    # Catalog reports serialize aware timestamps as ISO-8601, not epoch text.
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value)
+    return utc(value)
 
 
 def _candidate_kind(catalog_id, title):
@@ -56,8 +65,8 @@ def build_candidate_inventory(*reports):
             or report.get("final_test_access") != "LOCKED"
         ):
             raise ValueError("Complete locked announcement catalog slice required")
-        start = milliseconds(report.get("window_start"))
-        end = milliseconds(report.get("window_end"))
+        start = _time(report.get("window_start"))
+        end = _time(report.get("window_end"))
         if not start < end <= FINAL_START:
             raise ValueError("Strict pre-Final inventory window required")
         windows.add((start, end))
@@ -66,9 +75,12 @@ def build_candidate_inventory(*reports):
             raise ValueError("Pinned in-window article selection required")
         for row in rows:
             reviewed_rows += 1
-            if row.get("catalog_id") != catalog_id or row.get("catalog_scope") != CATALOGS[catalog_id]:
+            if (
+                row.get("catalog_id") != catalog_id
+                or row.get("catalog_scope") != CATALOGS[catalog_id]
+            ):
                 raise ValueError("Catalog row identity mismatch")
-            released = milliseconds(row.get("released_at"))
+            released = _time(row.get("released_at"))
             if not start <= released < end:
                 raise ValueError("Catalog row escapes pinned pre-Final window")
             code, title = row.get("code"), row.get("title")

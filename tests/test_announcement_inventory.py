@@ -1,10 +1,11 @@
+import json
 from copy import deepcopy
 from datetime import UTC, datetime
 
 import pytest
 
 from pvb24.data.announcement_inventory import build_candidate_inventory
-from pvb24.ids import digest
+from pvb24.ids import canonical, digest
 
 START = datetime(2024, 1, 1, tzinfo=UTC)
 END = datetime(2025, 1, 1, tzinfo=UTC)
@@ -102,5 +103,39 @@ def test_inventory_requires_same_window_and_unique_catalog():
 
     empty161 = report(161, "DELISTING", [])
     empty161["window_start"] = datetime(2024, 2, 1, tzinfo=UTC)
-    with pytest.raises(ValueError, match="same exact"):
+    with pytest.raises(ValueError, match="one exact"):
         build_candidate_inventory(empty48, empty161)
+
+
+def test_inventory_accepts_actual_iso_report_serialization_without_changing_identity():
+    source = report(
+        48,
+        "NEW_CRYPTOCURRENCY_LISTING",
+        [
+            row(
+                48,
+                "NEW_CRYPTOCURRENCY_LISTING",
+                "0" * 31 + "5",
+                "Launch ABCUSDT Perpetual Contract",
+                datetime(2024, 3, 1, tzinfo=UTC),
+            )
+        ],
+    )
+    assert build_candidate_inventory(source) == build_candidate_inventory(
+        json.loads(canonical(source))
+    )
+
+
+@pytest.mark.parametrize("field", ["window_start", "window_end"])
+def test_inventory_rejects_naive_times(field):
+    source = report(48, "NEW_CRYPTOCURRENCY_LISTING", [])
+    source[field] = "2024-01-01T00:00:00"
+    with pytest.raises(ValueError, match="Timezone-aware"):
+        build_candidate_inventory(source)
+
+
+def test_inventory_rejects_final_window():
+    source = report(48, "NEW_CRYPTOCURRENCY_LISTING", [])
+    source["window_end"] = "2025-07-01T00:00:00.001Z"
+    with pytest.raises(ValueError, match="pre-Final"):
+        build_candidate_inventory(source)
