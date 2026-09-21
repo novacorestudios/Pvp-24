@@ -373,7 +373,7 @@ def extract_facts(kind, body):
         if len(cutoff) != 1:
             raise ValueError("One explicit new-position cutoff required")
         cutoff_value, cutoff_suffix = cutoff[0]
-        cutoff_symbols = set(re.findall(r"\\b[A-Z0-9]+USDT\\b", cutoff_suffix))
+        cutoff_symbols = set(re.findall(r"\b[A-Z0-9]+USDT\b", cutoff_suffix))
         if cutoff_symbols and cutoff_symbols != set(symbols):
             raise ValueError("New-position cutoff symbol set differs from delisting set")
         settlement, cutoff_time = explicit_time(when), explicit_time(cutoff_value)
