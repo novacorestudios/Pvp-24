@@ -1,4 +1,4 @@
-# Handoff — Milestone 11N (pinned market-data capability attestation compiler)
+# Handoff — Milestone 11O (official announcement catalog discovery)
 
 - Repository: novacorestudios/Pvp-24; branch build/pvb24-v1.
 - Exact current HEAD: read the Git branch ref; main remains initialization only.
@@ -6,7 +6,7 @@
 - Milestone 0 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35422954155 — SUCCESS.
 - Public-disclosure authorization: user explicitly approved publishing these files and will change visibility later. Do not request this approval again.
 - Milestone 1: official Freqtrade 2026.8 / 9f10e357a93c1dcf10c2a2b367659214d89c073e installed; repeat locked install and offline dry-run config smoke passed.
-- Local tests/CI: 553 passed; Ruff lint/format passed. Milestone 11N CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35603211675 — SUCCESS.
+- Local tests/CI: 574 passed; Ruff lint/format passed. Milestone 11O CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35606070751 — SUCCESS.
 - Milestone 1 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423197873 — SUCCESS.
 - Milestone 2 CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423500106 — SUCCESS.
 - Milestone 3 final CI: https://github.com/novacorestudios/Pvp-24/actions/runs/35423929247 — SUCCESS.
@@ -60,7 +60,9 @@
 - Milestone 11M implementation: 435eaef94db9bc637242712bfa27701739a5fa17; CI 35601347834 — SUCCESS.
 - Milestone 11M documentation checkpoint: 2a8707a05d67044f6794cb9a04309e0fd2731110; CI 35601621863 — SUCCESS.
 - Milestone 11N implementation final: 0966ffc55948b4e31a494090ac4185752acb4ee5; CI 35603211675 — SUCCESS.
-- Next: acquire/qualify the historical universe/security/lifecycle evidence needed to produce a real COMPLETE HISTORICAL_UNIVERSE attestation, then generate pinned market-data obligations and acquire/verify all required LAST_1H/LAST_1M/MARK_1M months through the M11N compiler. Funding settlement pricing still has 4,291 missing source Marks; funding schedule/reserve and historical liquidation tiers remain incomplete. Any performance runner remains blocked behind require_performance_ready(). Final Test LOCKED; operational_ready=false; LIVE DISABLED.
+- Milestone 11N documentation checkpoint: 9c8a6d9cd2f0544e3b5843c2ee1bd2104b9e1301; CI 35603602858 — SUCCESS.
+- Milestone 11O implementation final: b1911842a8f6950efbc0fba45e023c458464bf55; CI 35606070751 — SUCCESS.
+- Next: use the M11O catalog-source path to build a pinned pre-Final listing/delisting candidate inventory without traversing/retaining Final-period rows, then acquire and semantically qualify the candidate article bodies with the existing announcement decoder. Reconcile qualified lifecycle evidence with causal archive activity before any COMPLETE HISTORICAL_UNIVERSE or SECURITY_MASTER attestation. Funding settlement pricing still has 4,291 missing source Marks; funding schedule/reserve and historical liquidation tiers remain incomplete. Any performance runner remains blocked behind require_performance_ready(). Final Test LOCKED; operational_ready=false; LIVE DISABLED.
 - Code: immutable Fill/Side types, precision-34 Decimal helpers, canonical IDs, SQLite WAL events/snapshots/write-ahead intents, fail-closed paper guard. Causal Timing/Candle/Mark/rule/security models, as-of revision selection, 30-day gap warmup, deterministic historical Top-20 and stale-universe grace implemented. Streaming Wilder ATR, channel/RVOL, exact long/short transitions, restartable indicator checkpoints, cooldown/status gates and timed simultaneous batch ranking implemented. Risk foundations now include rounded protective-stop costs, separate arrival shortfall gate, causal funding reserve with explicit coverage, immutable open/pending portfolio reservations and proportional confirmed-exit release. Descending quantity-step sizing, 1..5x minimum feasible leverage, isolated tier-consistent liquidation reconstruction, reduce-only post-fill action interface and transactional reservation+ENTRY intent are implemented. Execution market models now include sequence-consistent L2, consumed-depth replay, strict IOC caps and gates, partial sweep previews, and labelled preliminary OHLC proxies. Confirmed-fill protection lifecycle and transactional evidence/state/action-intent persistence now exist. Open-position reconciliation is now implemented; execution adapter and integrated backtest remain unimplemented. Exchange liquidation validation is still absent; actual post-fill collateral must come from the adapter, not a hypothetical newly opened smaller position.
 - Data: five official BTCUSDT January 2024 archives acquired and SHA-256/CSV verified: LAST/Mark 1m (44640 rows each), LAST/Mark 1h (744 each), raw funding (93). Candle grids complete for this sample only; funding has 28 millisecond interval discrepancies and no schedule attestation. PRELIMINARY availability model; no historical rules/security master/L2. See DATA_COVERAGE.md and data/11a-source-manifest.json. No backtest evidence.
 - PAPER: NOT READY. LIVE: DISABLED. No orders sent.
@@ -404,3 +406,14 @@ Each obligation expands into the exact Binance monthly archive requests required
 Only a gap-free capability can emit PVB24_CAPABILITY_ATTESTATION_V1. No repository COMPLETE attestation is emitted today because HISTORICAL_UNIVERSE remains PARTIAL; the current 11M readiness matrix therefore remains blocked. The compiler is available through scripts/audit_market_data_capability.py and documented in docs/MARKET_DATA_CAPABILITY_ATTESTATION.md.
 
 Fourteen new tests cover complete synthetic coverage, missing/gapped months, retained-object corruption, universe-attestation integrity, obligation pinning, symbol/window/boundary rejection and governance flags. Full CI 35603211675 passes 553 tests plus Ruff, provenance verification, reference smoke and pinned Freqtrade lifecycle/parity checks. No Alpha/risk/config value changed, Final Test remains LOCKED, no historical performance result was generated and no external order was sent.
+
+
+## Official announcement catalog discovery (Milestone 11O)
+
+A bounded official Binance CMS catalog adapter now inventories source candidates from catalog 48 (New Cryptocurrency Listing) and catalog 161 (Delisting) without treating catalog membership or titles as historical trading eligibility. It validates catalog identity, exact integer release clocks, legacy 12-digit and modern 32-hex article codes, newest-first ordering, duplicate identities, bounded page size, and a stable observed catalog total within one acquisition slice.
+
+Every retained raw catalog page is content-addressed by SHA-256 and revalidated before reuse. A caller must supply an explicitly reviewed starting page; the research engine does not crawl newer pages to discover where the pre-Final boundary begins. If any fetched row reaches or exceeds the requested pre-Final upper boundary, acquisition fails closed rather than filtering the row and continuing. This preserves the locked Final Test while still providing a scalable discovery path for older announcement candidates.
+
+A successful catalog slice means only that the requested source slice reached its lower time boundary without source/pagination ambiguity. It never marks HISTORICAL_UNIVERSE, SECURITY_MASTER or LIFECYCLE complete. Candidate bodies still require explicit acquisition, body/facts hashing and semantic qualification through the existing announcement decoder, then reconciliation with causal archive activity.
+
+The CLI is scripts/acquire_announcement_catalog.py and the source-policy notes are in docs/ANNOUNCEMENT_CATALOG_DISCOVERY.md. Twenty-one new tests cover source identity, legacy codes, ordering, pagination, page-total drift, duplicate/revision conflicts, retained-object tampering, Final-boundary rejection and governance flags. Full CI 35606070751 passes 574 tests plus Ruff, provenance, reference smoke and pinned Freqtrade lifecycle/parity checks. No Alpha/risk/config value changed, no performance result was generated and no external order was sent.
