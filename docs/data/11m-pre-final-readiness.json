@@ -283,24 +283,56 @@
       "name": "LIQUIDATION_RULES",
       "status": "PARTIAL",
       "gaps": [
-        "Historical maintenance-margin/leverage tiers and liquidation qualification remain incomplete."
+        "Three reviewed official Binance margin-tier announcements cover 13 USD-M symbols and only three 2024 change events; the complete 2020-01-01 through 2025-06-30 historical tier stream is not reconstructed.",
+        "The retained announcements expose notional bands, maximum leverage, maintenance-margin rates, effective times and position-cohort policy, but do not expose maintenance amount/cum/deduction values required to validate exact liquidation prices.",
+        "One selected change was published after its effective time and is retrospective evidence only; exchange liquidation-value validation remains incomplete."
       ],
       "evidence": {
-        "path": "docs/data/11g-funding-qualification.json",
-        "git_blob_sha": "40eb70b9f6a13f4edffd1c4441fa0f717094480e",
-        "schema": "PVB24_FUNDING_QUALIFICATION_SUMMARY_V1",
+        "path": "docs/data/11w-historical-liquidation-evidence.json",
+        "git_blob_sha": "ae118a1042cfe888d5119e1c3e176ae9edabd9eb",
+        "schema": "PVB24_HISTORICAL_LIQUIDATION_EVIDENCE_V1",
         "checks": [
           {
             "path": [
-              "source_coverage_data_hash"
+              "evidence_hash"
             ],
-            "equals": "7cede73083b59738ce753df2efbac6fd6ffed1e3fad03d9613eece00197a94d4"
+            "equals": "304cdc5a9d65a3ad86be4001babd0ad166b2469431b95e3d8cd095c99768e5f2"
           },
           {
             "path": [
-              "historical_rules_complete"
+              "maintenance_amounts_complete"
             ],
             "equals": false
+          },
+          {
+            "path": [
+              "maintenance_deductions_complete"
+            ],
+            "equals": false
+          },
+          {
+            "path": [
+              "exchange_liquidation_value_validation_complete"
+            ],
+            "equals": false
+          },
+          {
+            "path": [
+              "historical_liquidation_rules_complete"
+            ],
+            "equals": false
+          },
+          {
+            "path": [
+              "liquidation_validated"
+            ],
+            "equals": false
+          },
+          {
+            "path": [
+              "final_test_access"
+            ],
+            "equals": "LOCKED"
           }
         ]
       }

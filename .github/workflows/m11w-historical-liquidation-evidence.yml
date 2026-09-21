@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   actions: read
 
 jobs:
@@ -45,19 +45,6 @@ jobs:
             --source f9e6ea2d58ce4de5bf9ecadea5170526:2b809598c051204e5575467a44903792fa797506e74c4188fa934f75199ea609 \
             --output artifacts/m11w/evidence/11w-historical-liquidation-evidence.json
           sha256sum artifacts/m11w/evidence/11w-historical-liquidation-evidence.json
-      - name: Capture exact M11W report on branch
-        run: |
-          install -m 0644 artifacts/m11w/evidence/11w-historical-liquidation-evidence.json docs/data/11w-historical-liquidation-evidence.json
-          test "$(sha256sum docs/data/11w-historical-liquidation-evidence.json | cut -d' ' -f1)" = "85f37fc75f3b489844acdffa91d41625333ffdcce53a6f92daa8ec4899dab6ae"
-          if [ -z "$(git status --porcelain -- docs/data/11w-historical-liquidation-evidence.json)" ]; then
-            echo "Exact M11W report already captured"
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add docs/data/11w-historical-liquidation-evidence.json
-            git commit -m "docs: capture exact M11W evidence report"
-            git push origin HEAD:build/pvb24-v1
-          fi
       - uses: actions/upload-artifact@v4
         with:
           name: m11w-historical-liquidation-evidence
