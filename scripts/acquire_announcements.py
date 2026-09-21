@@ -61,9 +61,7 @@ def main():
                     ),
                     "history_coverage_end": None,
                     "full_security_record": (
-                        "PARTIAL_LISTING_FACTS_ONLY"
-                        if report["kind"] == "LISTING"
-                        else "MISSING"
+                        "PARTIAL_LISTING_FACTS_ONLY" if report["kind"] == "LISTING" else "MISSING"
                     ),
                     "full_contract_rules": "MISSING",
                     "actual_settlement_fill": "NOT_PROVEN",
