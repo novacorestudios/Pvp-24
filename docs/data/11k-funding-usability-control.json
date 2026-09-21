@@ -1,0 +1,29 @@
+{
+  "schema": "PVB24_FUNDING_SETTLEMENT_USABILITY_CONTROL_V1",
+  "scope": {
+    "symbol": "BTCUSDT",
+    "month": "2024-01"
+  },
+  "source_comparison_report_hash": "21eb9014863c43a749f7210e732a559f4b9b63d8a0c26b4afd7fad788ca66ba8",
+  "source_history_data_hash": "4a122d5a6382e1184f1c3955e91384980ec4262817577e5afeeb24480880d6c6",
+  "source_rows": 93,
+  "regular_rows": 93,
+  "source_mark_present_rows": 93,
+  "exact_source_economics_rows": 93,
+  "conditionally_ledger_usable_rows": 93,
+  "unconditionally_ledger_usable_rows": 0,
+  "independent_position_eligibility_rows": 0,
+  "settlement_pricing_complete_for_selected_month": true,
+  "historical_publication_times_verified": false,
+  "funding_schedule_complete": false,
+  "funding_reserve_coverage_qualified": false,
+  "position_eligibility_verified": false,
+  "historical_settlement_ledger_complete": false,
+  "broader_missing_source_mark_rows": 4291,
+  "timestamp_rounding_applied": false,
+  "ohlc_substitution_applied": false,
+  "quality": "PRELIMINARY",
+  "operational_ready": false,
+  "live_enabled": false,
+  "final_test_access": "LOCKED"
+}
