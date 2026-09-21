@@ -366,12 +366,17 @@ def extract_facts(kind, body):
             raise ValueError("Explicit unique USDT perpetual delisting symbols required")
         cutoff = re.findall(
             r"not allowed to open new positions for the aforementioned contracts starting from "
-            + UTC_TEXT,
+            + UTC_TEXT
+            + r"([^.]*)\\.",
             body_text,
         )
         if len(cutoff) != 1:
             raise ValueError("One explicit new-position cutoff required")
-        settlement, cutoff_time = explicit_time(when), explicit_time(cutoff[0])
+        cutoff_value, cutoff_suffix = cutoff[0]
+        cutoff_symbols = set(re.findall(r"\\b[A-Z0-9]+USDT\\b", cutoff_suffix))
+        if cutoff_symbols and cutoff_symbols != set(symbols):
+            raise ValueError("New-position cutoff symbol set differs from delisting set")
+        settlement, cutoff_time = explicit_time(when), explicit_time(cutoff_value)
         if cutoff_time > settlement:
             raise ValueError("Position cutoff after scheduled settlement")
         return [
