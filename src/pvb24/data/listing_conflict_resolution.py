@@ -14,10 +14,8 @@ from pathlib import Path
 
 from pvb24.data.announcements import explicit_time
 from pvb24.data.archive import FINAL_START
-from pvb24.data.listing_conflict_source import (
-    SCHEMA as SOURCE_SCHEMA,
-    inspect_listing_conflict_source,
-)
+from pvb24.data.listing_conflict_source import SCHEMA as SOURCE_SCHEMA
+from pvb24.data.listing_conflict_source import inspect_listing_conflict_source
 from pvb24.ids import canonical, digest
 from pvb24.types import utc
 
