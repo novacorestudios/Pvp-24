@@ -255,17 +255,11 @@ def extract_target_listing_fact(body, target):
 
     if len(facts) == 1:
         stamp = launch_at.strftime("%Y-%m-%d %H:%M")
-        table_pattern = (
-            re.escape(symbol)
-            + r"\s*Launch Time\s*"
-            + re.escape(stamp)
-            + r"\s*\(UTC\)"
-        )
+        table_pattern = re.escape(symbol) + r"\s*Launch Time\s*" + re.escape(stamp) + r"\s*\(UTC\)"
     else:
         symbol_sequence = r"\s*".join(re.escape(item[0]) for item in facts)
         time_sequence = r"\s*".join(
-            re.escape(item[1].strftime("%Y-%m-%d %H:%M")) + r"\s*\(UTC\)"
-            for item in facts
+            re.escape(item[1].strftime("%Y-%m-%d %H:%M")) + r"\s*\(UTC\)" for item in facts
         )
         table_pattern = symbol_sequence + r"\s*Launch Time\s*" + time_sequence
     if re.search(table_pattern, body, flags=re.IGNORECASE) is None:
