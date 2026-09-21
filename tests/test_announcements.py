@@ -11,8 +11,8 @@ from pvb24.data.announcements import (
     AnnouncementRequest,
     acquire,
     decode,
-    extract_facts,
     delisting_events,
+    extract_facts,
     load_acquired,
 )
 from pvb24.data.lifecycle import entry_block_reason
@@ -145,7 +145,8 @@ def test_postponement_extracts_only_main_causal_schedule_not_later_editor_note()
                 "p",
                 "Binance Futures will postpone the delisting of the USDⓈ-M OMGUSDT "
                 "Perpetual Contract to 2024-12-30 09:00 (UTC). We will conduct automatic "
-                "settlements on the USDⓈ-M OMGUSDT Perpetual Contract and then delist this contract.",
+                "settlements on the USDⓈ-M OMGUSDT Perpetual Contract and then delist "
+                "this contract.",
             ),
         ],
     }
