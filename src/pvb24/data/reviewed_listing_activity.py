@@ -1,10 +1,17 @@
 """Acquire checksum-verified activity evidence for reviewed M11X listing facts."""
 
 from copy import deepcopy
+from datetime import datetime
 
 from pvb24.data.listing_conflict_activity import acquire_listing_conflict_activity
 from pvb24.data.reviewed_listing_facts import SCHEMA as FACTS_SCHEMA
 from pvb24.types import utc
+
+
+def _time(value):
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value)
+    return utc(value)
 
 
 def acquire_reviewed_listing_activity(root, facts_report):
@@ -24,7 +31,7 @@ def acquire_reviewed_listing_activity(root, facts_report):
         candidates.append(
             {
                 "symbol": fact["symbol"],
-                "effective_from": utc(fact["launch_at"]),
+                "effective_from": _time(fact["launch_at"]),
                 "candidate_source": row["source"],
                 "revision_id": row["revision_id"],
                 "prior_epoch_disclosed": fact["prior_epoch_disclosed"],
