@@ -76,6 +76,24 @@ def test_inventory_is_discovery_only_and_deterministic():
     assert result["candidate_hash"] == digest(result["candidates"])
 
 
+
+def test_inventory_discovers_retained_listing_delay_revision():
+    delayed = row(
+        48,
+        "NEW_CRYPTOCURRENCY_LISTING",
+        "0" * 31 + "6",
+        "DOT USDT-Margined Perpetual Contract Listing Delayed to 2020/08/22",
+        datetime(2024, 2, 1, tzinfo=UTC),
+    )
+    result = build_candidate_inventory(
+        report(48, "NEW_CRYPTOCURRENCY_LISTING", [delayed])
+    )
+    assert [item["code"] for item in result["candidates"]] == [delayed["code"]]
+    assert result["candidates"][0]["qualification"] == "BODY_REVIEW_REQUIRED"
+    assert result["candidates"][0]["lifecycle_fact"] is False
+
+
+
 def test_inventory_fails_closed_on_unpinned_or_boundary_rows():
     listing = row(
         48,

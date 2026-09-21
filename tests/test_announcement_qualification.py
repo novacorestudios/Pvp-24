@@ -127,6 +127,47 @@ def test_delisting_postponement_qualifies_without_fabricating_entry_cutoff():
     assert "entry_cutoff_at" not in result["facts"][0]
 
 
+
+def test_listing_postponement_qualifies_without_fabricating_leverage():
+    released = datetime(2020, 8, 20, 7, 45, 59, tzinfo=UTC)
+    body = canonical(
+        {
+            "node": "root",
+            "child": [
+                {
+                    "node": "element",
+                    "tag": "p",
+                    "child": [
+                        {
+                            "node": "text",
+                            "text": (
+                                "The DOT USDT-margined perpetual contract trading start time will "
+                                "be delayed to 2020/08/22 7:00 AM (UTC). Please note that the "
+                                "previous start time was at 2020/08/20 7:00 AM (UTC)."
+                            ),
+                        }
+                    ],
+                }
+            ],
+        }
+    )
+    published = int(released.timestamp() * 1000)
+    result = qualify_candidate(candidate(48, released), response(body, publish=published))
+    assert result["status"] == QUALIFIED
+    assert result["facts"] == [
+        {
+            "symbol": "DOTUSDT",
+            "launch_at": datetime(2020, 8, 22, 7, tzinfo=UTC),
+            "previous_launch_at": datetime(2020, 8, 20, 7, tzinfo=UTC),
+            "revision_type": "POSTPONEMENT",
+            "contract_type": "PERPETUAL",
+            "quote_asset": "USDT",
+        }
+    ]
+    assert "max_leverage" not in result["facts"][0]
+
+
+
 def test_coin_margined_or_ambiguous_listing_is_not_promoted():
     body = listing_body().replace("VET/USDT", "VET/USD")
     result = qualify_candidate(candidate(), response(body))

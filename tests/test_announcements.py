@@ -159,6 +159,46 @@ def test_postponement_extracts_only_main_causal_schedule_not_later_editor_note()
     ]
 
 
+
+def test_listing_postponement_extracts_explicit_old_and_new_schedule_only():
+    body = {
+        "node": "root",
+        "child": [
+            node(
+                "p",
+                "The DOT USDT-margined perpetual contract trading start time will be delayed to "
+                "2020/08/22 7:00 AM (UTC). Please note that the previous start time was at "
+                "2020/08/20 7:00 AM (UTC). We apologize for any inconvenience caused.",
+            )
+        ],
+    }
+    assert extract_facts("LISTING", body) == [
+        {
+            "symbol": "DOTUSDT",
+            "launch_at": datetime(2020, 8, 22, 7, tzinfo=UTC),
+            "previous_launch_at": datetime(2020, 8, 20, 7, tzinfo=UTC),
+            "revision_type": "POSTPONEMENT",
+            "contract_type": "PERPETUAL",
+            "quote_asset": "USDT",
+        }
+    ]
+
+    backwards = {
+        "node": "root",
+        "child": [
+            node(
+                "p",
+                "The DOT USDT-margined perpetual contract trading start time will be delayed to "
+                "2020/08/20 7:00 AM (UTC). Please note that the previous start time was at "
+                "2020/08/22 7:00 AM (UTC).",
+            )
+        ],
+    }
+    with pytest.raises(ValueError, match="strictly later"):
+        extract_facts("LISTING", backwards)
+
+
+
 def test_original_clock_precision_preliminary_policy_and_no_fabricated_metadata():
     request, response = fixture()
     report = decode(request, canonical(response).encode())

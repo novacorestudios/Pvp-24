@@ -248,6 +248,58 @@ def test_postponement_supersedes_old_schedule_only_when_causally_available(tmp_p
     assert superseded["superseded_by_article_code"] == "c" * 32
 
 
+
+def test_late_listing_postponement_preserves_old_unknown_and_adds_new_boundary(tmp_path):
+    old_event = datetime(2020, 8, 20, 7, tzinfo=UTC)
+    revised_event = datetime(2020, 8, 22, 7, tzinfo=UTC)
+    report = qualification("LISTING", old_event)
+    revision_published = datetime(2020, 8, 20, 7, 45, 59, tzinfo=UTC)
+    report["results"].append(
+        {
+            "status": "QUALIFIED_PRELIMINARY",
+            "code": "c" * 32,
+            "source_sha256": "d" * 64,
+            "kind": "LISTING",
+            "published_at": revision_published.isoformat(),
+            "available_at": (revision_published + timedelta(seconds=2)).isoformat(),
+            "facts": [
+                {
+                    "symbol": "TESTUSDT",
+                    "launch_at": revised_event.isoformat(),
+                    "previous_launch_at": old_event.isoformat(),
+                    "revision_type": "POSTPONEMENT",
+                    "contract_type": "PERPETUAL",
+                    "quote_asset": "USDT",
+                }
+            ],
+        }
+    )
+    objects = {}
+    revised_request = DailyKlineRequest("TESTUSDT", revised_event.date().isoformat())
+    add_source(objects, revised_request, [revised_event, revised_event + timedelta(minutes=1)])
+
+    result, _ = reconcile_qualification_activity(
+        report, tmp_path, fetch=fetcher(objects)
+    )
+    assert result["superseded_count"] == 0
+    assert result["late_revision_count"] == 1
+    assert result["qualified_fact_count"] == 2
+    assert result["effective_fact_count"] == 2
+    assert result["reconciliation_count"] == 2
+
+    rows = {row["event_at"]: row for row in result["reconciliations"]}
+    old_key = old_event.isoformat(timespec="microseconds").replace("+00:00", "Z")
+    revised_key = revised_event.isoformat(timespec="microseconds").replace("+00:00", "Z")
+    assert rows[old_key]["status"] == "UNKNOWN"
+    assert rows[revised_key]["status"] == "CONSISTENT_EVENT_BOUNDARY_ONLY"
+
+    late = result["late_revisions"][0]
+    assert late["superseded_article_code"] == "a" * 32
+    assert late["superseded_by_article_code"] == "c" * 32
+    assert late["late_revision_after_prior_event"] is True
+
+
+
 def test_delisting_next_day_activity_is_a_contradiction(tmp_path):
     event = datetime(2024, 3, 26, 9, tzinfo=UTC)
     event_request = DailyKlineRequest("TESTUSDT", "2024-03-26")

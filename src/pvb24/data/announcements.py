@@ -176,6 +176,34 @@ def extract_facts(kind, body):
         ]
     if kind == "LISTING":
         body_text = text(body)
+        postponements = re.findall(
+            r"The ([A-Z0-9]+) USDT-margined perpetual contract trading start time "
+            r"will be delayed to "
+            r"(\d{4}/\d{2}/\d{2}\s+\d{1,2}:\d{2}\s+(?:AM|PM))\s*\(UTC\)\. "
+            r"Please note that the previous start time was at "
+            r"(\d{4}/\d{2}/\d{2}\s+\d{1,2}:\d{2}\s+(?:AM|PM))\s*\(UTC\)",
+            body_text,
+            flags=re.IGNORECASE,
+        )
+        if postponements:
+            if len(postponements) != 1:
+                raise ValueError("One unambiguous perpetual-contract listing postponement required")
+            base, replacement_text, previous_text = postponements[0]
+            launch_at = legacy_listing_time(replacement_text)
+            previous_launch_at = legacy_listing_time(previous_text)
+            if previous_launch_at >= launch_at:
+                raise ValueError("Listing postponement must move launch strictly later")
+            return [
+                {
+                    "symbol": base.upper() + "USDT",
+                    "launch_at": launch_at,
+                    "previous_launch_at": previous_launch_at,
+                    "revision_type": "POSTPONEMENT",
+                    "contract_type": "PERPETUAL",
+                    "quote_asset": "USDT",
+                }
+            ]
+
         if "Binance Futures will launch" not in body_text or "perpetual contract" not in body_text:
             raise ValueError("Explicit Binance Futures perpetual launch statement required")
         symbols = sorted(set(re.findall(r"\b([A-Z0-9]+)/USDT\b", body_text)))

@@ -33,12 +33,13 @@ def main():
     )
     report, path = reconcile_qualification_activity(qualification, args.output)
     summary = {
-        "schema": "PVB24_LIFECYCLE_ARCHIVE_ACTIVITY_SUMMARY_V2",
+        "schema": "PVB24_LIFECYCLE_ARCHIVE_ACTIVITY_SUMMARY_V3",
         "report": str(path),
         "report_sha256": path.stem,
         "qualified_fact_count": report["qualified_fact_count"],
         "effective_fact_count": report["effective_fact_count"],
         "superseded_count": report["superseded_count"],
+        "late_revision_count": report["late_revision_count"],
         "probe_count": report["probe_count"],
         "reconciliation_count": report["reconciliation_count"],
         "status_counts": report["status_counts"],

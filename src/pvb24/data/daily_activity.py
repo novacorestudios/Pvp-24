@@ -27,7 +27,7 @@ from pvb24.types import utc
 BASE = "https://data.binance.vision/data/futures/um/daily/klines/"
 MAX_ARCHIVE = 32 * 1024 * 1024
 MAX_CHECKSUM = 4096
-SCHEMA = "PVB24_LIFECYCLE_ARCHIVE_ACTIVITY_V2"
+SCHEMA = "PVB24_LIFECYCLE_ARCHIVE_ACTIVITY_V3"
 
 
 @dataclass(frozen=True)
@@ -293,11 +293,12 @@ def _qualified_lifecycle_records(qualification):
 def _effective_lifecycle_records(qualification):
     active = []
     superseded = []
+    late_revisions = []
     for record in _qualified_lifecycle_records(qualification):
-        is_postponement = (
-            record["kind"] == "DELISTING" and record["fact"].get("revision_type") == "POSTPONEMENT"
-        )
-        if is_postponement:
+        revision_type = record["fact"].get("revision_type")
+        is_postponement = revision_type == "POSTPONEMENT"
+
+        if is_postponement and record["kind"] == "DELISTING":
             candidates = [
                 (index, previous)
                 for index, previous in enumerate(active)
@@ -321,7 +322,47 @@ def _effective_lifecycle_records(qualification):
                         "replacement_event_at": record["event_at"],
                     }
                 )
+
+        if is_postponement and record["kind"] == "LISTING":
+            previous_value = record["fact"].get("previous_launch_at")
+            if previous_value is None:
+                raise ValueError("Listing postponement requires previous launch time")
+            previous_event = utc(datetime.fromisoformat(previous_value))
+            if (
+                previous_event.second
+                or previous_event.microsecond
+                or previous_event >= FINAL_START
+                or previous_event >= record["event_at"]
+            ):
+                raise ValueError("Valid earlier pre-Final listing schedule required")
+            candidates = [
+                (index, previous)
+                for index, previous in enumerate(active)
+                if previous["kind"] == "LISTING"
+                and previous["symbol"] == record["symbol"]
+                and previous["event_at"] == previous_event
+            ]
+            if len(candidates) != 1:
+                raise ValueError("Exactly one prior listing schedule required for postponement")
+            index, previous = candidates[0]
+            relation = {
+                "symbol": record["symbol"],
+                "kind": "LISTING",
+                "superseded_article_code": previous["article_code"],
+                "superseded_event_at": previous["event_at"],
+                "superseded_by_article_code": record["article_code"],
+                "revision_available_at": record["available_at"],
+                "replacement_event_at": record["event_at"],
+            }
+            if record["available_at"] <= previous["event_at"]:
+                active.pop(index)
+                superseded.append(relation)
+            else:
+                relation["late_revision_after_prior_event"] = True
+                late_revisions.append(relation)
+
         active.append(record)
+
     active.sort(key=lambda row: (row["event_at"], row["symbol"], row["article_code"]))
     superseded.sort(
         key=lambda row: (
@@ -330,7 +371,14 @@ def _effective_lifecycle_records(qualification):
             row["superseded_article_code"],
         )
     )
-    return tuple(active), tuple(superseded)
+    late_revisions.sort(
+        key=lambda row: (
+            row["revision_available_at"],
+            row["symbol"],
+            row["superseded_article_code"],
+        )
+    )
+    return tuple(active), tuple(superseded), tuple(late_revisions)
 
 
 def _probe_plan(records):
@@ -348,7 +396,7 @@ def _probe_plan(records):
 
 
 def probe_plan(qualification):
-    records, _ = _effective_lifecycle_records(qualification)
+    records, _, _ = _effective_lifecycle_records(qualification)
     return _probe_plan(records)
 
 
@@ -450,7 +498,7 @@ def reconcile_qualification_activity(qualification, output, *, fetch=public_dail
     if qualification.get("final_test_access") != "LOCKED":
         raise ValueError("Final Test must remain locked")
     output = Path(output)
-    effective_records, superseded = _effective_lifecycle_records(qualification)
+    effective_records, superseded, late_revisions = _effective_lifecycle_records(qualification)
     attempts = {}
     failures = []
     for request in _probe_plan(effective_records):
@@ -504,6 +552,9 @@ def reconcile_qualification_activity(qualification, output, *, fetch=public_dail
         "superseded_count": len(superseded),
         "superseded_facts": list(superseded),
         "superseded_hash": digest(superseded),
+        "late_revision_count": len(late_revisions),
+        "late_revisions": list(late_revisions),
+        "late_revision_hash": digest(late_revisions),
         "probe_count": len(attempts),
         "source_failures": failures,
         "reconciliation_count": len(reconciliations),

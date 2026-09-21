@@ -20,6 +20,11 @@ SCHEMA = "PVB24_ANNOUNCEMENT_CANDIDATE_INVENTORY_V1"
 _LISTING_HINTS = (
     re.compile(r"\b(?:launch|launches|launching)\b.*\bperpetual\b", re.I),
     re.compile(r"\b(?:list|lists|listing)\b.*\b(?:futures|perpetual)\b", re.I),
+    re.compile(
+        r"\b(?:futures|perpetual)\b.*\b(?:listing|launch)\b.*"
+        r"\b(?:delay|delayed|postpone|postponed|reschedule|rescheduled)\b",
+        re.I,
+    ),
 )
 _DELISTING_HINTS = (
     re.compile(r"\b(?:delist|delists|delisting)\b.*\b(?:futures|perpetual|contract)\b", re.I),
