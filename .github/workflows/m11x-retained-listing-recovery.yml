@@ -1,4 +1,4 @@
-name: M11X Retained Listing Recovery
+name: M11X Retained Lifecycle Recovery
 
 on:
   push:
@@ -38,7 +38,7 @@ jobs:
             --dir artifacts/m11x/qualification
       - name: Verify repository provenance
         run: python scripts/verify_provenance.py
-      - name: Replay retained sources with widened listing decoder
+      - name: Replay retained sources with bounded lifecycle recovery
         run: |
           mkdir -p artifacts/m11x/recovery
           python scripts/recover_retained_listing_facts.py \

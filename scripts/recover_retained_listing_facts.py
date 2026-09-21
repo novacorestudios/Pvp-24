@@ -1,4 +1,4 @@
-"""Offline M11X replay of retained announcement sources with the widened listing decoder."""
+"""Offline M11X replay of retained listing/delisting announcement sources."""
 
 import argparse
 import json
@@ -10,7 +10,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from verify_provenance import verify  # noqa: E402
 
-from pvb24.data.announcement_recovery import recover_retained_listing_facts  # noqa: E402
+from pvb24.data.announcement_recovery import recover_retained_lifecycle_facts  # noqa: E402
 
 
 def main():
@@ -21,7 +21,7 @@ def main():
     args = parser.parse_args()
 
     verify(ROOT)
-    report = recover_retained_listing_facts(args.root, args.report_sha256)
+    report = recover_retained_lifecycle_facts(args.root, args.report_sha256)
     encoded = (json.dumps(report, indent=2) + "\n").encode()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     if args.output.exists() and args.output.read_bytes() != encoded:
@@ -36,6 +36,9 @@ def main():
                 "recovered_article_count": report["recovered_article_count"],
                 "recovered_fact_count": report["recovered_fact_count"],
                 "recovered_symbol_count": report["recovered_symbol_count"],
+                "recovered_listing_fact_count": report["recovered_listing_fact_count"],
+                "recovered_delisting_fact_count": report["recovered_delisting_fact_count"],
+                "retrospective_count": report["retrospective_count"],
                 "remaining_semantic_unqualified_count": report[
                     "remaining_semantic_unqualified_count"
                 ],
