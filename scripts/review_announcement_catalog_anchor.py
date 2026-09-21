@@ -22,14 +22,16 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--catalog-id", type=int, choices=(48, 161), required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--max-requests", type=int, default=5000)
+    parser.add_argument("--max-pages", type=int, default=200)
+    parser.add_argument("--max-hint-backoff", type=int, default=20)
     args = parser.parse_args()
 
     verify(ROOT)
     report, path = review_anchor_start(
         REVIEWED_ANCHORS[args.catalog_id],
         args.output,
-        max_requests=args.max_requests,
+        max_pages=args.max_pages,
+        max_hint_backoff=args.max_hint_backoff,
     )
     summary = {
         "schema": "PVB24_ANNOUNCEMENT_CATALOG_ANCHOR_SUMMARY_V1",
@@ -38,10 +40,10 @@ def main():
         "report_sha256": report_sha256(path),
         "anchor_code": report["anchor"]["code"],
         "anchor_released_at": report["anchor"]["released_at"],
-        "catalog_total_observed": report["probe"]["catalog_total_observed"],
+        "catalog_total_observed": report["catalog_total_observed"],
         "safe_start_page": report["safe_start_page"],
-        "safe_start_newest_at": report["safe_start_newest_at"],
-        "safe_start_oldest_at": report["safe_start_oldest_at"],
+        "hint_backoff_pages": report["hint"]["backoff_pages"],
+        "first_valid_page": report["hint"]["first_valid_page"],
         "final_test_access": "LOCKED",
         "historical_universe_complete": False,
         "operational_ready": False,
