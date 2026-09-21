@@ -56,9 +56,7 @@ def acquire_listing_conflict_activity(root, candidates):
             observations.append(row)
             acquired[role] = row
             if status in ("HTTP_ERROR", "INVALID_OR_FAILED"):
-                source_failures.append(
-                    {"symbol": symbol, "day": request.day, "status": status}
-                )
+                source_failures.append({"symbol": symbol, "day": request.day, "status": status})
 
         event_row = acquired["EVENT_DAY"]
         prior_row = acquired["PRIOR_DAY"]

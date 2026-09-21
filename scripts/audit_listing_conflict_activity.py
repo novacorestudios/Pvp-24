@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from verify_provenance import verify  # noqa: E402
+
 from pvb24.data.listing_conflict_activity import acquire_listing_conflict_activity  # noqa: E402
 from pvb24.types import utc  # noqa: E402
 
@@ -39,15 +40,21 @@ def main():
     encoded = (json.dumps(report, indent=2) + "\n").encode()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(encoded)
-    print(json.dumps({
-        "candidate_count": report["candidate_count"],
-        "source_failures": report["source_failures"],
-        "statuses": {
-            row["symbol"] + "@" + row["effective_from"]: row["archive_boundary_status"]
-            for row in report["candidates"]
-        },
-        "activity_hash": report["activity_hash"],
-    }))
+    print(
+        json.dumps(
+            {
+                "candidate_count": report["candidate_count"],
+                "source_failures": report["source_failures"],
+                "statuses": {
+                    row["symbol"] + "@" + row["effective_from"]: row[
+                        "archive_boundary_status"
+                    ]
+                    for row in report["candidates"]
+                },
+                "activity_hash": report["activity_hash"],
+            }
+        )
+    )
     return 2 if report["source_failures"] else 0
 
 

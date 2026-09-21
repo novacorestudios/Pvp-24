@@ -1,34 +1,14 @@
 import hashlib
 import json
-from pathlib import Path
 
 import pytest
 
 from pvb24.data.listing_conflict_resolution import compile_listing_conflict_resolution
-from pvb24.ids import canonical, digest
-
-
-def _write(root, code, report_sha, source_sha, body_text, available):
-    target = Path(root) / code
-    (target / "objects").mkdir(parents=True, exist_ok=True)
-    (target / "reports").mkdir(parents=True, exist_ok=True)
-    raw_body = canonical({"node": "root", "child": [{"node": "text", "text": body_text}]})
-    raw = canonical({
-        "success": True,
-        "data": {
-            "code": code,
-            "publishDate": int((available.timestamp() - 2) * 1000),
-            "lastUpdateTime": 0,
-            "version": "1",
-            "body": raw_body,
-        },
-    }).encode()
-    assert hashlib.sha256(raw).hexdigest() == source_sha
-    raise AssertionError("fixture helper requires real source hashes")
+from pvb24.ids import digest
 
 
 def test_resolution_constants_are_pinned():
-    # Regression guard: production resolution must remain bound to the reviewed source identities.
+    # Production resolution remains bound to the reviewed source identities.
     from pvb24.data import listing_conflict_resolution as module
 
     assert module.POSTPONEMENT_SOURCE == (
