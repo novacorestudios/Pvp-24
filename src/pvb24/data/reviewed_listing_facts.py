@@ -253,16 +253,23 @@ def extract_target_listing_fact(body, target):
     if not 1 <= leverage <= 125:
         raise ValueError("Reviewed maximum leverage is out of range")
 
-    stamp = launch_at.strftime("%Y-%m-%d %H:%M")
-    if (
-        re.search(
-            re.escape(symbol) + r"\s*Launch Time\s*" + re.escape(stamp) + r"\s*\(UTC\)",
-            body,
-            flags=re.IGNORECASE,
+    if len(facts) == 1:
+        stamp = launch_at.strftime("%Y-%m-%d %H:%M")
+        table_pattern = (
+            re.escape(symbol)
+            + r"\s*Launch Time\s*"
+            + re.escape(stamp)
+            + r"\s*\(UTC\)"
         )
-        is None
-    ):
-        raise ValueError("Rendered contract table does not corroborate target launch")
+    else:
+        symbol_sequence = r"\s*".join(re.escape(item[0]) for item in facts)
+        time_sequence = r"\s*".join(
+            re.escape(item[1].strftime("%Y-%m-%d %H:%M")) + r"\s*\(UTC\)"
+            for item in facts
+        )
+        table_pattern = symbol_sequence + r"\s*Launch Time\s*" + time_sequence
+    if re.search(table_pattern, body, flags=re.IGNORECASE) is None:
+        raise ValueError("Rendered contract table does not corroborate reviewed launch order")
 
     prior = re.search(
         r"old\s+" + re.escape(symbol) + r"\s+contract, which was previously delisted at "

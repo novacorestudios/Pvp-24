@@ -26,8 +26,8 @@ from pvb24.data.reviewed_listing_facts import extract_target_listing_fact
             "Binance Futures will launch USDⓈ-M LDO and CVX perpetual contracts with "
             "up to 25x leverage on 2022-09-22 at 12:00 (UTC) and "
             "2022-09-22 at 12:15 (UTC) respectively. "
-            "LDOUSDTLaunch Time 2022-09-22 12:00 (UTC) "
-            "CVXUSDTLaunch Time 2022-09-22 12:15 (UTC)",
+            "LDOUSDTCVXUSDTLaunch Time 2022-09-22 12:00 (UTC)"
+            "2022-09-22 12:15 (UTC)",
             "CVXUSDT",
             "2022-09-22T12:15:00+00:00",
             25,
@@ -36,7 +36,8 @@ from pvb24.data.reviewed_listing_facts import extract_target_listing_fact
             "Binance Futures will launch USDT-margined AMB, LEVER and TLM perpetual "
             "contracts on 2023-03-30 12:00 (UTC), 2023-03-30 12:15 (UTC) and "
             "2023-03-30 12:30 (UTC) respectively, with up to 20x leverage. "
-            "TLMUSDTLaunch Time 2023-03-30 12:30 (UTC)",
+            "AMBUSDTLEVERUSDTTLMUSDTLaunch Time 2023-03-30 12:00 (UTC)"
+            "2023-03-30 12:15 (UTC)2023-03-30 12:30 (UTC)",
             "TLMUSDT",
             "2023-03-30T12:30:00+00:00",
             20,
