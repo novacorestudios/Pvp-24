@@ -11,8 +11,8 @@ import json
 import re
 import urllib.request
 from dataclasses import asdict, dataclass
-from html.parser import HTMLParser
 from datetime import UTC, date, datetime, timedelta
+from html.parser import HTMLParser
 from pathlib import Path
 
 from pvb24.data.acquisition import NoRedirect, object_write
