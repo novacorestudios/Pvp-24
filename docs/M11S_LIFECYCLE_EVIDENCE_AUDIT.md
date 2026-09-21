@@ -2,82 +2,106 @@
 
 ## Scope
 
-This checkpoint audits and repairs only historical announcement/lifecycle evidence added after the
-M11P baseline `ca5acbfb6d80d721e58c18462f9d6c02b23f9f5d`. It does not modify PVB-24 Alpha,
-thresholds, risk rules, entry/exit logic, leverage, sizing, or the frozen Final Test boundary.
+This checkpoint repairs only historical announcement/lifecycle evidence after the M11P baseline
+`ca5acbfb6d80d721e58c18462f9d6c02b23f9f5d`. PVB-24 Alpha, thresholds, risk rules,
+entry/exit logic, leverage, sizing, execution logic, baseline configuration and the frozen Final
+Test boundary are unchanged.
 
-A repository comparison through `87e2c0ad0dec05c543d52f3aa5f041713cb911ce` shows post-M11P changes only in data/provenance
-modules, acquisition/reconciliation scripts, tests, documentation and CI workflow files.
+The final correction set from `cbe152332656dfb9624b0f2971188c6084d79693` through
+`8351633d5f14238642c0e3cbe64a039cc2fad16d` modifies only announcement/lifecycle data modules, scripts and tests.
 
-## Root cause corrected
+## Root causes corrected
 
-The daily LAST 1m archive decoder stored the previous bar's interval end and rejected the next bar
-when `start <= previous_end`. For normal contiguous half-open intervals the next start is exactly
-the previous end, so valid consecutive 1m bars were incorrectly classified as failed source data.
+### 1. Contiguous 1m intervals
 
-The condition now rejects only `start < previous_end`. Equality is valid continuity; a strictly
-later start records an explicit gap. A direct regression test covers two contiguous minute bars.
+The original daily LAST decoder stored the previous interval end and rejected the next bar when
+`start <= previous_end`. Normal contiguous half-open 1m intervals have
+`next_start == previous_end`; the decoder now rejects only overlap/backwards input
+(`start < previous_end`) and records a gap only when `start > previous_end`.
 
-CI workflow paths were also corrected so changes to `daily_activity.py` or
-`reconcile_lifecycle_activity.py` automatically rerun the catalog/lifecycle evidence workflow.
+### 2. Archive rows are not automatically trading activity
+
+Binance daily archives can retain 1m rows after a delisting boundary with zero volume and zero
+trades. Reconciliation V2 now records explicit active-row statistics and treats only nonzero
+volume/trade rows as trading activity. Synthetic zero-activity rows no longer create false
+post-settlement contradictions. Activity at the exact announced settlement minute is retained as
+boundary evidence and is not treated as activity strictly after settlement.
+
+### 3. Causal delisting postponements
+
+The retained catalog already contained two official OMGUSDT postponement articles, but the V1
+extractor rejected them because they do not repeat the original announcement's entry-cutoff
+sentence. Qualification V2 recognizes an explicit USDⓈ-M perpetual delisting postponement as a
+schedule revision without fabricating an entry cutoff.
+
+Reconciliation applies a postponement only when the revision was available no later than the
+currently active scheduled event. The superseded schedule remains in the report audit trail;
+nothing is rewritten retroactively. The OMGUSDT chain therefore retains two superseded schedules
+and reconciles the final causally effective schedule.
 
 ## Verification
 
-Current code checkpoint: `87e2c0ad0dec05c543d52f3aa5f041713cb911ce`.
+Corrected code checkpoint: `8351633d5f14238642c0e3cbe64a039cc2fad16d`.
 
-PVB-24 CI Actions **35631163230 — SUCCESS**:
+PVB-24 CI Actions **35633773768 — SUCCESS**:
 - Ruff format check: passed.
 - Ruff lint: passed.
-- pytest: **624 passed**.
+- pytest: **629 passed**.
 - provenance: passed.
 - reference smoke: passed.
 - Freqtrade smoke/parity/framework parity: passed.
 
-Source-evidence workflow Actions **35630904789 — SUCCESS** on
-`ba6eb53bd949139def0eabb83d5159b6c7a1d917`. The later current-HEAD change only corrects the
-native-datetime assertion in the new regression test; lifecycle/data source logic is unchanged.
+Corrected source-evidence workflow Actions **35633393635 — SUCCESS** on
+`9df9dc626eb98258c7d89ae231929bb608355099`. Later commits through the corrected code
+checkpoint are formatting/test-lint-only and do not change production lifecycle semantics.
 
-## Announcement qualification evidence
+## Announcement qualification V2
 
-- Candidate catalog rows reviewed: 680.
+- Catalog rows reviewed: 680.
 - Title-selected candidates: 146.
 - Official detail fetch failures: 0.
-- `QUALIFIED_PRELIMINARY`: 25.
-- `SEMANTIC_UNQUALIFIED`: 121.
+- `QUALIFIED_PRELIMINARY`: 27.
+- `SEMANTIC_UNQUALIFIED`: 119.
 - Qualification report SHA-256:
-  `d95403c325d70555025b02b75b55b8034e84e5b556ae3b1adb6df44a4c800487`.
+  `26183381bf2324b38e17ffaff9d6b5bf114c0183d5966c8a9eea1420529b8bd5`.
 - Qualification artifact digest:
-  `sha256:49e466604ec35716ee79313f9f172a39f05ea13767ceb4a0a57149a8fb7c2eab`.
+  `sha256:96df948afa92feb2dd4d7414310f38094531e52d01c45f123c492fdec16d9a45`.
 
-A semantically qualified body is still PRELIMINARY. It is not proof that the retained CMS body is
-the exact historical revision originally visible at publication time, and it does not establish a
-complete security master.
+The two additional qualified records are schedule-revision evidence, not new independent
+delistings. All qualification remains PRELIMINARY and does not prove that the current retained CMS
+body is the exact original historical revision.
 
-## Lifecycle/archive reconciliation evidence
+## Lifecycle/archive reconciliation V2
 
-The qualified facts produced 64 checksum-verified official daily USD-M LAST 1m probes and 32
-lifecycle reconciliations, with zero source failures:
+The source evidence produced:
 
-- `CONSISTENT_EVENT_BOUNDARY_ONLY`: 14.
-- `CONTRADICTED_BY_ARCHIVE_ACTIVITY`: 11.
-- `UNKNOWN`: 7.
+- qualified lifecycle facts: 34;
+- causally superseded schedules retained for audit: 2;
+- effective lifecycle facts: 32;
+- checksum-verified daily USD-M LAST 1m probes: 64;
+- source failures: 0;
+- `CONSISTENT_EVENT_BOUNDARY_ONLY`: 25;
+- `UNKNOWN`: 7;
+- `CONTRADICTED_BY_ARCHIVE_ACTIVITY`: 0.
 
 Reconciliation report SHA-256:
-`64ecfe8ea042b9cfc078278a4c307bf5db2bb61dcfcad715bb7f38306a939941`.
+`9568da9fdc5057c294314a913ea6f0d504aa475902281e4ec2db522cb75f58f5`.
 
 Lifecycle artifact digest:
-`sha256:39a146162c8e5451b61836359bda38865d389b3f7e34ede11a1e01b76303f01d`.
+`sha256:6b99bc0ac8f4ed84c732671f7337510f3c690583907531b923784eeaef035541`.
 
-A missing archive object is explicitly UNKNOWN and never proves inactivity. A
-`CONSISTENT_EVENT_BOUNDARY_ONLY` result corroborates only the observed archive boundary; it does
-not prove full historical lifecycle eligibility. A contradiction is retained as evidence and is
-not overridden to fit an announcement.
+The seven UNKNOWN records remain unresolved rather than being forced into consistency. Missing
+archive objects, or event-day activity that begins after the announced boundary, do not prove
+inactivity or prove a lifecycle boundary.
+
+`CONSISTENT_EVENT_BOUNDARY_ONLY` is deliberately narrow corroboration. It does not set
+`historical_lifecycle_verified=true`, does not establish listing age or historical eligibility,
+and does not complete the historical security master.
 
 ## Remaining blockers / next action
 
-Investigate the 11 contradicted and 7 unknown reconciliations individually against retained source
-bytes and official source semantics. Do not promote unresolved lifecycle facts into a historical
-security master.
+Investigate the seven UNKNOWN listing boundaries using retained official evidence only. Do not
+promote unresolved lifecycle facts.
 
 The previously known blockers remain, including 4,291 missing BTCUSDT funding settlement Marks,
 funding schedule/reserve/eligibility, complete historical security/universe/rule snapshots,
