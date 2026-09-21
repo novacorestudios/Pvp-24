@@ -64,10 +64,8 @@ class DailyKlineRequest:
 
 
 def public_daily_bytes(url, *, max_bytes):
-    pattern = (
-        re.escape(BASE)
-        + r"([A-Z0-9]+USDT)/1m/\1-1m-\d{4}-\d{2}-\d{2}\.zip(?:\.CHECKSUM)?"
-    )
+    suffix = r"([A-Z0-9]+USDT)/1m/\1-1m-\d{4}-\d{2}-\d{2}\.zip(?:\.CHECKSUM)?"
+    pattern = re.escape(BASE) + suffix
     if not re.fullmatch(pattern, url):
         raise ValueError("Official daily USD-M LAST 1m archive URL required")
     with urllib.request.build_opener(NoRedirect()).open(url, timeout=30) as response:
@@ -167,11 +165,10 @@ def acquire_daily_activity(request, root, *, fetch=public_daily_bytes):
         result["checksum_object"] = object_write(root / "objects", checksum, ".checksum")
         result["expected_sha256"] = expected
         cached = root / "objects" / (expected + ".zip")
-        archive = (
-            cached.read_bytes()
-            if cached.exists()
-            else fetch(request.url, max_bytes=MAX_ARCHIVE)
-        )
+        if cached.exists():
+            archive = cached.read_bytes()
+        else:
+            archive = fetch(request.url, max_bytes=MAX_ARCHIVE)
         if len(archive) > MAX_ARCHIVE:
             raise ValueError("Daily archive exceeds its resource limit")
         result["actual_sha256"] = hashlib.sha256(archive).hexdigest()
