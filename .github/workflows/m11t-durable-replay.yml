@@ -60,6 +60,16 @@ jobs:
             --source-report-sha256 "$SOURCE_QUALIFICATION_SHA256" \
             --output \
               artifacts/m11t-replay/output/11y-retained-announcement-requalification.json
+      - name: Reconcile requalified lifecycle facts against official archive
+        run: |
+          REQUAL="artifacts/m11t-replay/output/11y-retained-announcement-requalification.json"
+          REQUAL_SHA="$(sha256sum "$REQUAL" | cut -d' ' -f1)"
+          python scripts/reconcile_retained_requalification_activity.py \
+            --requalification "$REQUAL" \
+            --requalification-sha256 "$REQUAL_SHA" \
+            --output-root artifacts/m11t-replay/output/11y-lifecycle-source \
+            --output-report \
+              artifacts/m11t-replay/output/11y-requalified-lifecycle-activity.json
       - name: Seal evidence artifact qualification
         if: github.event_name != 'pull_request'
         env:

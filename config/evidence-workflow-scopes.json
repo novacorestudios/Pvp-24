@@ -65,7 +65,9 @@
         "tests/test_historical_metadata_evidence.py",
         "scripts/requalify_retained_announcement_evidence.py",
         "src/pvb24/data/announcement_requalification.py",
-        "tests/test_announcement_requalification.py"
+        "tests/test_announcement_requalification.py",
+        "scripts/reconcile_retained_requalification_activity.py",
+        "tests/test_daily_activity.py"
       ]
     },
     {

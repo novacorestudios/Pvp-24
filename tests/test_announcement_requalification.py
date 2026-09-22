@@ -244,3 +244,34 @@ def test_requalification_requires_content_addressed_bundle_identity(tmp_path):
             source_report_sha256="a" * 64,
             durable_bundle_sha256="not-a-sha",
         )
+
+
+def test_requalification_summary_rejects_tampered_result_hash(tmp_path, monkeypatch):
+    item = candidate()
+    raw = source_response()
+    replay = qualify_candidate(item, raw)
+    recorded = old_unqualified_from_replay(replay)
+    report_sha = write_source_report(tmp_path, [recorded])
+
+    monkeypatch.setattr(
+        module,
+        "load_inventory",
+        lambda *args, **kwargs: {
+            "candidates": [item],
+            "inventory_hash": "inventory-hash",
+        },
+    )
+    monkeypatch.setattr(
+        module,
+        "retained_source_fetch",
+        lambda *args, **kwargs: lambda url: raw,
+    )
+    report = module.requalify_retained_qualification(
+        inventory_root=tmp_path / "inventory",
+        qualification_root=tmp_path,
+        source_report_sha256=report_sha,
+        durable_bundle_sha256="d" * 64,
+    )
+    report["results_hash"] = "0" * 64
+    with pytest.raises(ValueError, match="result count/hash"):
+        module.validate_requalification_summary(report)

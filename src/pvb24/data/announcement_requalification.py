@@ -82,6 +82,103 @@ def _change_record(recorded: dict, replayed: dict) -> dict:
     }
 
 
+
+def validate_requalification_summary(report: dict) -> dict:
+    """Recompute successor qualification counts, hashes, lineage, and locked readiness flags."""
+
+    if (
+        report.get("schema") != SCHEMA
+        or report.get("quality") != "PRELIMINARY"
+        or report.get("final_test_access") != "LOCKED"
+        or report.get("qualification_replayed_from_retained_bytes") is not True
+        or report.get("requested_window_complete") is not False
+        or report.get("upper_boundary_coverage_proven") is not False
+        or report.get("historical_publication_times_verified") is not False
+        or report.get("historical_universe_complete") is not False
+        or report.get("security_master_complete") is not False
+        or report.get("lifecycle_complete") is not False
+        or report.get("performance_run") is not False
+        or report.get("operational_ready") is not False
+        or report.get("live_enabled") is not False
+    ):
+        raise ValueError("Locked PRELIMINARY retained requalification report required")
+
+    for field in (
+        "durable_bundle_sha256",
+        "source_qualification_report_sha256",
+        "source_results_hash",
+        "source_review_requests_hash",
+        "inventory_report_sha256",
+    ):
+        if not isinstance(report.get(field), str) or not _SHA256.fullmatch(report[field]):
+            raise ValueError(f"Valid requalification lineage hash required: {field}")
+
+    results = report.get("results")
+    if (
+        not isinstance(results, list)
+        or report.get("candidate_count") != len(results)
+        or report.get("source_bytes_reverified_count") != len(results)
+        or report.get("results_hash") != digest(results)
+    ):
+        raise ValueError("Requalification result count/hash mismatch")
+
+    codes = set()
+    counts = Counter()
+    for row in results:
+        code = row.get("code")
+        status = row.get("status")
+        source_hash = row.get("source_sha256")
+        if not isinstance(code, str) or not code or code in codes:
+            raise ValueError("Unique requalification article code required")
+        codes.add(code)
+        if status not in (QUALIFIED, SEMANTIC_UNQUALIFIED):
+            raise ValueError("Unsupported requalification result status")
+        counts[status] += 1
+        if (
+            row.get("source_retained") is not True
+            or not isinstance(source_hash, str)
+            or not _SHA256.fullmatch(source_hash)
+            or row.get("source_object") != f"objects/{source_hash}.json"
+        ):
+            raise ValueError("Content-addressed retained requalification source required")
+
+    if report.get("status_counts") != dict(sorted(counts.items())):
+        raise ValueError("Requalification status counts mismatch")
+
+    requests = [row["review_request"] for row in results if row["status"] == QUALIFIED]
+    if (
+        report.get("review_requests") != requests
+        or report.get("review_requests_hash") != digest(requests)
+    ):
+        raise ValueError("Requalification review request summary mismatch")
+
+    changes = report.get("changes")
+    if (
+        not isinstance(changes, list)
+        or report.get("changed_result_count") != len(changes)
+        or report.get("change_hash") != digest(changes)
+    ):
+        raise ValueError("Requalification change summary mismatch")
+    promoted = [
+        row for row in changes if row.get("old_status") != QUALIFIED and row.get("new_status") == QUALIFIED
+    ]
+    reason_only = [
+        row
+        for row in changes
+        if row.get("old_status") == row.get("new_status")
+        and row.get("old_reason") != row.get("new_reason")
+    ]
+    if report.get("status_promoted_to_qualified_count") != len(promoted):
+        raise ValueError("Requalification promotion count mismatch")
+    if report.get("reason_only_change_count") != len(reason_only):
+        raise ValueError("Requalification reason-only count mismatch")
+
+    unhashed = dict(report)
+    requalification_hash = unhashed.pop("requalification_hash", None)
+    if requalification_hash != digest(unhashed):
+        raise ValueError("Requalification report hash mismatch")
+    return report
+
 def requalify_retained_qualification(
     *,
     inventory_root,
@@ -193,4 +290,6 @@ def requalify_retained_qualification(
         "final_test_access": "LOCKED",
     }
     report["requalification_hash"] = digest(report)
-    return json.loads(canonical(report))
+    normalized = json.loads(canonical(report))
+    validate_requalification_summary(normalized)
+    return normalized

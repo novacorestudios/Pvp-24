@@ -19,6 +19,7 @@ from pathlib import Path
 
 from pvb24.data.acquisition import NoRedirect, object_write
 from pvb24.data.announcement_qualification import SCHEMA as QUALIFICATION_SCHEMA
+from pvb24.data.announcement_requalification import validate_requalification_summary
 from pvb24.data.archive import FINAL_START, KLINE_HEADER, checksum_digest, milliseconds
 from pvb24.decimal_math import D, require_decimal
 from pvb24.ids import canonical, digest
@@ -28,6 +29,7 @@ BASE = "https://data.binance.vision/data/futures/um/daily/klines/"
 MAX_ARCHIVE = 32 * 1024 * 1024
 MAX_CHECKSUM = 4096
 SCHEMA = "PVB24_LIFECYCLE_ARCHIVE_ACTIVITY_V3"
+REQUALIFIED_SCHEMA = "PVB24_REQUALIFIED_LIFECYCLE_ARCHIVE_ACTIVITY_V1"
 
 
 @dataclass(frozen=True)
@@ -541,11 +543,14 @@ def _reconcile(kind, fact, event_observation, boundary_observation):
     }
 
 
-def reconcile_qualification_activity(qualification, output, *, fetch=public_daily_bytes):
-    if qualification.get("schema") != QUALIFICATION_SCHEMA:
-        raise ValueError("Pinned body qualification report required")
-    if qualification.get("final_test_access") != "LOCKED":
-        raise ValueError("Final Test must remain locked")
+def _reconcile_activity(
+    qualification,
+    output,
+    *,
+    fetch,
+    schema,
+    lineage=None,
+):
     output = Path(output)
     effective_records, superseded, late_revisions = _effective_lifecycle_records(qualification)
     attempts = {}
@@ -590,9 +595,10 @@ def reconcile_qualification_activity(qualification, output, *, fetch=public_dail
     for row in reconciliations:
         counts[row["status"]] = counts.get(row["status"], 0) + 1
     report = {
-        "schema": SCHEMA,
+        "schema": schema,
         "quality": "PRELIMINARY",
         "created_at": datetime.now(UTC),
+        **({} if lineage is None else dict(lineage)),
         "qualification_results_hash": qualification["results_hash"],
         "qualification_review_requests_hash": qualification["review_requests_hash"],
         "final_test_access": "LOCKED",
@@ -621,3 +627,35 @@ def reconcile_qualification_activity(qualification, output, *, fetch=public_dail
     encoded = canonical(report).encode()
     name = object_write(output / "reports", encoded, ".json")
     return json.loads(encoded), output / "reports" / name
+
+
+def reconcile_qualification_activity(qualification, output, *, fetch=public_daily_bytes):
+    if qualification.get("schema") != QUALIFICATION_SCHEMA:
+        raise ValueError("Pinned body qualification report required")
+    if qualification.get("final_test_access") != "LOCKED":
+        raise ValueError("Final Test must remain locked")
+    return _reconcile_activity(
+        qualification,
+        output,
+        fetch=fetch,
+        schema=SCHEMA,
+    )
+
+
+def reconcile_requalification_activity(requalification, output, *, fetch=public_daily_bytes):
+    validate_requalification_summary(requalification)
+    return _reconcile_activity(
+        requalification,
+        output,
+        fetch=fetch,
+        schema=REQUALIFIED_SCHEMA,
+        lineage={
+            "source_requalification_hash": requalification["requalification_hash"],
+            "source_qualification_report_sha256": requalification[
+                "source_qualification_report_sha256"
+            ],
+            "source_results_hash": requalification["source_results_hash"],
+            "source_review_requests_hash": requalification["source_review_requests_hash"],
+            "qualification_replayed_from_retained_bytes": True,
+        },
+    )

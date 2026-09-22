@@ -7,13 +7,16 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from pvb24.data.announcement_qualification import SCHEMA as QUALIFICATION_SCHEMA
+from pvb24.data.announcement_requalification import SCHEMA as REQUALIFICATION_SCHEMA
 from pvb24.data.daily_activity import (
     DailyKlineRequest,
     acquire_daily_activity,
     decode_daily_activity,
     load_daily_activity,
     reconcile_qualification_activity,
+    reconcile_requalification_activity,
 )
+from pvb24.ids import digest
 
 
 def ms(value):
@@ -328,3 +331,99 @@ def test_daily_request_rejects_final_or_non_usdt_without_network():
         DailyKlineRequest("BTCUSDT", "2025-07-01")
     with pytest.raises(ValueError, match="USD-M USDT"):
         DailyKlineRequest("BTCUSD", "2024-01-01")
+
+
+def requalification(kind, event):
+    base = qualification(kind, event)
+    article = {
+        **base["results"][0],
+        "source_retained": True,
+        "source_object": "objects/" + "b" * 64 + ".json",
+    }
+    article["facts_hash"] = digest(article["facts"])
+    article["review_request"] = {
+        "code": article["code"],
+        "kind": kind,
+        "facts_hash": article["facts_hash"],
+    }
+    results = [article]
+    requests = [article["review_request"]]
+    report = {
+        "schema": REQUALIFICATION_SCHEMA,
+        "quality": "PRELIMINARY",
+        "durable_bundle_sha256": "d" * 64,
+        "source_qualification_report_sha256": "a" * 64,
+        "source_results_hash": "c" * 64,
+        "source_review_requests_hash": "e" * 64,
+        "inventory_report": "reports/" + "1" * 64 + ".json",
+        "inventory_report_sha256": "1" * 64,
+        "inventory_hash": "inventory-hash",
+        "window_start": "2020-01-01T00:00:00.000000Z",
+        "window_end": "2025-07-01T00:00:00.000000Z",
+        "candidate_count": 1,
+        "source_bytes_reverified_count": 1,
+        "prior_status_counts": {"SEMANTIC_UNQUALIFIED": 1},
+        "status_counts": {"QUALIFIED_PRELIMINARY": 1},
+        "results": results,
+        "results_hash": digest(results),
+        "review_requests": requests,
+        "review_requests_hash": digest(requests),
+        "changed_result_count": 1,
+        "status_promoted_to_qualified_count": 1,
+        "reason_only_change_count": 0,
+        "changes": [
+            {
+                "code": article["code"],
+                "kind": kind,
+                "source_sha256": article["source_sha256"],
+                "old_status": "SEMANTIC_UNQUALIFIED",
+                "new_status": "QUALIFIED_PRELIMINARY",
+                "old_reason": "legacy",
+                "new_reason": None,
+                "old_facts_hash": None,
+                "new_facts_hash": article["facts_hash"],
+            }
+        ],
+        "qualification_replayed_from_retained_bytes": True,
+        "requested_window_complete": False,
+        "upper_boundary_coverage_proven": False,
+        "historical_publication_times_verified": False,
+        "historical_universe_complete": False,
+        "security_master_complete": False,
+        "lifecycle_complete": False,
+        "performance_run": False,
+        "operational_ready": False,
+        "live_enabled": False,
+        "final_test_access": "LOCKED",
+    }
+    report["change_hash"] = digest(report["changes"])
+    report["requalification_hash"] = digest(report)
+    return report
+
+
+def test_requalified_listing_reuses_causal_archive_reconciliation_with_lineage(tmp_path):
+    event = datetime(2020, 8, 12, 7, tzinfo=UTC)
+    request = DailyKlineRequest("TESTUSDT", "2020-08-12")
+    objects = {}
+    add_source(objects, request, [event, event + timedelta(minutes=1)])
+
+    report, path = reconcile_requalification_activity(
+        requalification("LISTING", event), tmp_path, fetch=fetcher(objects)
+    )
+
+    assert report["schema"] == "PVB24_REQUALIFIED_LIFECYCLE_ARCHIVE_ACTIVITY_V1"
+    assert report["source_requalification_hash"]
+    assert report["qualification_replayed_from_retained_bytes"] is True
+    assert report["reconciliations"][0]["status"] == "CONSISTENT_EVENT_BOUNDARY_ONLY"
+    assert report["historical_universe_complete"] is False
+    assert report["security_master_complete"] is False
+    assert report["final_test_access"] == "LOCKED"
+    assert path.exists()
+
+
+def test_requalified_lifecycle_rejects_tampered_successor_summary(tmp_path):
+    event = datetime(2020, 8, 12, 7, tzinfo=UTC)
+    report = requalification("LISTING", event)
+    report["results_hash"] = "0" * 64
+    with pytest.raises(ValueError, match="result count/hash"):
+        reconcile_requalification_activity(report, tmp_path, fetch=fetcher({}))
