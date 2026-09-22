@@ -2,8 +2,8 @@
 
 Status: **CLOSED**
 Branch: `build/pvb24-v1`
-Audit-remediation implementation checkpoint before F9 documentation sync:
-`527a15c3d89c966686fe51fec38a3b243bbee674`
+Strict audit-remediation implementation checkpoint after F4/F9 closure:
+`f9d1358570ea05877a932a4526b583b95cdc5e35`
 
 This document records the completed remediation of the independent
 Production-grade engineering audit. It is a remediation-status record, not a
@@ -17,13 +17,29 @@ LIVE operation.
 | F1 — Cutoff coverage | CLOSED | A retained cutoff cannot be generalized to symbols not explicitly covered; malformed grouped schedules fail closed. |
 | F2 — Connector pseudo-symbol | CLOSED | Listing symbol groups are parsed explicitly; connector words such as `and` cannot become symbols such as `ANDUSDT`; ambiguous connectors fail closed. |
 | F3 — Timezone causality | CLOSED | Retained lifecycle timestamps require explicit UTC semantics; missing timezone or non-UTC offsets are rejected rather than assumed. |
-| F4 — Symbol binding | CLOSED | A lifecycle reconciliation row must bind to exactly one qualified fact with the same symbol. |
+| F4 — Evidence identity / trust boundary | CLOSED | Lifecycle rows bind to exactly one qualified fact with matching symbol/kind/source revision/event time, and qualification/lifecycle/tick internal hashes and counts are recomputed instead of trusted from pinned files. |
 | F5 — Delisting revisions | CLOSED | Same-date evidence corroborates; distinct dates remain unresolved unless an explicit causal postponement resolves them; no latest-wins heuristic. |
 | F6 — Durable evidence | CLOSED | The five pinned M11T source artifacts are preserved in a deterministic, content-addressed Git bundle with independent verification and restore. |
 | F7 — Point-in-time availability | CLOSED | Each source keeps its own `available_at`; transition selection/reconciliation cannot become available before the source that establishes it. |
 | F8 — Regression invariants | CLOSED | Negative/fail-closed regression coverage locks F1–F5 and later audit semantics. |
-| F9 — Handoff/readiness | CLOSED | Current handoff and readiness documentation now distinguish completed audit remediation from still-blocked historical/PAPER/LIVE readiness. |
+| F9 — Handoff/readiness | CLOSED | The committed readiness matrix pins the latest committed M11V/M11U/M11W evidence where applicable, keeps all eleven capabilities PARTIAL, removes stale three-article lifecycle wording, and regression-tests those pins while Final/PAPER/LIVE remain blocked. |
 | F10 — Evidence qualification | CLOSED | Evidence workflows require successful same-SHA CI, same-run governance + Freqtrade smoke, explicit producer SHA, and SHA-256 sealed payload inventories. |
+
+
+## F4 trust-boundary hardening
+
+The historical metadata compiler now treats a correct outer file SHA as necessary but
+not sufficient. Before consuming pinned evidence it recomputes and verifies:
+
+- qualification candidate count, status counts, results hash, facts hashes,
+  review-request identities and review-request hash;
+- lifecycle qualified/effective fact counts, superseded/late-revision summaries,
+  probe count, reconciliation count/status counts and reconciliation hash;
+- M11F announcement coverage requested/acquired counts, article facts/report hashes,
+  derived coverage rows, data hash and report hash.
+
+Regression fixtures now use computed hashes rather than placeholder repeated-digit hashes,
+and dedicated tamper tests prove these internal identities fail closed.
 
 ## Durable evidence and replay
 
@@ -74,10 +90,10 @@ The final Catalog replay no longer depends on live Binance body availability for
 the pinned M11T source set. It restores the retained raw source bytes from the
 durable bundle and verifies their hashes before semantic qualification.
 
-## Latest implementation verification before this documentation sync
+## Latest strict closure verification
 
-- PVB-24 CI #283: SUCCESS.
-- 743 tests passed.
+- PVB-24 CI #295: SUCCESS.
+- 754 tests passed.
 - Ruff format/check: SUCCESS.
 - Provenance: SUCCESS.
 - Reference smoke: SUCCESS.
