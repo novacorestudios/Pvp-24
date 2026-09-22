@@ -172,17 +172,19 @@ def _listing_variant_facts(body_text):
         return sorted(facts, key=lambda fact: fact["symbol"])
 
     single = re.search(
-        r"Binance Futures will launch\s+(?P<symbol>[A-Z0-9]+USDT)\s+"
-        r"perpetual contracts?,?\s+with trading open at\s+"
+        r"Binance Futures will launch\s+"
+        r"(?P<symbol>(?:[A-Z0-9]+USDT|[A-Z0-9]+/USDT))\s+"
+        r"perpetual contracts?,?\s+(?:and\s+)?(?:with\s+)?trading open at\s+"
         + _LISTING_TIME.pattern
         + r"\s*\((?P<timezone>UTC(?:[+-]\d{1,2})?)\)",
         body_text,
         flags=re.IGNORECASE,
     )
     if single:
+        symbol = single.group("symbol").upper().replace("/", "")
         return [
             {
-                "symbol": single.group("symbol").upper(),
+                "symbol": symbol,
                 "launch_at": _parse_recovery_time(
                     single.group(2), timezone=single.group("timezone")
                 ),
