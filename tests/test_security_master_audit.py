@@ -290,9 +290,7 @@ def test_conflicting_delisting_dates_fail_closed_without_inactive_transition(tmp
     assert conflict["symbol"] == "CCCUSDT"
     assert conflict["resolution_status"] == "UNRESOLVED_CONFLICT"
     assert len(conflict["announced_delisting_times"]) == 2
-    assert all(
-        row["symbol"] != "CCCUSDT" for row in report["selected_inactive_transitions"]
-    )
+    assert all(row["symbol"] != "CCCUSDT" for row in report["selected_inactive_transitions"])
     obligation = next(row for row in report["symbol_obligations"] if row["symbol"] == "CCCUSDT")
     assert "RESOLVE_DELISTING_REVISION_OR_RELISTING_SEMANTICS" in obligation["obligations"]
 
@@ -370,9 +368,7 @@ def test_explicit_causal_postponement_supersedes_earlier_delisting(tmp_path):
         ),
     ]
     report = compile_with_recovery(tmp_path, recovered)
-    row = next(
-        row for row in report["selected_inactive_transitions"] if row["symbol"] == "CCCUSDT"
-    )
+    row = next(row for row in report["selected_inactive_transitions"] if row["symbol"] == "CCCUSDT")
     assert row["effective_from"] == "2024-03-01T00:00:00.000000Z"
     assert row["revision_resolution"] == "EXPLICIT_POSTPONEMENT"
     assert row["superseded_delisting_times"] == ["2024-02-01T00:00:00.000000Z"]
@@ -416,9 +412,7 @@ def test_postponement_known_after_old_delisting_does_not_rewrite_history(tmp_pat
     ]
     report = compile_with_recovery(tmp_path, recovered)
     assert report["delisting_revision_conflict_count"] == 1
-    assert all(
-        row["symbol"] != "CCCUSDT" for row in report["selected_inactive_transitions"]
-    )
+    assert all(row["symbol"] != "CCCUSDT" for row in report["selected_inactive_transitions"])
 
 
 def test_unknown_m11v_boundary_remains_blocking_with_recovered_evidence(tmp_path):
