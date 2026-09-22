@@ -9,7 +9,6 @@ from pvb24.data.evidence_ci import (
     write_ci_attestation,
 )
 
-
 SHA = "a" * 40
 
 
