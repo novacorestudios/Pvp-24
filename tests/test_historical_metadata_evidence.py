@@ -232,6 +232,23 @@ def test_lifecycle_must_bind_same_qualification_results(tmp_path):
         )
 
 
+@pytest.mark.parametrize("reconciliation_index", [0, 2])
+def test_lifecycle_symbol_must_match_qualified_fact(reconciliation_index, tmp_path):
+    q, lifecycle_ref, tick_ref = fixtures(tmp_path)
+    value = json.loads(lifecycle_ref[0].read_text())
+    value["reconciliations"][reconciliation_index]["symbol"] = "ZZZUSDT"
+    lifecycle_ref = write(lifecycle_ref[0], value)
+    with pytest.raises(ValueError, match="Lifecycle symbol differs from qualified fact"):
+        compile_partial_historical_metadata(
+            q[0],
+            q[1],
+            lifecycle_ref[0],
+            lifecycle_ref[1],
+            tick_ref[0],
+            tick_ref[1],
+        )
+
+
 def test_unknown_listing_is_never_materialized_as_security(tmp_path):
     result = compile_fixture(tmp_path)
     assert [row.symbol for row in preliminary_listing_securities(result)] == ["AAAUSDT"]
