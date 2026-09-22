@@ -210,9 +210,9 @@ def test_listing_timezone_offset_fails_closed(tmp_path):
     assert report["recovered_listing_fact_count"] == 0
     assert report["recovered_symbols"] == []
     assert report["remaining_semantic_unqualified_count"] == 1
-    assert "Explicit UTC retained lifecycle timestamp required" in report["remaining"][0][
-        "new_reason"
-    ]
+    assert (
+        "Explicit UTC retained lifecycle timestamp required" in report["remaining"][0]["new_reason"]
+    )
 
 
 def test_listing_without_timezone_fails_closed(tmp_path):
