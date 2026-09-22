@@ -446,7 +446,7 @@ def test_event_time_and_final_lock_fail_closed(tmp_path):
     lifecycle_value["qualification_results_hash"] = value["results_hash"]
     lifecycle_value["qualification_review_requests_hash"] = value["review_requests_hash"]
     lifecycle_ref = write(lifecycle_ref[0], lifecycle_value)
-    with pytest.raises(ValueError, match="Final Test"):
+    with pytest.raises(ValueError, match="pre-Final"):
         compile_partial_historical_metadata(
             q[0],
             q[1],
