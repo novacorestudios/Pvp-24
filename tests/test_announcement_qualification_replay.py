@@ -110,6 +110,21 @@ def build_report(tmp_path, monkeypatch):
     return report_sha, source_sha
 
 
+def test_retained_source_fetch_replays_content_addressed_body(tmp_path, monkeypatch):
+    report_sha, source_sha = build_report(tmp_path, monkeypatch)
+    fetch = module.retained_source_fetch(tmp_path, report_sha)
+    assert fetch(candidate()["article_url"]) == (
+        tmp_path / "objects" / f"{source_sha}.json"
+    ).read_bytes()
+
+
+def test_retained_source_fetch_rejects_source_tamper(tmp_path, monkeypatch):
+    report_sha, source_sha = build_report(tmp_path, monkeypatch)
+    (tmp_path / "objects" / f"{source_sha}.json").write_bytes(b"tampered")
+    with pytest.raises(ValueError, match="source bytes changed"):
+        module.retained_source_fetch(tmp_path, report_sha)
+
+
 def test_load_qualification_replays_retained_source_bytes(tmp_path, monkeypatch):
     report_sha, _ = build_report(tmp_path, monkeypatch)
     loaded = module.load_qualification(
