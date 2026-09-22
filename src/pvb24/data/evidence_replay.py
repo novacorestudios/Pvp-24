@@ -43,6 +43,10 @@ def _subset_mismatches(name, expected, actual):
     return mismatches
 
 
+def _jsonable(value):
+    return json.loads(canonical(value))
+
+
 def _qualification_replay(root, report_sha256, inventory_root):
     root = Path(root)
     report_path = root / "reports" / f"{report_sha256}.json"
@@ -100,8 +104,8 @@ def _qualification_replay(root, report_sha256, inventory_root):
                     "new_reason": replayed.get("reason"),
                     "old_facts_hash": recorded_row.get("facts_hash"),
                     "new_facts_hash": replayed.get("facts_hash"),
-                    "old_facts": recorded_row.get("facts"),
-                    "new_facts": replayed.get("facts"),
+                    "old_facts": _jsonable(recorded_row.get("facts")),
+                    "new_facts": _jsonable(replayed.get("facts")),
                 }
             )
 
@@ -213,9 +217,7 @@ def replay_durable_evidence_chain(
         raise ValueError("Durable lifecycle report filename/hash mismatch")
 
     compilation_report = compile_partial_historical_metadata(
-        Path(qualification_root)
-        / "reports"
-        / f"{qualification_expected['report_sha256']}.json",
+        Path(qualification_root) / "reports" / f"{qualification_expected['report_sha256']}.json",
         qualification_expected["report_sha256"],
         lifecycle_pin,
         lifecycle_sha,
