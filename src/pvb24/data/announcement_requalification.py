@@ -179,6 +179,7 @@ def validate_requalification_summary(report: dict) -> dict:
         raise ValueError("Requalification report hash mismatch")
     return report
 
+
 def requalify_retained_qualification(
     *,
     inventory_root,
