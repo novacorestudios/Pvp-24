@@ -13,13 +13,17 @@
     "review_requests_hash": "f6473119a542498f9c5c79aaf07d34732771258fff644e3fa32e6682e9ac61c4",
     "qualified_review_request_count": 28,
     "source_bytes_verified_count": 148,
-    "changed_result_count": 0,
-    "changed_codes": [],
+    "changed_result_count": 60,
     "replayed_status_counts": {
-      "QUALIFIED_PRELIMINARY": 28,
-      "SEMANTIC_UNQUALIFIED": 120
+      "QUALIFIED_PRELIMINARY": 84,
+      "SEMANTIC_UNQUALIFIED": 64
     },
-    "replayed_review_requests_hash": "f6473119a542498f9c5c79aaf07d34732771258fff644e3fa32e6682e9ac61c4"
+    "replayed_review_requests_hash": "0b6bb655228a864ba351c47e0c24109189128b8f9994111aa0bbc02edf17dd91",
+    "status_changed_count": 56,
+    "reason_only_change_count": 4,
+    "recorded_semantic_hash": "980a15af57cde9295aabb977c433814537c266362a6ec782585cabc820eef2fb",
+    "replayed_semantic_hash": "7837b810a5955681ca03404561740c8e890aade4f88c14f97ba1061f91e8134a",
+    "change_hash": "041cef54af1f87f786e96851e692f57853ca9f2b9edbaaa6618f6058884dbbf8"
   },
   "recovery": {
     "output_sha256": "aedcd648151c26968268c1580b7c6bf10284a1d1774c86bc21074f7fe697943d",
