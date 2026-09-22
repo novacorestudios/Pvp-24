@@ -125,8 +125,7 @@ def compile_security_master_v7(
     active = []
     applied = set()
     active_keys = {
-        (row["symbol"], row["effective_from"])
-        for row in base["selected_active_transitions"]
+        (row["symbol"], row["effective_from"]) for row in base["selected_active_transitions"]
     }
     for row in base["selected_active_transitions"]:
         updated = dict(row)
@@ -139,9 +138,7 @@ def compile_security_master_v7(
             updated["archive_proves_exact_launch"] = False
             applied.add(key)
         active.append(updated)
-    resolved_without_active = [
-        resolved[key] for key in sorted(set(resolved) - active_keys)
-    ]
+    resolved_without_active = [resolved[key] for key in sorted(set(resolved) - active_keys)]
 
     unresolved_listings = []
     for key in sorted(remaining):
@@ -193,9 +190,7 @@ def compile_security_master_v7(
         "unresolved_listings": unresolved_listings,
         "announcement_boundary_corroborated_count": len(resolved),
         "announcement_boundary_corroborated_active_count": len(applied),
-        "announcement_boundary_corroborated_without_active_count": len(
-            resolved_without_active
-        ),
+        "announcement_boundary_corroborated_without_active_count": len(resolved_without_active),
         "announcement_boundary_corroborated": refinement["resolved_announcement_boundaries"],
         "announcement_boundaries_without_active_transition": resolved_without_active,
         "symbol_obligations": obligations,
