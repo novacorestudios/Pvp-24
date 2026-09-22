@@ -1,5 +1,5 @@
-import json
 from pathlib import Path
+import json
 
 
 SCOPES = Path("config/evidence-workflow-scopes.json")
