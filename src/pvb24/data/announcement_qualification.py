@@ -299,6 +299,7 @@ def validate_qualification_summary(report):
         raise ValueError("Qualification summary differs from result rows")
     return report
 
+
 def retained_source_fetch(root, report_sha256):
     """Build an offline fetcher from a content-addressed retained qualification report."""
 
