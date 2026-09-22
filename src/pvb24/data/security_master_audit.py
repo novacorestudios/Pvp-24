@@ -193,22 +193,35 @@ def _append_listing(evidence, *, symbol, effective, available, source, revision,
     )
 
 
-def _append_delisting(evidence, *, symbol, effective, available, source, revision, reconciled):
+def _append_delisting(
+    evidence,
+    *,
+    symbol,
+    effective,
+    available,
+    source,
+    revision,
+    reconciled,
+    revision_type=None,
+):
     if not isinstance(symbol, str) or not symbol.endswith("USDT"):
         raise ValueError("Explicit USDT delisting symbol required")
+    if revision_type not in (None, "POSTPONEMENT"):
+        raise ValueError("Unsupported delisting revision semantics")
     effective, available = _time(effective), _time(available)
     if available > effective:
         raise ValueError("Delisting evidence became available after its effective time")
-    evidence[symbol].append(
-        {
-            "symbol": symbol,
-            "effective_from": effective,
-            "available_at": available,
-            "source": source,
-            "revision_id": revision,
-            "boundary_reconciled": reconciled,
-        }
-    )
+    row = {
+        "symbol": symbol,
+        "effective_from": effective,
+        "available_at": available,
+        "source": source,
+        "revision_id": revision,
+        "boundary_reconciled": reconciled,
+    }
+    if revision_type is not None:
+        row["revision_type"] = revision_type
+    evidence[symbol].append(row)
 
 
 def _dedupe(events):
@@ -387,6 +400,7 @@ def compile_security_master_obligations(
             source=row["source"],
             revision=row["revision_id"],
             reconciled=True,
+            revision_type=row.get("revision_type"),
         )
 
     if recovery is not None:
@@ -440,6 +454,7 @@ def compile_security_master_obligations(
                         source=source_url,
                         revision=revision,
                         reconciled=False,
+                        revision_type=fact.get("revision_type"),
                     )
 
     applied_cancellations = []
@@ -682,45 +697,141 @@ def compile_security_master_obligations(
     inactive_transitions = []
     unpaired_delistings = []
     ambiguous_delistings = []
+    delisting_revision_conflicts = []
+    delisting_conflict_symbols = set()
     for symbol, rows in sorted(delisting_evidence.items()):
+        by_time = defaultdict(list)
         for row in rows:
-            start = selected_starts.get(symbol)
-            conflict = any(item["symbol"] == symbol for item in listing_conflicts)
-            if start is None or start >= row["effective_from"] or conflict:
-                target = ambiguous_delistings if conflict else unpaired_delistings
-                target.append(
-                    {
-                        **row,
-                        "blocking_obligation": (
-                            "RESOLVE_RELISTING_BEFORE_DELISTING"
-                            if conflict
-                            else "ACQUIRE_UNAMBIGUOUS_TRADING_START_BEFORE_DELISTING"
-                        ),
-                    }
-                )
-                continue
-            inactive_transitions.append(
+            by_time[row["effective_from"]].append(row)
+        times = sorted(by_time)
+
+        resolution = "SINGLE" if len(times) == 1 and len(rows) == 1 else "CORROBORATED"
+        selected = by_time[times[0]] if len(times) == 1 else None
+        superseded_times = []
+
+        if len(times) > 1:
+            postponement_times = sorted(
                 {
-                    "symbol": symbol,
-                    "transition": "INACTIVE_DELISTED",
-                    "effective_from": row["effective_from"],
-                    "available_at": row["available_at"],
-                    "trading_start": start,
-                    "classification": "UNKNOWN",
-                    "boundary_reconciled": row["boundary_reconciled"],
-                    "source": row["source"],
-                    "revision_id": row["revision_id"],
-                    "historical_verified": False,
-                    "universe_eligible": False,
+                    row["effective_from"]
+                    for row in rows
+                    if row.get("revision_type") == "POSTPONEMENT"
                 }
             )
+            if len(postponement_times) == 1:
+                postponed_to = postponement_times[0]
+                older_times = [time for time in times if time != postponed_to]
+                postponements = [
+                    row
+                    for row in by_time[postponed_to]
+                    if row.get("revision_type") == "POSTPONEMENT"
+                ]
+                if (
+                    older_times
+                    and all(time < postponed_to for time in older_times)
+                    and any(
+                        row["available_at"] <= min(older_times)
+                        for row in postponements
+                    )
+                ):
+                    selected = by_time[postponed_to]
+                    superseded_times = older_times
+                    resolution = "EXPLICIT_POSTPONEMENT"
+
+        if selected is None:
+            conflict_row = {
+                "symbol": symbol,
+                "announced_delisting_times": times,
+                "evidence_count": len(rows),
+                "sources": [
+                    {
+                        "effective_from": row["effective_from"],
+                        "available_at": row["available_at"],
+                        "source": row["source"],
+                        "revision_id": row["revision_id"],
+                        "boundary_reconciled": row["boundary_reconciled"],
+                        "revision_type": row.get("revision_type"),
+                    }
+                    for row in rows
+                ],
+                "resolution_status": "UNRESOLVED_CONFLICT",
+                "resolution_requires": [
+                    "EXPLICIT_CAUSAL_POSTPONEMENT",
+                    "PROVEN_RELISTING_EPOCHS",
+                ],
+                "blocking_obligation": "RESOLVE_DELISTING_REVISION_OR_RELISTING_SEMANTICS",
+            }
+            delisting_revision_conflicts.append(conflict_row)
+            ambiguous_delistings.append(conflict_row)
+            delisting_conflict_symbols.add(symbol)
+            continue
+
+        effective = selected[0]["effective_from"]
+        available = min(row["available_at"] for row in selected)
+        source_rows = [
+            {
+                "available_at": row["available_at"],
+                "source": row["source"],
+                "revision_id": row["revision_id"],
+                "boundary_reconciled": row["boundary_reconciled"],
+                "revision_type": row.get("revision_type"),
+            }
+            for row in selected
+        ]
+        start = selected_starts.get(symbol)
+        listing_conflict = any(item["symbol"] == symbol for item in listing_conflicts)
+        if start is None or start >= effective or listing_conflict:
+            target = ambiguous_delistings if listing_conflict else unpaired_delistings
+            target.append(
+                {
+                    "symbol": symbol,
+                    "effective_from": effective,
+                    "available_at": available,
+                    "evidence_count": len(selected),
+                    "sources": source_rows,
+                    "revision_resolution": resolution,
+                    "superseded_delisting_times": superseded_times,
+                    "blocking_obligation": (
+                        "RESOLVE_RELISTING_BEFORE_DELISTING"
+                        if listing_conflict
+                        else "ACQUIRE_UNAMBIGUOUS_TRADING_START_BEFORE_DELISTING"
+                    ),
+                }
+            )
+            continue
+
+        representative = selected[0]
+        inactive_transitions.append(
+            {
+                "symbol": symbol,
+                "transition": "INACTIVE_DELISTED",
+                "effective_from": effective,
+                "available_at": available,
+                "trading_start": start,
+                "classification": "UNKNOWN",
+                "evidence_count": len(selected),
+                "boundary_reconciled": any(row["boundary_reconciled"] for row in selected),
+                "source": representative["source"],
+                "revision_id": representative["revision_id"],
+                "sources": source_rows,
+                "revision_resolution": resolution,
+                "superseded_delisting_times": superseded_times,
+                "historical_verified": False,
+                "universe_eligible": False,
+            }
+        )
 
     active_transitions.sort(key=lambda row: (row["symbol"], row["effective_from"]))
     inactive_transitions.sort(key=lambda row: (row["symbol"], row["effective_from"]))
     unresolved_rows.sort(key=lambda row: (row["symbol"], row["event_at"]))
     listing_conflicts.sort(key=lambda row: row["symbol"])
     unpaired_delistings.sort(key=lambda row: (row["symbol"], row["effective_from"]))
-    ambiguous_delistings.sort(key=lambda row: (row["symbol"], row["effective_from"]))
+    ambiguous_delistings.sort(
+        key=lambda row: (
+            row["symbol"],
+            row.get("effective_from") or row["announced_delisting_times"][0],
+        )
+    )
+    delisting_revision_conflicts.sort(key=lambda row: row["symbol"])
 
     symbols = sorted(
         {
@@ -743,7 +854,9 @@ def compile_security_master_obligations(
             obligations.append("RESOLVE_PRIOR_SECURITY_EPOCH")
         if symbol in reviewed_classification_hints:
             obligations.append("QUALIFY_REVIEWED_CLASSIFICATION_HINT")
-        if symbol in delisting_evidence and symbol not in delisted_symbols:
+        if symbol in delisting_conflict_symbols:
+            obligations.append("RESOLVE_DELISTING_REVISION_OR_RELISTING_SEMANTICS")
+        elif symbol in delisting_evidence and symbol not in delisted_symbols:
             obligations.append("PAIR_DELISTING_WITH_UNAMBIGUOUS_TRADING_START")
         by_symbol.append(
             {
@@ -845,6 +958,8 @@ def compile_security_master_obligations(
         "unpaired_delistings": unpaired_delistings,
         "ambiguous_delisting_count": len(ambiguous_delistings),
         "ambiguous_delistings": ambiguous_delistings,
+        "delisting_revision_conflict_count": len(delisting_revision_conflicts),
+        "delisting_revision_conflicts": delisting_revision_conflicts,
         "recovery_remaining_semantic_unqualified_count": (
             recovery["remaining_semantic_unqualified_count"] if recovery is not None else None
         ),
