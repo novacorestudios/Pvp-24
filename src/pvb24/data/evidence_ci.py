@@ -115,7 +115,7 @@ def qualify_same_sha_ci(
         last_checks = payload.get("check_runs", [])
         cache = {}
 
-        def run_lookup(run_id):
+        def run_lookup(run_id, cache=cache):
             if run_id not in cache:
                 cache[run_id] = api_get(repository, f"actions/runs/{run_id}", token)
             return cache[run_id]
