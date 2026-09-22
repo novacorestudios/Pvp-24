@@ -133,6 +133,39 @@ def acquired(tmp_path, kind="DELISTING"):
     return report, path, Path(path).stem
 
 
+def _f1_delisting_body(cutoff_text):
+    return {
+        "node": "root",
+        "child": [
+            node(
+                "p",
+                "Binance Futures will close all positions and conduct an automatic settlement on "
+                "the USDⓈ-M AAAUSDT and BBBUSDT perpetual contracts at 2024-03-26 09:00 "
+                "(UTC). The contracts will be delisted after settlement.",
+            ),
+            node("p", cutoff_text),
+        ],
+    }
+
+
+def test_shared_decoder_rejects_partial_cutoff_symbol_scope():
+    body = _f1_delisting_body(
+        "Users are not allowed to open new positions for the aforementioned contracts starting "
+        "from 2024-03-26 08:30 (UTC): AAAUSDT."
+    )
+    with pytest.raises(ValueError, match="cutoff symbol set differs"):
+        extract_facts("DELISTING", body)
+
+
+def test_shared_decoder_rejects_multiple_cutoff_times_in_one_schedule():
+    body = _f1_delisting_body(
+        "Users are not allowed to open new positions for the aforementioned contracts starting "
+        "from 2024-03-26 08:00 (UTC): AAAUSDT and 2024-03-26 08:30 (UTC): BBBUSDT."
+    )
+    with pytest.raises(ValueError, match="shared new-position cutoff time"):
+        extract_facts("DELISTING", body)
+
+
 def test_postponement_extracts_only_main_causal_schedule_not_later_editor_note():
     body = {
         "node": "root",
