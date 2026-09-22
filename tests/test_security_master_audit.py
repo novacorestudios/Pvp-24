@@ -176,6 +176,122 @@ def compile_with_recovery(tmp_path, recovered):
     return compile_security_master_obligations(m11v, m11v_sha, recovery, recovery_sha)
 
 
+def test_active_transition_preserves_source_level_point_in_time_availability(tmp_path):
+    recovered = [
+        recovered_article(
+            "LISTING",
+            "list-aaa-early",
+            "2023-12-20T00:00:00+00:00",
+            [
+                {
+                    "symbol": "AAAUSDT",
+                    "launch_at": "2024-01-02T00:00:00+00:00",
+                    "max_leverage": 20,
+                    "contract_type": "PERPETUAL",
+                    "quote_asset": "USDT",
+                }
+            ],
+        )
+    ]
+    report = compile_with_recovery(tmp_path, recovered)
+    row = next(
+        item for item in report["selected_active_transitions"] if item["symbol"] == "AAAUSDT"
+    )
+    assert report["schema"] == "PVB24_SECURITY_MASTER_OBLIGATION_AUDIT_V5"
+    assert report["availability_model"] == "PER_SOURCE_POINT_IN_TIME_V1"
+    assert report["point_in_time_source_availability_preserved"] is True
+    assert row["available_at"] == "2023-12-20T00:00:00.000000Z"
+    assert row["first_evidence_available_at"] == "2023-12-20T00:00:00.000000Z"
+    assert row["selection_available_at"] == "2023-12-20T00:00:00.000000Z"
+    assert row["evidence_complete_at"] == "2024-01-01T00:00:00.000000Z"
+    assert row["boundary_reconciled_available_at"] == "2024-01-01T00:00:00.000000Z"
+    assert [source["available_at"] for source in row["sources"]] == [
+        "2023-12-20T00:00:00.000000Z",
+        "2024-01-01T00:00:00.000000Z",
+    ]
+    assert row["evidence_timeline"][0]["evidence_count"] == 1
+    assert row["evidence_timeline"][0]["boundary_reconciled"] is False
+    assert row["evidence_timeline"][1]["evidence_count"] == 2
+    assert row["evidence_timeline"][1]["boundary_reconciled"] is True
+
+
+def test_inactive_transition_preserves_source_level_point_in_time_availability(tmp_path):
+    recovered = [
+        recovered_article(
+            "DELISTING",
+            "delist-aaa-early",
+            "2024-02-10T00:00:00+00:00",
+            [
+                {
+                    "symbol": "AAAUSDT",
+                    "scheduled_settlement_at": "2024-03-01T00:00:00+00:00",
+                }
+            ],
+        )
+    ]
+    report = compile_with_recovery(tmp_path, recovered)
+    row = next(
+        item for item in report["selected_inactive_transitions"] if item["symbol"] == "AAAUSDT"
+    )
+    assert row["available_at"] == "2024-02-10T00:00:00.000000Z"
+    assert row["first_evidence_available_at"] == "2024-02-10T00:00:00.000000Z"
+    assert row["selection_available_at"] == "2024-02-10T00:00:00.000000Z"
+    assert row["evidence_complete_at"] == "2024-02-20T00:00:00.000000Z"
+    assert row["boundary_reconciled_available_at"] == "2024-02-20T00:00:00.000000Z"
+    assert [source["available_at"] for source in row["sources"]] == [
+        "2024-02-10T00:00:00.000000Z",
+        "2024-02-20T00:00:00.000000Z",
+    ]
+    assert row["evidence_timeline"][0]["boundary_reconciled"] is False
+    assert row["evidence_timeline"][1]["boundary_reconciled"] is True
+
+
+def test_conflicting_listing_selection_waits_for_reconciliation_availability(tmp_path):
+    recovered = [
+        recovered_article(
+            "LISTING",
+            "list-aaa-same-start",
+            "2023-12-15T00:00:00+00:00",
+            [
+                {
+                    "symbol": "AAAUSDT",
+                    "launch_at": "2024-01-02T00:00:00+00:00",
+                    "max_leverage": 20,
+                    "contract_type": "PERPETUAL",
+                    "quote_asset": "USDT",
+                }
+            ],
+        ),
+        recovered_article(
+            "LISTING",
+            "list-aaa-other-start",
+            "2023-12-16T00:00:00+00:00",
+            [
+                {
+                    "symbol": "AAAUSDT",
+                    "launch_at": "2024-01-05T00:00:00+00:00",
+                    "max_leverage": 20,
+                    "contract_type": "PERPETUAL",
+                    "quote_asset": "USDT",
+                }
+            ],
+        ),
+    ]
+    report = compile_with_recovery(tmp_path, recovered)
+    row = next(
+        item for item in report["selected_active_transitions"] if item["symbol"] == "AAAUSDT"
+    )
+    conflict = next(
+        item for item in report["listing_start_conflicts"] if item["symbol"] == "AAAUSDT"
+    )
+    assert row["first_evidence_available_at"] == "2023-12-15T00:00:00.000000Z"
+    assert row["selection_available_at"] == "2024-01-01T00:00:00.000000Z"
+    assert row["available_at"] == "2024-01-01T00:00:00.000000Z"
+    assert row["selection_basis"] == "UNIQUE_RECONCILED_EFFECTIVE_TIME"
+    assert row["evidence_timeline"][0]["boundary_reconciled"] is False
+    assert conflict["selection_available_at"] == "2024-01-01T00:00:00.000000Z"
+
+
 def test_integrated_audit_pairs_recovered_start_and_delisting(tmp_path):
     recovered = [
         recovered_article(
