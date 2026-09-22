@@ -17,6 +17,7 @@ on:
       - "docs/data/11f-announcement-coverage.json"
       - "docs/data/11t-durable-evidence.json"
       - "docs/data/11t-durable-replay-baseline.json"
+      - "docs/M11T_DURABLE_REPLAY.md"
       - "evidence/m11t/**"
   workflow_dispatch:
 
