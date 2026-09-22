@@ -37,9 +37,7 @@ def test_scope_file_covers_every_evidence_workflow_file():
     value = json.loads(SCOPES.read_text())
     scoped = {row["workflow"] for row in value["workflows"]}
     actual = {
-        path.as_posix()
-        for path in Path(".github/workflows").glob("*.yml")
-        if path.name != "ci.yml"
+        path.as_posix() for path in Path(".github/workflows").glob("*.yml") if path.name != "ci.yml"
     }
     assert scoped == actual
 
