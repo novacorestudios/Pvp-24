@@ -165,9 +165,8 @@ def _symbol_group(value):
     if not isinstance(value, str) or not value.strip():
         raise ValueError("Explicit unique USDT-margined listing symbols required")
     tokens = re.split(r"\s*(?:,|&|\band\b)\s*", value.strip(), flags=re.IGNORECASE)
-    if (
-        not tokens
-        or any(not re.fullmatch(r"[A-Z0-9]+", token, flags=re.IGNORECASE) for token in tokens)
+    if not tokens or any(
+        not re.fullmatch(r"[A-Z0-9]+", token, flags=re.IGNORECASE) for token in tokens
     ):
         raise ValueError("Explicit unique USDT-margined listing symbols required")
     symbols = [token.upper() for token in tokens]
