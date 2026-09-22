@@ -9,19 +9,21 @@ on:
       - "src/pvb24/data/announcements.py"
       - "src/pvb24/data/announcement_qualification.py"
       - "src/pvb24/data/announcement_recovery.py"
+      - "src/pvb24/data/durable_evidence.py"
       - "scripts/recover_retained_listing_facts.py"
+      - "scripts/durable_m11t_evidence.py"
+      - "docs/data/11t-durable-evidence.json"
+      - "evidence/m11t/**"
   workflow_dispatch:
 
 permissions:
   contents: read
-  actions: read
 
 jobs:
   recover:
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: ${{ github.token }}
-      SOURCE_RUN_ID: "35636682664"
+      DURABLE_LOCATOR: "docs/data/11t-durable-evidence.json"
       SOURCE_REPORT_SHA256: "ed5539a48c6fca0fca16823bfd4dfd60ad3048c57716635adbb5d04d4b5ddd3a"
     steps:
       - uses: actions/checkout@v4
@@ -29,22 +31,20 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install -e '.[dev]'
-      - name: Restore pinned retained qualification evidence
+      - name: Restore durable retained qualification evidence
         run: |
-          mkdir -p artifacts/m11x/qualification
-          gh run download "$SOURCE_RUN_ID" \
-            --repo "${{ github.repository }}" \
-            --name announcement-body-qualification-evidence \
-            --dir artifacts/m11x/qualification
+          python scripts/durable_m11t_evidence.py verify             --locator "$DURABLE_LOCATOR"
+          python scripts/durable_m11t_evidence.py restore             --locator "$DURABLE_LOCATOR"             --destination artifacts/m11x/source             --artifact announcement-body-qualification-evidence
+          test -f             "artifacts/m11x/source/announcement-body-qualification-evidence/reports/${SOURCE_REPORT_SHA256}.json"
+          test "$(
+            sha256sum               "artifacts/m11x/source/announcement-body-qualification-evidence/reports/${SOURCE_REPORT_SHA256}.json"               | cut -d' ' -f1
+          )" = "$SOURCE_REPORT_SHA256"
       - name: Verify repository provenance
         run: python scripts/verify_provenance.py
       - name: Replay retained sources with bounded lifecycle recovery
         run: |
           mkdir -p artifacts/m11x/recovery
-          python scripts/recover_retained_listing_facts.py \
-            --root artifacts/m11x/qualification \
-            --report-sha256 "$SOURCE_REPORT_SHA256" \
-            --output artifacts/m11x/recovery/11x-retained-listing-recovery.json
+          python scripts/recover_retained_listing_facts.py             --root artifacts/m11x/source/announcement-body-qualification-evidence             --report-sha256 "$SOURCE_REPORT_SHA256"             --output artifacts/m11x/recovery/11x-retained-listing-recovery.json
           sha256sum artifacts/m11x/recovery/11x-retained-listing-recovery.json
       - uses: actions/upload-artifact@v4
         with:
