@@ -1,24 +1,12 @@
 name: M11X Listing Conflict Resolution
 
 on:
-  push:
-    branches:
-      - build/pvb24-v1
-    paths:
-      - ".github/workflows/m11x-listing-conflict-resolution.yml"
-      - "src/pvb24/data/listing_conflict_resolution.py"
-      - "src/pvb24/data/listing_conflict_activity.py"
-      - "scripts/resolve_listing_conflicts.py"
-      - "scripts/audit_listing_conflict_activity.py"
-      - "src/pvb24/data/evidence_ci.py"
-      - "scripts/verify_evidence_ci.py"
-      - "scripts/qualify_evidence_artifact.py"
-      - "tests/test_evidence_ci.py"
-      - "scripts/verify_provenance.py"
-      - "src/pvb24/ids.py"
-      - "src/pvb24/types.py"
-      - "pyproject.toml"
   workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact build/pvb24-v1 SHA that passed PVB-24 CI
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -37,19 +25,21 @@ jobs:
       SOURCE_RUN_ID: "35665202158"
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: python -m pip install -e '.[dev]'
       - name: Qualify exact producer SHA against CI
-        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
           PYTHONPATH: src
         run: |
           python scripts/verify_evidence_ci.py \
             --repository "$GITHUB_REPOSITORY" \
-            --sha "$GITHUB_SHA" \
+            --sha "${{ inputs.source_sha }}" \
+            --wait-seconds 90 \
             --output artifacts/evidence-ci/ci.json
       - name: Restore pinned recovery and conflict sources
         run: |
@@ -77,7 +67,6 @@ jobs:
             --output artifacts/m11x/conflict-resolution/11x-listing-conflict-activity.json
           sha256sum artifacts/m11x/conflict-resolution/11x-listing-conflict-activity.json
       - name: Seal evidence artifact qualification
-        if: github.event_name != 'pull_request'
         env:
           PYTHONPATH: src
         run: |
@@ -87,7 +76,7 @@ jobs:
           python scripts/qualify_evidence_artifact.py verify \
             --root artifacts/m11x/conflict-resolution \
             --ci-attestation artifacts/evidence-ci/ci.json \
-            --expected-sha "$GITHUB_SHA"
+            --expected-sha "${{ inputs.source_sha }}"
       - uses: actions/upload-artifact@v4
         with:
           name: m11x-listing-conflict-resolution

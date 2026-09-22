@@ -1,24 +1,12 @@
 name: M11X Reviewed Listing Facts and Activity
 
 on:
-  push:
-    branches:
-      - build/pvb24-v1
-    paths:
-      - ".github/workflows/m11x-reviewed-listing-facts.yml"
-      - "src/pvb24/data/reviewed_listing_facts.py"
-      - "src/pvb24/data/reviewed_listing_activity.py"
-      - "scripts/compile_reviewed_listing_facts.py"
-      - "scripts/audit_reviewed_listing_activity.py"
-      - "src/pvb24/data/evidence_ci.py"
-      - "scripts/verify_evidence_ci.py"
-      - "scripts/qualify_evidence_artifact.py"
-      - "tests/test_evidence_ci.py"
-      - "scripts/verify_provenance.py"
-      - "src/pvb24/ids.py"
-      - "src/pvb24/types.py"
-      - "pyproject.toml"
   workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact build/pvb24-v1 SHA that passed PVB-24 CI
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -35,19 +23,21 @@ jobs:
       SOURCE_RUN_ID: "35666586892"
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: python -m pip install -e '.[dev]'
       - name: Qualify exact producer SHA against CI
-        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
           PYTHONPATH: src
         run: |
           python scripts/verify_evidence_ci.py \
             --repository "$GITHUB_REPOSITORY" \
-            --sha "$GITHUB_SHA" \
+            --sha "${{ inputs.source_sha }}" \
+            --wait-seconds 90 \
             --output artifacts/evidence-ci/ci.json
       - name: Restore reviewed listing source batch
         run: |
@@ -76,7 +66,6 @@ jobs:
             --output artifacts/m11x/reviewed-listing/11x-reviewed-listing-activity.json
           sha256sum artifacts/m11x/reviewed-listing/11x-reviewed-listing-activity.json
       - name: Seal evidence artifact qualification
-        if: github.event_name != 'pull_request'
         env:
           PYTHONPATH: src
         run: |
@@ -86,7 +75,7 @@ jobs:
           python scripts/qualify_evidence_artifact.py verify \
             --root artifacts/m11x/reviewed-listing \
             --ci-attestation artifacts/evidence-ci/ci.json \
-            --expected-sha "$GITHUB_SHA"
+            --expected-sha "${{ inputs.source_sha }}"
       - uses: actions/upload-artifact@v4
         with:
           name: m11x-reviewed-listing-facts
