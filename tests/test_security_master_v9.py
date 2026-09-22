@@ -91,7 +91,9 @@ def fixture(tmp_path):
             "status": status,
             "ancillary_sources": [],
             "supporting_source_count": 1 if status.startswith("ANNOUNCED") else 0,
-            "supporting_source_kinds": ["markPriceKlines"] if status.startswith("ANNOUNCED") else [],
+            "supporting_source_kinds": ["markPriceKlines"]
+            if status.startswith("ANNOUNCED")
+            else [],
             "announcement_exact_time_corroborated": status.startswith("ANNOUNCED"),
             "ancillary_proves_first_executable_trade": False,
             "pre_event_ancillary_used_as_inactivity_proof": False,

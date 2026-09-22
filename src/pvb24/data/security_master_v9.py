@@ -109,9 +109,7 @@ def compile_security_master_v9(
     if set(evidence) != set(base_unresolved):
         raise ValueError("Ancillary evidence does not cover every V8 unresolved identity")
 
-    corroborated = {
-        key: row for key, row in evidence.items() if row["status"] == CORROBORATED
-    }
+    corroborated = {key: row for key, row in evidence.items() if row["status"] == CORROBORATED}
     unknown = {key: row for key, row in evidence.items() if row["status"] == UNKNOWN}
 
     active_keys = {
@@ -187,12 +185,8 @@ def compile_security_master_v9(
         "unresolved_listings": unresolved_listings,
         "ancillary_boundary_corroborated_count": len(corroborated),
         "ancillary_boundary_corroborated_active_count": len(applied),
-        "ancillary_boundary_corroborated_without_active_count": len(
-            corroborated_without_active
-        ),
-        "ancillary_boundary_corroborated": [
-            corroborated[key] for key in sorted(corroborated)
-        ],
+        "ancillary_boundary_corroborated_without_active_count": len(corroborated_without_active),
+        "ancillary_boundary_corroborated": [corroborated[key] for key in sorted(corroborated)],
         "ancillary_boundary_corroborated_without_active": corroborated_without_active,
         "symbol_obligations": obligations,
         "classification_history_complete": False,

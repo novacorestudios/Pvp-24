@@ -51,9 +51,8 @@ def _load(path, expected_sha256):
     if recorded != digest(unhashed):
         raise ValueError("V8 Security Master audit hash mismatch")
     unresolved = report.get("unresolved_listings")
-    if (
-        not isinstance(unresolved, list)
-        or report.get("unresolved_listing_count") != len(unresolved)
+    if not isinstance(unresolved, list) or report.get("unresolved_listing_count") != len(
+        unresolved
     ):
         raise ValueError("V8 unresolved listing count mismatch")
     return report
@@ -164,9 +163,7 @@ def compile_ancillary_listing_boundary_evidence(
             source, decoded = sources[(item["symbol"], month, kind, interval)]
             summaries.append(_relative_summary(source, decoded, event))
 
-        failed = any(
-            row["status"] in ("HTTP_ERROR", "INVALID_OR_FAILED") for row in summaries
-        )
+        failed = any(row["status"] in ("HTTP_ERROR", "INVALID_OR_FAILED") for row in summaries)
         supporting = [
             row
             for row in summaries

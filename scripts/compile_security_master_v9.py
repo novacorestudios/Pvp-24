@@ -37,9 +37,7 @@ def main():
     print(
         json.dumps(
             {
-                "selected_active_transition_count": report[
-                    "selected_active_transition_count"
-                ],
+                "selected_active_transition_count": report["selected_active_transition_count"],
                 "unresolved_listing_count": report["unresolved_listing_count"],
                 "ancillary_boundary_corroborated_count": report[
                     "ancillary_boundary_corroborated_count"
