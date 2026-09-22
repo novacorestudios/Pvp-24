@@ -113,9 +113,10 @@ def build_report(tmp_path, monkeypatch):
 def test_retained_source_fetch_replays_content_addressed_body(tmp_path, monkeypatch):
     report_sha, source_sha = build_report(tmp_path, monkeypatch)
     fetch = module.retained_source_fetch(tmp_path, report_sha)
-    assert fetch(candidate()["article_url"]) == (
-        tmp_path / "objects" / f"{source_sha}.json"
-    ).read_bytes()
+    assert (
+        fetch(candidate()["article_url"])
+        == (tmp_path / "objects" / f"{source_sha}.json").read_bytes()
+    )
 
 
 def test_retained_source_fetch_rejects_source_tamper(tmp_path, monkeypatch):
