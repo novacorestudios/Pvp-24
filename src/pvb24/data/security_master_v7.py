@@ -125,7 +125,8 @@ def compile_security_master_v7(
     active = []
     applied = set()
     active_keys = {
-        (row["symbol"], row["effective_from"]) for row in base["selected_active_transitions"]
+        (row["symbol"], row["effective_from"])
+        for row in base["selected_active_transitions"]
     }
     for row in base["selected_active_transitions"]:
         updated = dict(row)
