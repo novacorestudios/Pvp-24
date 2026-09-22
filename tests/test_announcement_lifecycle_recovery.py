@@ -241,9 +241,9 @@ def test_delisting_cutoff_timezone_offset_fails_closed(tmp_path):
     assert report["recovered_delisting_fact_count"] == 0
     assert report["recovered_symbols"] == []
     assert report["remaining_semantic_unqualified_count"] == 1
-    assert "Explicit UTC retained lifecycle timestamp required" in report["remaining"][0][
-        "new_reason"
-    ]
+    assert (
+        "Explicit UTC retained lifecycle timestamp required" in report["remaining"][0]["new_reason"]
+    )
 
 
 def test_post_effective_known_update_is_retrospective_not_causal(tmp_path):
