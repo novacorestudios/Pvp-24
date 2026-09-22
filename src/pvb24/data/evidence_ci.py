@@ -221,7 +221,9 @@ def _artifact_files(root, manifest_name):
     return rows
 
 
-def qualify_artifact_root(*, root, ci_attestation_path, manifest_name="evidence-qualification.json"):
+def qualify_artifact_root(
+    *, root, ci_attestation_path, manifest_name="evidence-qualification.json"
+):
     ci = load_ci_attestation(ci_attestation_path)
     files = _artifact_files(Path(root), manifest_name)
     value = {
