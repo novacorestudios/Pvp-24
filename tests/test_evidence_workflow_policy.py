@@ -14,6 +14,7 @@ WORKFLOWS = (
     Path(".github/workflows/m11x-reviewed-listing-facts.yml"),
     Path(".github/workflows/m11x-reviewed-listing-source.yml"),
     Path(".github/workflows/m11x-security-master-audit.yml"),
+    Path(".github/workflows/m11y-retained-requalification.yml"),
 )
 
 
