@@ -1,8 +1,6 @@
 import json
 from pathlib import Path
 
-import pytest
-
 
 SCOPES = Path("config/evidence-workflow-scopes.json")
 
@@ -12,25 +10,25 @@ def workflow_paths():
     return [Path(row["workflow"]) for row in value["workflows"]]
 
 
-@pytest.mark.parametrize("path", workflow_paths(), ids=lambda path: path.name)
-def test_evidence_workflow_is_post_ci_dispatch_only(path):
-    raw = path.read_text()
-    trigger = raw.split("\npermissions:", 1)[0].split("on:\n", 1)[1]
+def test_evidence_workflows_are_post_ci_dispatch_only():
+    for path in workflow_paths():
+        raw = path.read_text()
+        trigger = raw.split("\npermissions:", 1)[0].split("on:\n", 1)[1]
 
-    assert "\n  push:" not in trigger
-    assert "\n  pull_request:" not in trigger
-    assert "  workflow_dispatch:\n" in trigger
-    assert "      source_sha:\n" in trigger
-    assert "        required: true\n" in trigger
-    assert "        type: string\n" in trigger
+        assert "\n  push:" not in trigger, path
+        assert "\n  pull_request:" not in trigger, path
+        assert "  workflow_dispatch:\n" in trigger, path
+        assert "      source_sha:\n" in trigger, path
+        assert "        required: true\n" in trigger, path
+        assert "        type: string\n" in trigger, path
 
-    assert "github.ref == 'refs/heads/build/pvb24-v1'" in raw
-    assert "ref: ${{ inputs.source_sha }}" in raw
-    assert "scripts/verify_evidence_ci.py" in raw
-    assert '--sha "${{ inputs.source_sha }}"' in raw
-    assert "scripts/qualify_evidence_artifact.py create" in raw
-    assert "scripts/qualify_evidence_artifact.py verify" in raw
-    assert '--expected-sha "${{ inputs.source_sha }}"' in raw
+        assert "github.ref == 'refs/heads/build/pvb24-v1'" in raw, path
+        assert "ref: ${{ inputs.source_sha }}" in raw, path
+        assert "scripts/verify_evidence_ci.py" in raw, path
+        assert '--sha "${{ inputs.source_sha }}"' in raw, path
+        assert "scripts/qualify_evidence_artifact.py create" in raw, path
+        assert "scripts/qualify_evidence_artifact.py verify" in raw, path
+        assert '--expected-sha "${{ inputs.source_sha }}"' in raw, path
 
 
 def test_scope_file_covers_every_evidence_workflow_file():
