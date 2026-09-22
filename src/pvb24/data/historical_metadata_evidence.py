@@ -39,7 +39,6 @@ def _load_pinned(path, expected_hash, *, schema):
     return payload
 
 
-
 def _validate_tick_summary(report):
     articles = report.get("articles")
     failures = report.get("failures")
