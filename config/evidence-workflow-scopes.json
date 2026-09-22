@@ -67,7 +67,10 @@
         "src/pvb24/data/announcement_requalification.py",
         "tests/test_announcement_requalification.py",
         "scripts/reconcile_retained_requalification_activity.py",
-        "tests/test_daily_activity.py"
+        "tests/test_daily_activity.py",
+        "scripts/compile_requalified_security_master_delta.py",
+        "src/pvb24/data/requalified_security_master.py",
+        "tests/test_requalified_security_master.py"
       ]
     },
     {

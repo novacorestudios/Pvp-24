@@ -21,6 +21,8 @@ jobs:
     env:
       SOURCE_QUALIFICATION_SHA256: >-
         ed5539a48c6fca0fca16823bfd4dfd60ad3048c57716635adbb5d04d4b5ddd3a
+      BASE_SECURITY_RUN_ID: "35713323687"
+      BASE_SECURITY_SHA256: "584045c6a9c909158c61bd70065e5fcb33ba4a2895812a88e313e053a1b66a03"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -70,6 +72,28 @@ jobs:
             --output-root artifacts/m11t-replay/output/11y-lifecycle-source \
             --output-report \
               artifacts/m11t-replay/output/11y-requalified-lifecycle-activity.json
+      - name: Integrate requalified lifecycle with Security Master obligations
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/m11t-replay/base-security
+          gh run download "$BASE_SECURITY_RUN_ID" \
+            --repo "${{ github.repository }}" \
+            --name m11x-security-master-obligation-audit \
+            --dir artifacts/m11t-replay/base-security
+          BASE="artifacts/m11t-replay/base-security/11x-security-master-obligations.json"
+          test "$(sha256sum "$BASE" | cut -d' ' -f1)" = "$BASE_SECURITY_SHA256"
+          REQUAL="artifacts/m11t-replay/output/11y-retained-announcement-requalification.json"
+          LIFE="artifacts/m11t-replay/output/11y-requalified-lifecycle-activity.json"
+          python scripts/compile_requalified_security_master_delta.py \
+            --base "$BASE" \
+            --base-sha256 "$BASE_SECURITY_SHA256" \
+            --requalification "$REQUAL" \
+            --requalification-sha256 "$(sha256sum "$REQUAL" | cut -d' ' -f1)" \
+            --lifecycle "$LIFE" \
+            --lifecycle-sha256 "$(sha256sum "$LIFE" | cut -d' ' -f1)" \
+            --output \
+              artifacts/m11t-replay/output/11y-requalified-security-master-delta.json
       - name: Seal evidence artifact qualification
         if: github.event_name != 'pull_request'
         env:
