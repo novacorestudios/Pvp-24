@@ -2,7 +2,10 @@ import hashlib
 import json
 from datetime import UTC, datetime
 
-from pvb24.data.announcement_recovery import recover_retained_lifecycle_facts
+from pvb24.data.announcement_recovery import (
+    _parse_recovery_time,
+    recover_retained_lifecycle_facts,
+)
 from pvb24.ids import canonical, digest
 
 
@@ -174,6 +177,58 @@ def test_busd_only_contract_never_becomes_fake_usdt_symbol(tmp_path):
     assert report["recovered_delisting_fact_count"] == 0
     assert report["remaining_semantic_unqualified_count"] == 1
     assert "FTTBUSDUSDT" not in report["recovered_symbols"]
+
+
+def test_recovery_time_requires_explicit_utc_timezone():
+    try:
+        _parse_recovery_time("2022-05-13 09:00")
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("Timezone must be an explicit parser argument")
+
+    try:
+        _parse_recovery_time("2022-05-13 09:00", timezone="UTC+8")
+    except ValueError as exc:
+        assert "Explicit UTC" in str(exc)
+    else:
+        raise AssertionError("Non-UTC retained timestamp must fail closed")
+
+
+def test_listing_timezone_offset_fails_closed(tmp_path):
+    report = recover_one(
+        tmp_path,
+        "LISTING",
+        "Binance Futures will launch a ABC/USDT perpetual contract with trading opening at "
+        "2022/04/05 2:00 AM (UTC+8). Users will be able to select between 1-50x leverage.",
+    )
+    assert report["recovered_listing_fact_count"] == 0
+    assert report["remaining_semantic_unqualified_count"] == 1
+
+
+def test_listing_without_timezone_fails_closed(tmp_path):
+    report = recover_one(
+        tmp_path,
+        "LISTING",
+        "Binance Futures will launch a ABC/USDT perpetual contract with trading opening at "
+        "2022/04/05 2:00 AM. Users will be able to select between 1-50x leverage.",
+    )
+    assert report["recovered_listing_fact_count"] == 0
+    assert report["remaining_semantic_unqualified_count"] == 1
+
+
+def test_delisting_cutoff_timezone_offset_fails_closed(tmp_path):
+    report = recover_one(
+        tmp_path,
+        "DELISTING",
+        "Binance Futures will close all positions and conduct an automatic settlement on the "
+        "AAAUSDT and BBBUSDT USDⓈ-M perpetual contracts at 2022-05-13 09:00 (UTC). "
+        "The contracts will be delisted after settlement. Users are not allowed to open new "
+        "positions for the aforementioned contracts starting from 2022-05-13 08:30 (UTC+8): "
+        "AAAUSDT and BBBUSDT.",
+    )
+    assert report["recovered_delisting_fact_count"] == 0
+    assert report["remaining_semantic_unqualified_count"] == 1
 
 
 def test_post_effective_known_update_is_retrospective_not_causal(tmp_path):
