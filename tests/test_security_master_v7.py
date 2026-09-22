@@ -25,6 +25,14 @@ def fixture(tmp_path):
             "boundary_reconciled": False,
         },
     ]
+    unresolved_source = [
+        *active,
+        {
+            "symbol": "CCCUSDT",
+            "effective_from": "2020-01-04T08:00:00.000000Z",
+            "boundary_reconciled": False,
+        },
+    ]
     unresolved = [
         {
             "symbol": row["symbol"],
@@ -36,7 +44,7 @@ def fixture(tmp_path):
             "requalified_boundary_status": "UNKNOWN",
             "blocking_obligation": "RESOLVE_LISTING_BOUNDARY",
         }
-        for row in active
+        for row in unresolved_source
     ]
     base = {
         "schema": "PVB24_SECURITY_MASTER_OBLIGATION_AUDIT_V6",
@@ -45,7 +53,7 @@ def fixture(tmp_path):
         "selected_active_transitions": active,
         "archive_reconciled_active_transition_count": 0,
         "announcement_only_active_transition_count": 2,
-        "unresolved_listing_count": 2,
+        "unresolved_listing_count": 3,
         "unresolved_listings": unresolved,
         "symbol_obligations": [
             {
@@ -62,7 +70,7 @@ def fixture(tmp_path):
                 ],
                 "full_security_history_complete": False,
             }
-            for row in active
+            for row in unresolved_source
         ],
         "classification_history_complete": False,
         "rename_relisting_history_complete": False,
@@ -118,6 +126,14 @@ def fixture(tmp_path):
         "resolution": "UNKNOWN",
         "blocking_obligation": "RESOLVE_LISTING_BOUNDARY",
     }
+    resolved_without_active = {
+        **resolved,
+        "symbol": "CCCUSDT",
+        "event_at": unresolved[2]["event_at"],
+        "source": unresolved[2]["source"],
+        "article_code": unresolved[2]["article_code"],
+        "article_source_sha256": unresolved[2]["revision_id"],
+    }
     refinement = {
         "schema": "PVB24_LISTING_BOUNDARY_REFINEMENT_V1",
         "quality": "PRELIMINARY",
@@ -127,9 +143,9 @@ def fixture(tmp_path):
             "lifecycle_sha256": "c" * 64,
             "lifecycle_reconciliation_hash": "d" * 64,
         },
-        "input_unresolved_listing_count": 2,
-        "resolved_announcement_boundary_count": 1,
-        "resolved_announcement_boundaries": [resolved],
+        "input_unresolved_listing_count": 3,
+        "resolved_announcement_boundary_count": 2,
+        "resolved_announcement_boundaries": [resolved, resolved_without_active],
         "remaining_unresolved_listing_count": 1,
         "remaining_unresolved_listings": [remaining],
         "prior_day_absence_used_as_proof": False,
@@ -163,7 +179,9 @@ def test_v7_removes_only_resolved_boundary_obligation_without_archive_overclaim(
     assert report["selected_active_transition_count"] == 2
     assert report["archive_reconciled_active_transition_count"] == 0
     assert report["announcement_only_active_transition_count"] == 2
-    assert report["announcement_boundary_corroborated_count"] == 1
+    assert report["announcement_boundary_corroborated_count"] == 2
+    assert report["announcement_boundary_corroborated_active_count"] == 1
+    assert report["announcement_boundary_corroborated_without_active_count"] == 1
     assert report["unresolved_listing_count"] == 1
 
     aaa = next(row for row in report["selected_active_transitions"] if row["symbol"] == "AAAUSDT")
@@ -180,6 +198,11 @@ def test_v7_removes_only_resolved_boundary_obligation_without_archive_overclaim(
         row for row in report["symbol_obligations"] if row["symbol"] == "BBBUSDT"
     )
     assert "RESOLVE_LISTING_BOUNDARY" not in aaa_obligations["obligations"]
+    ccc_obligations = next(
+        row for row in report["symbol_obligations"] if row["symbol"] == "CCCUSDT"
+    )
     assert "RESOLVE_LISTING_BOUNDARY" in bbb_obligations["obligations"]
+    assert "RESOLVE_LISTING_BOUNDARY" not in ccc_obligations["obligations"]
+    assert "MATERIALIZE_REQUALIFIED_ACTIVE_TRANSITION" in ccc_obligations["obligations"]
     assert report["historical_universe_complete"] is False
     assert report["final_test_access"] == "LOCKED"

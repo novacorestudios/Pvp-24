@@ -48,6 +48,9 @@ def main():
                     "announcement_boundary_corroborated_count"
                 ],
                 "unresolved_listing_count": report["unresolved_listing_count"],
+                "announcement_boundary_corroborated_without_active_count": report[
+                    "announcement_boundary_corroborated_without_active_count"
+                ],
                 "security_history_complete": report["security_history_complete"],
                 "historical_universe_complete": report["historical_universe_complete"],
                 "audit_hash": report["audit_hash"],

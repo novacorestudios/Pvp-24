@@ -124,6 +124,9 @@ def compile_security_master_v7(
 
     active = []
     applied = set()
+    active_keys = {
+        (row["symbol"], row["effective_from"]) for row in base["selected_active_transitions"]
+    }
     for row in base["selected_active_transitions"]:
         updated = dict(row)
         key = (row["symbol"], row["effective_from"])
@@ -135,8 +138,9 @@ def compile_security_master_v7(
             updated["archive_proves_exact_launch"] = False
             applied.add(key)
         active.append(updated)
-    if applied != set(resolved):
-        raise ValueError("Every resolved listing boundary must map to one active transition")
+    resolved_without_active = [
+        resolved[key] for key in sorted(set(resolved) - active_keys)
+    ]
 
     unresolved_listings = []
     for key in sorted(remaining):
@@ -167,6 +171,8 @@ def compile_security_master_v7(
             row["has_unresolved_listing_boundary"] = True
             if "RESOLVE_LISTING_BOUNDARY" not in row["obligations"]:
                 row["obligations"].append("RESOLVE_LISTING_BOUNDARY")
+        if any(item["symbol"] == symbol for item in resolved_without_active):
+            row["obligations"].append("MATERIALIZE_REQUALIFIED_ACTIVE_TRANSITION")
         row["obligations"] = sorted(set(row["obligations"]))
         obligations.append(row)
     obligations.sort(key=lambda row: row["symbol"])
@@ -185,7 +191,12 @@ def compile_security_master_v7(
         "unresolved_listing_count": len(unresolved_listings),
         "unresolved_listings": unresolved_listings,
         "announcement_boundary_corroborated_count": len(resolved),
+        "announcement_boundary_corroborated_active_count": len(applied),
+        "announcement_boundary_corroborated_without_active_count": len(
+            resolved_without_active
+        ),
         "announcement_boundary_corroborated": refinement["resolved_announcement_boundaries"],
+        "announcement_boundaries_without_active_transition": resolved_without_active,
         "symbol_obligations": obligations,
         "classification_history_complete": False,
         "rename_relisting_history_complete": False,
