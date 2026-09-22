@@ -400,7 +400,6 @@ def probe_plan(qualification):
     return _probe_plan(records)
 
 
-
 def validate_lifecycle_summary(qualification, report):
     """Recompute lifecycle reconciliation counts/hashes from the qualified facts."""
 
