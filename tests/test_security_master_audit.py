@@ -289,7 +289,16 @@ def test_conflicting_delisting_dates_fail_closed_without_inactive_transition(tmp
     conflict = report["delisting_revision_conflicts"][0]
     assert conflict["symbol"] == "CCCUSDT"
     assert conflict["resolution_status"] == "UNRESOLVED_CONFLICT"
+    assert conflict["blocking_obligation"] == (
+        "RESOLVE_DELISTING_REVISION_OR_RELISTING_SEMANTICS"
+    )
+    assert conflict["resolution_requires"] == [
+        "EXPLICIT_CAUSAL_POSTPONEMENT",
+        "PROVEN_RELISTING_EPOCHS",
+    ]
     assert len(conflict["announced_delisting_times"]) == 2
+    assert report["ambiguous_delisting_count"] == 1
+    assert report["unpaired_delisting_count"] == 1
     assert all(row["symbol"] != "CCCUSDT" for row in report["selected_inactive_transitions"])
     obligation = next(row for row in report["symbol_obligations"] if row["symbol"] == "CCCUSDT")
     assert "RESOLVE_DELISTING_REVISION_OR_RELISTING_SEMANTICS" in obligation["obligations"]
@@ -328,7 +337,9 @@ def test_same_delisting_date_is_corroborated_into_one_transition(tmp_path):
     rows = [row for row in report["selected_inactive_transitions"] if row["symbol"] == "CCCUSDT"]
     assert len(rows) == 1
     assert rows[0]["evidence_count"] == 2
+    assert len(rows[0]["sources"]) == 2
     assert rows[0]["revision_resolution"] == "CORROBORATED"
+    assert rows[0]["superseded_delisting_times"] == []
     assert report["delisting_revision_conflict_count"] == 0
 
 
@@ -372,6 +383,7 @@ def test_explicit_causal_postponement_supersedes_earlier_delisting(tmp_path):
     assert row["effective_from"] == "2024-03-01T00:00:00.000000Z"
     assert row["revision_resolution"] == "EXPLICIT_POSTPONEMENT"
     assert row["superseded_delisting_times"] == ["2024-02-01T00:00:00.000000Z"]
+    assert any(source["revision_type"] == "POSTPONEMENT" for source in row["sources"])
     assert report["delisting_revision_conflict_count"] == 0
 
 
@@ -412,6 +424,7 @@ def test_postponement_known_after_old_delisting_does_not_rewrite_history(tmp_pat
     ]
     report = compile_with_recovery(tmp_path, recovered)
     assert report["delisting_revision_conflict_count"] == 1
+    assert report["ambiguous_delisting_count"] == 1
     assert all(row["symbol"] != "CCCUSDT" for row in report["selected_inactive_transitions"])
 
 
