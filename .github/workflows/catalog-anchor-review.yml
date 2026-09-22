@@ -13,6 +13,14 @@ on:
       - "scripts/review_announcement_catalog_anchor.py"
       - "scripts/acquire_reviewed_announcement_catalog.py"
       - "scripts/qualify_announcement_inventory.py"
+      - "src/pvb24/data/evidence_ci.py"
+      - "scripts/verify_evidence_ci.py"
+      - "scripts/qualify_evidence_artifact.py"
+      - "tests/test_evidence_ci.py"
+      - "scripts/verify_provenance.py"
+      - "src/pvb24/ids.py"
+      - "src/pvb24/types.py"
+      - "pyproject.toml"
   pull_request:
     branches: [main]
     paths:
@@ -25,13 +33,26 @@ on:
       - "scripts/review_announcement_catalog_anchor.py"
       - "scripts/acquire_reviewed_announcement_catalog.py"
       - "scripts/qualify_announcement_inventory.py"
+      - "src/pvb24/data/evidence_ci.py"
+      - "scripts/verify_evidence_ci.py"
+      - "scripts/qualify_evidence_artifact.py"
+      - "tests/test_evidence_ci.py"
+      - "scripts/verify_provenance.py"
+      - "src/pvb24/ids.py"
+      - "src/pvb24/types.py"
+      - "pyproject.toml"
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
 
 jobs:
   reviewed-anchor:
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.repository == 'novacorestudios/Pvp-24' &&
+      github.ref == 'refs/heads/build/pvb24-v1')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -43,6 +64,16 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install -e '.[dev]'
+      - name: Qualify exact producer SHA against CI
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONPATH: src
+        run: |
+          python scripts/verify_evidence_ci.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --sha "$GITHUB_SHA" \
+            --output artifacts/evidence-ci/ci.json
       - run: python scripts/verify_provenance.py
       - name: Acquire replay-verified retained pre-Final catalog slice
         run: |
@@ -50,6 +81,18 @@ jobs:
             --catalog-id ${{ matrix.catalog }} \
             --window-start 2020-01-01T00:00:00Z \
             --output artifacts/catalog-evidence/${{ matrix.catalog }}
+      - name: Seal evidence artifact qualification
+        if: github.event_name != 'pull_request'
+        env:
+          PYTHONPATH: src
+        run: |
+          python scripts/qualify_evidence_artifact.py create \
+            --root "artifacts/catalog-evidence/${{ matrix.catalog }}" \
+            --ci-attestation artifacts/evidence-ci/ci.json
+          python scripts/qualify_evidence_artifact.py verify \
+            --root "artifacts/catalog-evidence/${{ matrix.catalog }}" \
+            --ci-attestation artifacts/evidence-ci/ci.json \
+            --expected-sha "$GITHUB_SHA"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -59,6 +102,10 @@ jobs:
           retention-days: 14
 
   candidate-inventory:
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.repository == 'novacorestudios/Pvp-24' &&
+      github.ref == 'refs/heads/build/pvb24-v1')
     needs: reviewed-anchor
     runs-on: ubuntu-latest
     steps:
@@ -67,6 +114,16 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install -e '.[dev]'
+      - name: Qualify exact producer SHA against CI
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONPATH: src
+        run: |
+          python scripts/verify_evidence_ci.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --sha "$GITHUB_SHA" \
+            --output artifacts/evidence-ci/ci.json
       - run: python scripts/verify_provenance.py
       - uses: actions/download-artifact@v4
         with:
@@ -93,6 +150,18 @@ jobs:
             --slice "$OUT/source/catalog-48" "reports/$H48.json" "$H48" \
             --slice "$OUT/source/catalog-161" "reports/$H161.json" "$H161" \
             --output "$OUT"
+      - name: Seal evidence artifact qualification
+        if: github.event_name != 'pull_request'
+        env:
+          PYTHONPATH: src
+        run: |
+          python scripts/qualify_evidence_artifact.py create \
+            --root artifacts/announcement-inventory \
+            --ci-attestation artifacts/evidence-ci/ci.json
+          python scripts/qualify_evidence_artifact.py verify \
+            --root artifacts/announcement-inventory \
+            --ci-attestation artifacts/evidence-ci/ci.json \
+            --expected-sha "$GITHUB_SHA"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -102,6 +171,10 @@ jobs:
           retention-days: 14
 
   body-qualification:
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.repository == 'novacorestudios/Pvp-24' &&
+      github.ref == 'refs/heads/build/pvb24-v1')
     needs: candidate-inventory
     runs-on: ubuntu-latest
     steps:
@@ -110,6 +183,16 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install -e '.[dev]'
+      - name: Qualify exact producer SHA against CI
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONPATH: src
+        run: |
+          python scripts/verify_evidence_ci.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --sha "$GITHUB_SHA" \
+            --output artifacts/evidence-ci/ci.json
       - run: python scripts/verify_provenance.py
       - uses: actions/download-artifact@v4
         with:
@@ -127,6 +210,18 @@ jobs:
             --inventory-report "reports/$HINV.json" \
             --inventory-sha256 "$HINV" \
             --output artifacts/announcement-body-qualification
+      - name: Seal evidence artifact qualification
+        if: github.event_name != 'pull_request'
+        env:
+          PYTHONPATH: src
+        run: |
+          python scripts/qualify_evidence_artifact.py create \
+            --root artifacts/announcement-body-qualification \
+            --ci-attestation artifacts/evidence-ci/ci.json
+          python scripts/qualify_evidence_artifact.py verify \
+            --root artifacts/announcement-body-qualification \
+            --ci-attestation artifacts/evidence-ci/ci.json \
+            --expected-sha "$GITHUB_SHA"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -136,6 +231,10 @@ jobs:
           retention-days: 14
 
   lifecycle-archive-reconciliation:
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.repository == 'novacorestudios/Pvp-24' &&
+      github.ref == 'refs/heads/build/pvb24-v1')
     needs: body-qualification
     runs-on: ubuntu-latest
     steps:
@@ -144,6 +243,16 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install -e '.[dev]'
+      - name: Qualify exact producer SHA against CI
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONPATH: src
+        run: |
+          python scripts/verify_evidence_ci.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --sha "$GITHUB_SHA" \
+            --output artifacts/evidence-ci/ci.json
       - run: python scripts/verify_provenance.py
       - uses: actions/download-artifact@v4
         with:
@@ -166,6 +275,18 @@ jobs:
             --qualification-report "reports/$HQ.json" \
             --qualification-sha256 "$HQ" \
             --output artifacts/lifecycle-archive-reconciliation
+      - name: Seal evidence artifact qualification
+        if: github.event_name != 'pull_request'
+        env:
+          PYTHONPATH: src
+        run: |
+          python scripts/qualify_evidence_artifact.py create \
+            --root artifacts/lifecycle-archive-reconciliation \
+            --ci-attestation artifacts/evidence-ci/ci.json
+          python scripts/qualify_evidence_artifact.py verify \
+            --root artifacts/lifecycle-archive-reconciliation \
+            --ci-attestation artifacts/evidence-ci/ci.json \
+            --expected-sha "$GITHUB_SHA"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
