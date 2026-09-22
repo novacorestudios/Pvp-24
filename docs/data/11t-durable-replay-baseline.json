@@ -1,0 +1,37 @@
+{
+  "schema": "PVB24_DURABLE_REPLAY_BASELINE_V1",
+  "durable_bundle_sha256": "9bef3d0684b525c8ee0db0e9d1c4f27fcddea5f6b53c1ea1911f3bbee150f5e4",
+  "qualification": {
+    "report_sha256": "ed5539a48c6fca0fca16823bfd4dfd60ad3048c57716635adbb5d04d4b5ddd3a",
+    "candidate_count": 148,
+    "status_counts": {
+      "QUALIFIED_PRELIMINARY": 28,
+      "SEMANTIC_UNQUALIFIED": 120
+    },
+    "source_fetch_complete": true,
+    "results_hash": "e78a2f4fa45755a063733777a3e47cf833dd41537689b75820c324b5d40fbf6e",
+    "review_requests_hash": "f6473119a542498f9c5c79aaf07d34732771258fff644e3fa32e6682e9ac61c4",
+    "qualified_review_request_count": 28
+  },
+  "recovery": {
+    "output_sha256": "aedcd648151c26968268c1580b7c6bf10284a1d1774c86bc21074f7fe697943d",
+    "recovery_hash": "24bcdc421db1d6f32122ed293720d43ae824db94a8f8a4c74a2d6f8d310a9d3c",
+    "prior_qualified_count_replayed_identically": 28,
+    "recovered_article_count": 32,
+    "recovered_fact_count": 48,
+    "recovered_symbol_count": 45,
+    "recovered_listing_fact_count": 24,
+    "recovered_delisting_fact_count": 24,
+    "retrospective_count": 0,
+    "remaining_semantic_unqualified_count": 88
+  },
+  "compilation": {
+    "output_sha256": "8130ae8d57cb60747daaef379a1713a990937d499a86360c920d0584a7e20252",
+    "evidence_hash": "4794c5f0fb40ef343523d56744c6e7a9e9fa7b24fcdd22879df7f7af078bc26d",
+    "listing_candidate_count": 15,
+    "unresolved_listing_count": 7,
+    "delisting_event_count": 11,
+    "tick_field_event_count": 10,
+    "historical_universe_complete": false
+  }
+}

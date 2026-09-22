@@ -1,0 +1,52 @@
+name: M11T Durable Evidence Replay
+
+on:
+  push:
+    branches:
+      - build/pvb24-v1
+    paths:
+      - ".github/workflows/m11t-durable-replay.yml"
+      - "src/pvb24/data/announcements.py"
+      - "src/pvb24/data/announcement_qualification.py"
+      - "src/pvb24/data/announcement_recovery.py"
+      - "src/pvb24/data/historical_metadata_evidence.py"
+      - "src/pvb24/data/durable_evidence.py"
+      - "src/pvb24/data/evidence_replay.py"
+      - "scripts/replay_durable_evidence_chain.py"
+      - "tests/test_evidence_replay.py"
+      - "docs/data/11f-announcement-coverage.json"
+      - "docs/data/11t-durable-evidence.json"
+      - "docs/data/11t-durable-replay-baseline.json"
+      - "evidence/m11t/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  replay:
+    if: >-
+      github.repository == 'novacorestudios/Pvp-24' &&
+      github.ref == 'refs/heads/build/pvb24-v1'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e '.[dev]'
+      - name: Verify repository provenance
+        run: python scripts/verify_provenance.py
+      - name: Restore exact durable source set
+        run: |
+          python scripts/durable_m11t_evidence.py verify             --locator docs/data/11t-durable-evidence.json
+          python scripts/durable_m11t_evidence.py restore             --locator docs/data/11t-durable-evidence.json             --destination artifacts/m11t-replay/source             --artifact announcement-inventory-evidence             --artifact announcement-body-qualification-evidence             --artifact lifecycle-archive-reconciliation-evidence
+      - name: Replay qualification, recovery, and compilation
+        run: |
+          python scripts/replay_durable_evidence_chain.py             --locator docs/data/11t-durable-evidence.json             --baseline docs/data/11t-durable-replay-baseline.json             --inventory-root               artifacts/m11t-replay/source/announcement-inventory-evidence             --qualification-root               artifacts/m11t-replay/source/announcement-body-qualification-evidence             --lifecycle-root               artifacts/m11t-replay/source/lifecycle-archive-reconciliation-evidence             --tick-evidence docs/data/11f-announcement-coverage.json             --output artifacts/m11t-replay/11t-durable-replay-comparison.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m11t-durable-replay-comparison
+          path: artifacts/m11t-replay/11t-durable-replay-comparison.json
+          if-no-files-found: error
