@@ -75,7 +75,10 @@ def _matching_fact(article, reconciliation):
     matches = [fact for fact in facts if canonical(fact) == canonical(target)]
     if len(matches) != 1:
         raise ValueError("Lifecycle fact must match exactly one qualified announcement fact")
-    return matches[0]
+    fact = matches[0]
+    if fact.get("symbol") != reconciliation.get("symbol"):
+        raise ValueError("Lifecycle symbol differs from qualified fact")
+    return fact
 
 
 def compile_partial_historical_metadata(
@@ -132,8 +135,6 @@ def compile_partial_historical_metadata(
         if article.get("source_sha256") != row.get("article_source_sha256"):
             raise ValueError("Lifecycle source revision differs from qualification evidence")
         fact = _matching_fact(article, row)
-        if fact.get("symbol") != symbol:
-            raise ValueError("Lifecycle symbol differs from qualified fact")
         event_at = _event_time(kind, fact)
         if event_at != _time(row["event_at"]):
             raise ValueError("Lifecycle event time differs from qualified fact")
