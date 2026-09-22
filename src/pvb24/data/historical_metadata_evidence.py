@@ -12,7 +12,9 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from pvb24.data.announcement_qualification import validate_qualification_summary
 from pvb24.data.archive import FINAL_START
+from pvb24.data.daily_activity import validate_lifecycle_summary
 from pvb24.data.universe import Security
 from pvb24.decimal_math import D, require_decimal
 from pvb24.ids import canonical, digest
@@ -36,6 +38,72 @@ def _load_pinned(path, expected_hash, *, schema):
         raise ValueError("Historical metadata evidence schema/holdout policy not qualified")
     return payload
 
+
+
+def _validate_tick_summary(report):
+    articles = report.get("articles")
+    failures = report.get("failures")
+    coverage = report.get("coverage")
+    if not isinstance(articles, list) or not isinstance(failures, list) or not isinstance(coverage, list):
+        raise ValueError("Tick evidence summary collections required")
+    if (
+        report.get("acquired_articles") != len(articles)
+        or report.get("requested_articles") != len(articles) + len(failures)
+        or report.get("data_hash") != digest(articles)
+    ):
+        raise ValueError("Tick evidence article count/data hash mismatch")
+
+    expected_coverage = []
+    for article in articles:
+        facts = article.get("facts")
+        if not isinstance(facts, list) or digest(facts) != article.get("facts_hash"):
+            raise ValueError("Tick evidence article facts hash mismatch")
+        report_hash = article.get("report_hash")
+        report_payload = {
+            key: value
+            for key, value in article.items()
+            if key not in ("report_path", "report_hash")
+        }
+        if report_hash != digest(report_payload):
+            raise ValueError("Tick evidence article report hash mismatch")
+        kind = article.get("kind")
+        for fact in facts:
+            expected_coverage.append(
+                {
+                    "symbol": fact["symbol"],
+                    "kind": kind,
+                    "source": article["source"],
+                    "revision_id": article["revision_id"],
+                    "source_sha256": article["source_sha256"],
+                    "published_at": article["published_at"],
+                    "available_at": article["available_at"],
+                    "facts": fact,
+                    "quality": "PRELIMINARY",
+                    "history_coverage_start": (
+                        fact.get("launch_at") if kind == "LISTING" else None
+                    ),
+                    "history_coverage_end": None,
+                    "full_security_record": (
+                        "PARTIAL_LISTING_FACTS_ONLY" if kind == "LISTING" else "MISSING"
+                    ),
+                    "full_contract_rules": "MISSING",
+                    "actual_settlement_fill": "NOT_PROVEN",
+                    "eligibility": (
+                        "NOT_INFERRED_FROM_LISTING"
+                        if kind == "LISTING"
+                        else "NOT_INFERRED_FROM_ANNOUNCEMENT"
+                    ),
+                }
+            )
+    if canonical(expected_coverage) != canonical(coverage):
+        raise ValueError("Tick evidence coverage differs from acquired article facts")
+
+    report_hash = report.get("report_hash")
+    unhashed = dict(report)
+    unhashed.pop("report_hash", None)
+    if report_hash != digest(unhashed):
+        raise ValueError("Tick evidence report hash mismatch")
+    return report
 
 def _time(value):
     parsed = utc(datetime.fromisoformat(value))
@@ -97,6 +165,9 @@ def compile_partial_historical_metadata(
     lifecycle = _load_pinned(lifecycle_path, lifecycle_sha256, schema=LIFECYCLE_SCHEMA)
     ticks = _load_pinned(tick_path, tick_sha256, schema=TICK_SCHEMA)
 
+    validate_qualification_summary(qualification)
+    _validate_tick_summary(ticks)
+
     if qualification.get("source_fetch_complete") is not True:
         raise ValueError("Complete selected announcement source fetch required")
     source_failures = lifecycle.get("source_failures")
@@ -108,6 +179,7 @@ def compile_partial_historical_metadata(
         "review_requests_hash"
     ):
         raise ValueError("Lifecycle/qualification review identities disagree")
+    validate_lifecycle_summary(qualification, lifecycle)
 
     articles = _qualified_articles(qualification)
     listing_candidates = []
