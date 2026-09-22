@@ -14,13 +14,25 @@ on:
       - "scripts/durable_m11t_evidence.py"
       - "docs/data/11t-durable-evidence.json"
       - "evidence/m11t/**"
+      - "src/pvb24/data/evidence_ci.py"
+      - "scripts/verify_evidence_ci.py"
+      - "scripts/qualify_evidence_artifact.py"
+      - "tests/test_evidence_ci.py"
+      - "scripts/verify_provenance.py"
+      - "src/pvb24/ids.py"
+      - "src/pvb24/types.py"
+      - "pyproject.toml"
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
 
 jobs:
   recover:
+    if: >-
+      github.repository == 'novacorestudios/Pvp-24' &&
+      github.ref == 'refs/heads/build/pvb24-v1'
     runs-on: ubuntu-latest
     env:
       DURABLE_LOCATOR: "docs/data/11t-durable-evidence.json"
@@ -31,6 +43,16 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install -e '.[dev]'
+      - name: Qualify exact producer SHA against CI
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONPATH: src
+        run: |
+          python scripts/verify_evidence_ci.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --sha "$GITHUB_SHA" \
+            --output artifacts/evidence-ci/ci.json
       - name: Restore durable retained qualification evidence
         run: |
           python scripts/durable_m11t_evidence.py verify             --locator "$DURABLE_LOCATOR"
@@ -46,8 +68,20 @@ jobs:
           mkdir -p artifacts/m11x/recovery
           python scripts/recover_retained_listing_facts.py             --root artifacts/m11x/source/announcement-body-qualification-evidence             --report-sha256 "$SOURCE_REPORT_SHA256"             --output artifacts/m11x/recovery/11x-retained-listing-recovery.json
           sha256sum artifacts/m11x/recovery/11x-retained-listing-recovery.json
+      - name: Seal evidence artifact qualification
+        if: github.event_name != 'pull_request'
+        env:
+          PYTHONPATH: src
+        run: |
+          python scripts/qualify_evidence_artifact.py create \
+            --root artifacts/m11x/recovery \
+            --ci-attestation artifacts/evidence-ci/ci.json
+          python scripts/qualify_evidence_artifact.py verify \
+            --root artifacts/m11x/recovery \
+            --ci-attestation artifacts/evidence-ci/ci.json \
+            --expected-sha "$GITHUB_SHA"
       - uses: actions/upload-artifact@v4
         with:
           name: m11x-retained-listing-recovery
-          path: artifacts/m11x/recovery/11x-retained-listing-recovery.json
+          path: artifacts/m11x/recovery
           if-no-files-found: error
