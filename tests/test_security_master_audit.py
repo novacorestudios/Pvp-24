@@ -289,9 +289,7 @@ def test_conflicting_delisting_dates_fail_closed_without_inactive_transition(tmp
     conflict = report["delisting_revision_conflicts"][0]
     assert conflict["symbol"] == "CCCUSDT"
     assert conflict["resolution_status"] == "UNRESOLVED_CONFLICT"
-    assert conflict["blocking_obligation"] == (
-        "RESOLVE_DELISTING_REVISION_OR_RELISTING_SEMANTICS"
-    )
+    assert conflict["blocking_obligation"] == ("RESOLVE_DELISTING_REVISION_OR_RELISTING_SEMANTICS")
     assert conflict["resolution_requires"] == [
         "EXPLICIT_CAUSAL_POSTPONEMENT",
         "PROVEN_RELISTING_EPOCHS",
