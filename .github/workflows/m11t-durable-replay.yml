@@ -19,9 +19,18 @@ on:
       - "docs/data/11t-durable-replay-baseline.json"
       - "docs/M11T_DURABLE_REPLAY.md"
       - "evidence/m11t/**"
+      - "src/pvb24/data/evidence_ci.py"
+      - "scripts/verify_evidence_ci.py"
+      - "scripts/qualify_evidence_artifact.py"
+      - "tests/test_evidence_ci.py"
+      - "scripts/verify_provenance.py"
+      - "src/pvb24/ids.py"
+      - "src/pvb24/types.py"
+      - "pyproject.toml"
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
 
 jobs:
@@ -36,6 +45,16 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install -e '.[dev]'
+      - name: Qualify exact producer SHA against CI
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONPATH: src
+        run: |
+          python scripts/verify_evidence_ci.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --sha "$GITHUB_SHA" \
+            --output artifacts/evidence-ci/ci.json
       - name: Verify repository provenance
         run: python scripts/verify_provenance.py
       - name: Restore exact durable source set
@@ -44,10 +63,22 @@ jobs:
           python scripts/durable_m11t_evidence.py restore             --locator docs/data/11t-durable-evidence.json             --destination artifacts/m11t-replay/source             --artifact announcement-inventory-evidence             --artifact announcement-body-qualification-evidence             --artifact lifecycle-archive-reconciliation-evidence
       - name: Replay qualification, recovery, and compilation
         run: |
-          python scripts/replay_durable_evidence_chain.py             --locator docs/data/11t-durable-evidence.json             --baseline docs/data/11t-durable-replay-baseline.json             --inventory-root               artifacts/m11t-replay/source/announcement-inventory-evidence             --qualification-root               artifacts/m11t-replay/source/announcement-body-qualification-evidence             --lifecycle-root               artifacts/m11t-replay/source/lifecycle-archive-reconciliation-evidence             --tick-evidence docs/data/11f-announcement-coverage.json             --output artifacts/m11t-replay/11t-durable-replay-comparison.json
+          python scripts/replay_durable_evidence_chain.py             --locator docs/data/11t-durable-evidence.json             --baseline docs/data/11t-durable-replay-baseline.json             --inventory-root               artifacts/m11t-replay/source/announcement-inventory-evidence             --qualification-root               artifacts/m11t-replay/source/announcement-body-qualification-evidence             --lifecycle-root               artifacts/m11t-replay/source/lifecycle-archive-reconciliation-evidence             --tick-evidence docs/data/11f-announcement-coverage.json             --output artifacts/m11t-replay/output/11t-durable-replay-comparison.json
+      - name: Seal evidence artifact qualification
+        if: github.event_name != 'pull_request'
+        env:
+          PYTHONPATH: src
+        run: |
+          python scripts/qualify_evidence_artifact.py create \
+            --root artifacts/m11t-replay/output \
+            --ci-attestation artifacts/evidence-ci/ci.json
+          python scripts/qualify_evidence_artifact.py verify \
+            --root artifacts/m11t-replay/output \
+            --ci-attestation artifacts/evidence-ci/ci.json \
+            --expected-sha "$GITHUB_SHA"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: m11t-durable-replay-comparison
-          path: artifacts/m11t-replay/11t-durable-replay-comparison.json
+          path: artifacts/m11t-replay/output
           if-no-files-found: error
