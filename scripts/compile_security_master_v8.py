@@ -37,9 +37,7 @@ def main():
     print(
         json.dumps(
             {
-                "selected_active_transition_count": report[
-                    "selected_active_transition_count"
-                ],
+                "selected_active_transition_count": report["selected_active_transition_count"],
                 "unresolved_listing_count": report["unresolved_listing_count"],
                 "monthly_boundary_corroborated_count": report[
                     "monthly_boundary_corroborated_count"
@@ -51,9 +49,7 @@ def main():
                     "monthly_boundary_contradicted_count"
                 ],
                 "security_history_complete": report["security_history_complete"],
-                "historical_universe_complete": report[
-                    "historical_universe_complete"
-                ],
+                "historical_universe_complete": report["historical_universe_complete"],
                 "audit_hash": report["audit_hash"],
             }
         )

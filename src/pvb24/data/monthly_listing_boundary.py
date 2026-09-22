@@ -49,10 +49,7 @@ def _load(path, expected_sha256):
     if recorded != digest(unhashed):
         raise ValueError("V7 Security Master audit hash mismatch")
     rows = report.get("unresolved_listings")
-    if (
-        not isinstance(rows, list)
-        or report.get("unresolved_listing_count") != len(rows)
-    ):
+    if not isinstance(rows, list) or report.get("unresolved_listing_count") != len(rows):
         raise ValueError("V7 unresolved listing count mismatch")
     return report
 
@@ -89,13 +86,9 @@ def _monthly_observation(request, root, result, attempt):
     observation.update(
         row_count=len(decoded),
         active_row_count=len(active),
-        first_active_interval_start=(
-            active[0].timing.interval_start if active else None
-        ),
+        first_active_interval_start=(active[0].timing.interval_start if active else None),
         first_active_available_at=(active[0].timing.available_at if active else None),
-        last_active_interval_start=(
-            active[-1].timing.interval_start if active else None
-        ),
+        last_active_interval_start=(active[-1].timing.interval_start if active else None),
     )
     return observation, active
 
@@ -169,9 +162,7 @@ def compile_monthly_listing_boundary_evidence(
             "status": status,
             "monthly_source": observation,
             "pre_event_activity_observed": bool(before),
-            "first_pre_event_activity_start": (
-                before[0].timing.interval_start if before else None
-            ),
+            "first_pre_event_activity_start": (before[0].timing.interval_start if before else None),
             "first_pre_event_activity_available_at": (
                 before[0].timing.available_at if before else None
             ),

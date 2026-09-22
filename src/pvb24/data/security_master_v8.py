@@ -109,15 +109,9 @@ def compile_security_master_v8(
     if set(monthly_rows) != set(base_unresolved):
         raise ValueError("Monthly evidence does not cover every V7 unresolved identity")
 
-    corroborated = {
-        key: row for key, row in monthly_rows.items() if row["status"] in (EXACT, POST)
-    }
-    contradicted = {
-        key: row for key, row in monthly_rows.items() if row["status"] == CONTRADICTED
-    }
-    unknown = {
-        key: row for key, row in monthly_rows.items() if row["status"] == UNKNOWN
-    }
+    corroborated = {key: row for key, row in monthly_rows.items() if row["status"] in (EXACT, POST)}
+    contradicted = {key: row for key, row in monthly_rows.items() if row["status"] == CONTRADICTED}
+    unknown = {key: row for key, row in monthly_rows.items() if row["status"] == UNKNOWN}
     if len(corroborated) + len(contradicted) + len(unknown) != len(monthly_rows):
         raise ValueError("Unsupported monthly boundary state")
 
@@ -154,9 +148,7 @@ def compile_security_master_v8(
     remaining_symbols = {row["symbol"] for row in unresolved_listings}
     corroborated_symbols = {row["symbol"] for row in corroborated.values()}
     contradicted_symbols = {row["symbol"] for row in contradicted.values()}
-    corroborated_without_active_symbols = {
-        row["symbol"] for row in corroborated_without_active
-    }
+    corroborated_without_active_symbols = {row["symbol"] for row in corroborated_without_active}
 
     obligations = []
     for source in base["symbol_obligations"]:
@@ -169,9 +161,7 @@ def compile_security_master_v8(
             and symbol not in remaining_symbols
         ):
             row["obligations"] = [
-                item
-                for item in row["obligations"]
-                if item != "RESOLVE_LISTING_BOUNDARY"
+                item for item in row["obligations"] if item != "RESOLVE_LISTING_BOUNDARY"
             ]
             row["has_unresolved_listing_boundary"] = False
 
@@ -214,17 +204,11 @@ def compile_security_master_v8(
         "unresolved_listings": unresolved_listings,
         "monthly_boundary_corroborated_count": len(corroborated),
         "monthly_boundary_corroborated_active_count": len(applied),
-        "monthly_boundary_corroborated_without_active_count": len(
-            corroborated_without_active
-        ),
-        "monthly_boundary_corroborated": [
-            corroborated[key] for key in sorted(corroborated)
-        ],
+        "monthly_boundary_corroborated_without_active_count": len(corroborated_without_active),
+        "monthly_boundary_corroborated": [corroborated[key] for key in sorted(corroborated)],
         "monthly_boundary_corroborated_without_active": corroborated_without_active,
         "monthly_boundary_contradicted_count": len(contradicted),
-        "monthly_boundary_contradicted": [
-            contradicted[key] for key in sorted(contradicted)
-        ],
+        "monthly_boundary_contradicted": [contradicted[key] for key in sorted(contradicted)],
         "symbol_obligations": obligations,
         "classification_history_complete": False,
         "rename_relisting_history_complete": False,

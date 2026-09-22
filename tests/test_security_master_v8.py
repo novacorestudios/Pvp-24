@@ -108,8 +108,7 @@ def fixture(tmp_path):
             "article_source_sha256": item["revision_id"],
             "status": status,
             "monthly_source": {"status": "ACQUIRED"},
-            "pre_event_activity_observed": status
-            == "CONTRADICTED_BY_PRE_EVENT_MONTHLY_ACTIVITY",
+            "pre_event_activity_observed": status == "CONTRADICTED_BY_PRE_EVENT_MONTHLY_ACTIVITY",
             "first_pre_event_activity_start": None,
             "first_pre_event_activity_available_at": None,
             "first_activity_at_or_after_event": item["event_at"],
@@ -191,15 +190,9 @@ def test_v8_resolves_boundary_without_overwriting_relisting_semantics(tmp_path):
     assert aaa["boundary_reconciled"] is False
     assert aaa["monthly_archive_proves_exact_launch"] is False
 
-    aaa_obligation = next(
-        row for row in report["symbol_obligations"] if row["symbol"] == "AAAUSDT"
-    )
-    bbb_obligation = next(
-        row for row in report["symbol_obligations"] if row["symbol"] == "BBBUSDT"
-    )
-    ccc_obligation = next(
-        row for row in report["symbol_obligations"] if row["symbol"] == "CCCUSDT"
-    )
+    aaa_obligation = next(row for row in report["symbol_obligations"] if row["symbol"] == "AAAUSDT")
+    bbb_obligation = next(row for row in report["symbol_obligations"] if row["symbol"] == "BBBUSDT")
+    ccc_obligation = next(row for row in report["symbol_obligations"] if row["symbol"] == "CCCUSDT")
     assert "RESOLVE_LISTING_BOUNDARY" not in aaa_obligation["obligations"]
     assert "RESOLVE_LISTING_BOUNDARY" not in bbb_obligation["obligations"]
     assert "REJECT_CONTRADICTED_LISTING_START" in bbb_obligation["obligations"]

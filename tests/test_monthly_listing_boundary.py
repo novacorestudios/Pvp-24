@@ -45,9 +45,7 @@ def archive(request, rows):
     with zipfile.ZipFile(data, "w", zipfile.ZIP_DEFLATED) as zipped:
         zipped.writestr(request.filename[:-4] + ".csv", text.getvalue())
     raw = data.getvalue()
-    checksum = (
-        hashlib.sha256(raw).hexdigest() + "  " + request.filename + "\n"
-    ).encode()
+    checksum = (hashlib.sha256(raw).hexdigest() + "  " + request.filename + "\n").encode()
     return raw, checksum
 
 
@@ -129,21 +127,20 @@ def test_monthly_fallback_partitions_exact_contradicted_post_and_unknown(tmp_pat
         "CONTRADICTED_BY_PRE_EVENT_MONTHLY_ACTIVITY": 1,
         "UNKNOWN": 1,
     }
-    by_identity = {
-        (row["symbol"], row["event_at"]): row for row in report["results"]
-    }
-    assert by_identity[
-        ("AAAUSDT", "2020-12-22T07:00:00.000000Z")
-    ]["status"] == "CONSISTENT_FIRST_MONTHLY_ACTIVITY_AT_ANNOUNCED_LAUNCH"
-    assert by_identity[
-        ("AAAUSDT", "2020-12-28T07:00:00.000000Z")
-    ]["status"] == "CONTRADICTED_BY_PRE_EVENT_MONTHLY_ACTIVITY"
-    assert by_identity[
-        ("BBBUSDT", "2020-12-29T07:00:00.000000Z")
-    ]["archive_proves_exact_launch"] is False
-    assert by_identity[
-        ("CCCUSDT", "2020-12-30T07:00:00.000000Z")
-    ]["status"] == "UNKNOWN"
+    by_identity = {(row["symbol"], row["event_at"]): row for row in report["results"]}
+    assert (
+        by_identity[("AAAUSDT", "2020-12-22T07:00:00.000000Z")]["status"]
+        == "CONSISTENT_FIRST_MONTHLY_ACTIVITY_AT_ANNOUNCED_LAUNCH"
+    )
+    assert (
+        by_identity[("AAAUSDT", "2020-12-28T07:00:00.000000Z")]["status"]
+        == "CONTRADICTED_BY_PRE_EVENT_MONTHLY_ACTIVITY"
+    )
+    assert (
+        by_identity[("BBBUSDT", "2020-12-29T07:00:00.000000Z")]["archive_proves_exact_launch"]
+        is False
+    )
+    assert by_identity[("CCCUSDT", "2020-12-30T07:00:00.000000Z")]["status"] == "UNKNOWN"
     assert report["historical_universe_complete"] is False
 
 

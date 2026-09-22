@@ -37,15 +37,11 @@ def main():
     print(
         json.dumps(
             {
-                "input_unresolved_listing_count": report[
-                    "input_unresolved_listing_count"
-                ],
+                "input_unresolved_listing_count": report["input_unresolved_listing_count"],
                 "monthly_source_count": report["monthly_source_count"],
                 "status_counts": report["status_counts"],
                 "source_failure_count": report["source_failure_count"],
-                "historical_universe_complete": report[
-                    "historical_universe_complete"
-                ],
+                "historical_universe_complete": report["historical_universe_complete"],
                 "evidence_hash": report["evidence_hash"],
             }
         )
