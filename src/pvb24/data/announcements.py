@@ -162,11 +162,18 @@ def legacy_html_text(body):
 
 
 def _symbol_group(value):
-    residual = re.sub(r"\b[A-Z0-9]+\b|\band\b|[,&\s]", "", value, flags=re.IGNORECASE)
-    tokens = [token for token in re.findall(r"\b[A-Z0-9]+\b", value.upper()) if token != "AND"]
-    if residual or not tokens or len(tokens) != len(set(tokens)):
+    if not isinstance(value, str) or not value.strip():
         raise ValueError("Explicit unique USDT-margined listing symbols required")
-    return tokens
+    tokens = re.split(r"\s*(?:,|&|\band\b)\s*", value.strip(), flags=re.IGNORECASE)
+    if (
+        not tokens
+        or any(not re.fullmatch(r"[A-Z0-9]+", token, flags=re.IGNORECASE) for token in tokens)
+    ):
+        raise ValueError("Explicit unique USDT-margined listing symbols required")
+    symbols = [token.upper() for token in tokens]
+    if len(symbols) != len(set(symbols)):
+        raise ValueError("Explicit unique USDT-margined listing symbols required")
+    return symbols
 
 
 def _listing_facts_from_text(body_text):
