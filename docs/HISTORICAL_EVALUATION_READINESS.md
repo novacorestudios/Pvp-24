@@ -18,6 +18,8 @@ CONTRACT_RULES, LIFECYCLE, LAST_1H, LAST_1M, MARK_1M,
 FUNDING_SETTLEMENT_PRICING, FUNDING_SCHEDULE, FUNDING_RESERVE and
 LIQUIDATION_RULES.
 
+The committed matrix now pins M11V for historical-universe/security-master/contract-rule/lifecycle evidence, M11U for funding-schedule evidence, and M11W for liquidation evidence. A repository regression test locks those pins and also verifies that all eleven rows remain PARTIAL and that the stale three-article lifecycle description cannot return.
+
 Later audit work materially improved evidence integrity — durable source
 preservation, replayability, same-SHA CI qualification, delisting-revision
 semantics, symbol/timezone binding and per-source point-in-time availability —
