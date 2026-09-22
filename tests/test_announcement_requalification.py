@@ -213,7 +213,6 @@ def test_requalification_rejects_source_revision_change(tmp_path, monkeypatch):
     recorded = old_unqualified_from_replay(replay)
     report_sha = write_source_report(tmp_path, [recorded])
 
-    other_raw = source_response("b" * 32)
     monkeypatch.setattr(
         module,
         "load_inventory",
@@ -225,8 +224,10 @@ def test_requalification_rejects_source_revision_change(tmp_path, monkeypatch):
     monkeypatch.setattr(
         module,
         "retained_source_fetch",
-        lambda *args, **kwargs: (lambda url: other_raw),
+        lambda *args, **kwargs: (lambda url: raw),
     )
+    changed = {**replay, "source_sha256": "f" * 64}
+    monkeypatch.setattr(module, "qualify_candidate", lambda *args, **kwargs: changed)
 
     with pytest.raises(ValueError, match="Retained replay source revision changed"):
         module.requalify_retained_qualification(
