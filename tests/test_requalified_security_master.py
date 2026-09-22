@@ -178,9 +178,11 @@ def fixture(tmp_path):
         "live_enabled": False,
         "final_test_access": "LOCKED",
     }
-    return write(Path(tmp_path) / "base.json", base), write(
-        Path(tmp_path) / "requalification.json", requalification
-    ), write(Path(tmp_path) / "lifecycle.json", lifecycle)
+    return (
+        write(Path(tmp_path) / "base.json", base),
+        write(Path(tmp_path) / "requalification.json", requalification),
+        write(Path(tmp_path) / "lifecycle.json", lifecycle),
+    )
 
 
 def test_delta_corroborates_unknown_and_rejects_contradicted_active(tmp_path):

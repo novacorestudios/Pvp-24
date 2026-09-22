@@ -144,7 +144,8 @@ def compile_requalified_security_master_delta(
             article is None
             or article.get("kind") != row.get("kind")
             or article.get("source_sha256") != row.get("article_source_sha256")
-            or canonical(row.get("fact")) not in {canonical(fact) for fact in article.get("facts", [])}
+            or canonical(row.get("fact"))
+            not in {canonical(fact) for fact in article.get("facts", [])}
         ):
             raise ValueError("Lifecycle reconciliation lacks exact requalification lineage")
 
@@ -201,9 +202,7 @@ def compile_requalified_security_master_delta(
         else:
             raise ValueError("Unsupported lifecycle kind")
 
-    newly_reconciled_active = sum(
-        row["base_boundary_reconciled"] is False for row in exact_active
-    )
+    newly_reconciled_active = sum(row["base_boundary_reconciled"] is False for row in exact_active)
     recommended_active = base["selected_active_transition_count"] - len(contradicted_active)
     recommended_reconciled = (
         base["archive_reconciled_active_transition_count"] + newly_reconciled_active

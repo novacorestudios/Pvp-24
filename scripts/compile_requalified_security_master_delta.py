@@ -44,16 +44,10 @@ def main():
         json.dumps(
             {
                 "base_active_corroborated_count": report["base_active_corroborated_count"],
-                "base_active_newly_reconciled_count": report[
-                    "base_active_newly_reconciled_count"
-                ],
-                "base_active_unknown_boundary_count": report[
-                    "base_active_unknown_boundary_count"
-                ],
+                "base_active_newly_reconciled_count": report["base_active_newly_reconciled_count"],
+                "base_active_unknown_boundary_count": report["base_active_unknown_boundary_count"],
                 "base_active_contradicted_count": report["base_active_contradicted_count"],
-                "base_inactive_corroborated_count": report[
-                    "base_inactive_corroborated_count"
-                ],
+                "base_inactive_corroborated_count": report["base_inactive_corroborated_count"],
                 "exact_delisting_unpaired_count": report["exact_delisting_unpaired_count"],
                 "recommended_successor_active_transition_count": report[
                     "recommended_successor_active_transition_count"
