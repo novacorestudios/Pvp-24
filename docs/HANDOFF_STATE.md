@@ -1,4 +1,90 @@
-# Handoff — Milestone 11W (historical liquidation / maintenance-tier evidence)
+# Handoff — Post-audit remediation checkpoint
+
+## Current authoritative checkpoint — 2026-09-22
+
+- Repository: `novacorestudios/Pvp-24`; work branch: `build/pvb24-v1`.
+- Audit-remediation implementation checkpoint before this F9 documentation sync:
+  `527a15c3d89c966686fe51fec38a3b243bbee674`.
+- Last implementation CI before this documentation sync: **PVB-24 CI #283 — SUCCESS**.
+- CI #283 passed **743 tests**, Ruff format/check, provenance, reference smoke,
+  Freqtrade smoke, Freqtrade parity and framework parity.
+- Reference smoke remained non-trading:
+  `orders_sent_to_exchange=0`, `paper_ready=false`.
+- Baseline provenance remained unchanged:
+  `source_sha256=098a3ca390bce81d506bdec011fc3a936ecbb793f46c2f117f337998bfc1c5d8`,
+  `config_hash=6d267edbcde56081012bc7b93d46f2c7f345aceb0e3bc769095ba53ef00b5be7`,
+  `live_enabled=false`.
+- Final Test remains **LOCKED**.
+- Historical performance remains **BLOCKED** by the fail-closed readiness gate.
+- Operational readiness remains **false**.
+- PAPER remains **NOT READY**.
+- LIVE remains **DISABLED**.
+- No strategy/Alpha/threshold/sizing/leverage/risk/entry/exit semantics were changed
+  by the engineering-audit remediation.
+
+### Engineering audit remediation status
+
+The independent Production-grade audit remediation is complete. The authoritative
+status record is `docs/PVB24_ENGINEERING_AUDIT_REMEDIATION.md`.
+
+Closed findings:
+
+- F1 — cutoff coverage / generalized cutoff scope.
+- F2 — connector pseudo-symbol parsing such as `ANDUSDT`.
+- F3 — timezone causality and explicit UTC requirements.
+- F4 — lifecycle report/fact symbol binding.
+- F5 — conflicting delisting revisions and causal postponement semantics.
+- F6 — durable, content-addressed M11T evidence preservation and restore.
+- F7 — per-source point-in-time availability and reconciliation availability.
+- F8 — regression/invariant test coverage.
+- F9 — handoff/readiness documentation synchronization.
+- F10 — evidence qualification bound to successful same-SHA CI plus payload hashes.
+
+The post-F6 durable replay is also pinned as a recurring regression gate. The
+bounded recovery and historical-metadata compilation remain byte-identical to
+their audited baselines even though the current parser exposes diagnostic
+qualification differences in retained raw sources. Those diagnostic differences
+are not silently promoted into downstream evidence.
+
+### Current evidence controls
+
+- Durable bundle SHA-256:
+  `9bef3d0684b525c8ee0db0e9d1c4f27fcddea5f6b53c1ea1911f3bbee150f5e4`.
+- Durable manifest SHA-256:
+  `e14af7876f770f9d20e3896a9d0df73bdbe26b3cb494c59e51e221f7a713349d`.
+- M11X bounded recovery output SHA-256:
+  `aedcd648151c26968268c1580b7c6bf10284a1d1774c86bc21074f7fe697943d`.
+- M11V historical metadata output SHA-256:
+  `8130ae8d57cb60747daaef379a1713a990937d499a86360c920d0584a7e20252`.
+- Security Master audit schema is
+  `PVB24_SECURITY_MASTER_OBLIGATION_AUDIT_V5` with
+  `PER_SOURCE_POINT_IN_TIME_V1` availability semantics.
+- Evidence workflows are post-CI dispatch only and require an explicit
+  `source_sha`; evidence is qualified only when the same SHA has a successful
+  `PVB-24 CI` run with both `governance` and `freqtrade-smoke` successful
+  from that same run. Payload inventories are SHA-256 sealed before upload.
+
+### Readiness remains deliberately fail-closed
+
+Audit remediation closure does **not** promote historical-data capabilities to
+COMPLETE. The frozen pre-Final readiness matrix still has all eleven mandatory
+capabilities at `PARTIAL`, including historical universe, security master,
+contract rules, lifecycle, LAST/Mark coverage, funding pricing/schedule/reserve,
+and liquidation rules.
+
+Do not run or publish a strategy performance evaluation until
+`python scripts/check_historical_evaluation_readiness.py` exits successfully.
+Do not unlock the Final Test or enable LIVE as part of ordinary development work.
+
+### Next engineering handoff
+
+The audit-remediation lane is complete. Resume normal project development from the
+current branch HEAD, while preserving the existing fail-closed readiness,
+Final-Test lock, provenance controls, and evidence qualification policy.
+
+---
+
+## Legacy milestone history retained below
 
 - Repository: novacorestudios/Pvp-24; branch build/pvb24-v1.
 - Exact current HEAD: read the Git branch ref; main remains initialization only.

@@ -1,4 +1,42 @@
-# Historical evaluation readiness gate — Milestone 11M
+# Historical evaluation readiness gate — current fail-closed state
+
+## Post-audit remediation status — 2026-09-22
+
+The engineering audit remediation F1–F10 is complete, but it did **not** promote
+historical-data coverage or operational readiness.
+
+The authoritative frozen matrix remains
+`docs/data/11m-pre-final-readiness.json`. Its current top-level state is:
+
+- `final_test_access=LOCKED`
+- `performance_run=false`
+- `operational_ready=false`
+- all eleven mandatory capabilities remain `PARTIAL`.
+
+The current partial capabilities are HISTORICAL_UNIVERSE, SECURITY_MASTER,
+CONTRACT_RULES, LIFECYCLE, LAST_1H, LAST_1M, MARK_1M,
+FUNDING_SETTLEMENT_PRICING, FUNDING_SCHEDULE, FUNDING_RESERVE and
+LIQUIDATION_RULES.
+
+Later audit work materially improved evidence integrity — durable source
+preservation, replayability, same-SHA CI qualification, delisting-revision
+semantics, symbol/timezone binding and per-source point-in-time availability —
+but none of those controls proves full 2020-01-01 through 2025-06-30 capability
+coverage. They therefore must not be interpreted as permission to run or publish
+historical performance.
+
+The readiness gate remains authoritative. A performance run is allowed only when:
+
+```bash
+python scripts/check_historical_evaluation_readiness.py
+```
+
+exits successfully. Until then, Final Test stays LOCKED, PAPER stays NOT READY and
+LIVE stays DISABLED.
+
+---
+
+## Original Milestone 11M gate design retained below
 
 PVB-24 now has a hard precondition between historical source qualification and any
 strategy performance run. The gate covers the frozen Development + Validation
