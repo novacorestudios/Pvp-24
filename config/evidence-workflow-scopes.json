@@ -79,7 +79,13 @@
         "tests/test_listing_boundary_refinement.py",
         "scripts/compile_security_master_v7.py",
         "src/pvb24/data/security_master_v7.py",
-        "tests/test_security_master_v7.py"
+        "tests/test_security_master_v7.py",
+        "scripts/acquire_monthly_listing_boundaries.py",
+        "src/pvb24/data/monthly_listing_boundary.py",
+        "tests/test_monthly_listing_boundary.py",
+        "scripts/compile_security_master_v8.py",
+        "src/pvb24/data/security_master_v8.py",
+        "tests/test_security_master_v8.py"
       ]
     },
     {
