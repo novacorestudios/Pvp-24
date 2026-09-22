@@ -11,18 +11,30 @@
       "name": "HISTORICAL_UNIVERSE",
       "status": "PARTIAL",
       "gaps": [
-        "Full causal USDT-linear active-contract universe and daily eligibility history are not reconstructed for 2020-01-01 through 2025-06-30."
+        "M11V contains 15 preliminary listing candidates, 7 unresolved listings and 11 delisting events, but it does not reconstruct the complete causal USDT-linear active-contract universe or classification/change stream for 2020-01-01 through 2025-06-30."
       ],
       "evidence": {
-        "path": "docs/data/11g-funding-qualification.json",
-        "git_blob_sha": "40eb70b9f6a13f4edffd1c4441fa0f717094480e",
-        "schema": "PVB24_FUNDING_QUALIFICATION_SUMMARY_V1",
+        "path": "docs/data/11v-historical-metadata-evidence.json",
+        "git_blob_sha": "7aadc0469e02f0687b185623e38e13a55e0d7a07",
+        "schema": "PVB24_PARTIAL_HISTORICAL_METADATA_EVIDENCE_V1",
         "checks": [
           {
             "path": [
-              "source_coverage_data_hash"
+              "evidence_hash"
             ],
-            "equals": "7cede73083b59738ce753df2efbac6fd6ffed1e3fad03d9613eece00197a94d4"
+            "equals": "4794c5f0fb40ef343523d56744c6e7a9e9fa7b24fcdd22879df7f7af078bc26d"
+          },
+          {
+            "path": [
+              "listing_candidate_count"
+            ],
+            "equals": 15
+          },
+          {
+            "path": [
+              "unresolved_listing_count"
+            ],
+            "equals": 7
           },
           {
             "path": [
@@ -37,22 +49,34 @@
       "name": "SECURITY_MASTER",
       "status": "PARTIAL",
       "gaps": [
-        "Reviewed announcements are not a complete listing/delisting/rename/classification security master."
+        "M11V binds retained listing/delisting evidence and emits 15 preliminary Security candidates, but emits zero full Security rows; classification, rename/relisting and the market-wide security change stream remain incomplete."
       ],
       "evidence": {
-        "path": "docs/data/11f-announcement-coverage.json",
-        "git_blob_sha": "98c8483118d618727bb32d6f20a6095d371c0bca",
-        "schema": "PVB24_ANNOUNCEMENT_SOURCE_COVERAGE_V1",
+        "path": "docs/data/11v-historical-metadata-evidence.json",
+        "git_blob_sha": "7aadc0469e02f0687b185623e38e13a55e0d7a07",
+        "schema": "PVB24_PARTIAL_HISTORICAL_METADATA_EVIDENCE_V1",
         "checks": [
           {
             "path": [
-              "report_hash"
+              "evidence_hash"
             ],
-            "equals": "5430199b5e2930bba17b75d9d6385b4f496e95af0dbe7867a37b3201c2de47a2"
+            "equals": "4794c5f0fb40ef343523d56744c6e7a9e9fa7b24fcdd22879df7f7af078bc26d"
           },
           {
             "path": [
-              "historical_universe_complete"
+              "full_security_rows_emitted"
+            ],
+            "equals": 0
+          },
+          {
+            "path": [
+              "classification_complete"
+            ],
+            "equals": false
+          },
+          {
+            "path": [
+              "security_history_complete"
             ],
             "equals": false
           }
@@ -63,22 +87,34 @@
       "name": "CONTRACT_RULES",
       "status": "PARTIAL",
       "gaps": [
-        "Historical tick/step/minimums, contract semantics and rule change stream are incomplete."
+        "M11V records 10 USDT tick-field events but emits zero full ContractRules rows; historical step/minimum/notional/capability fields and the complete rule change stream remain incomplete. M11W margin-tier evidence is separately represented by LIQUIDATION_RULES and does not fill these missing fields."
       ],
       "evidence": {
-        "path": "docs/data/11f-announcement-coverage.json",
-        "git_blob_sha": "98c8483118d618727bb32d6f20a6095d371c0bca",
-        "schema": "PVB24_ANNOUNCEMENT_SOURCE_COVERAGE_V1",
+        "path": "docs/data/11v-historical-metadata-evidence.json",
+        "git_blob_sha": "7aadc0469e02f0687b185623e38e13a55e0d7a07",
+        "schema": "PVB24_PARTIAL_HISTORICAL_METADATA_EVIDENCE_V1",
         "checks": [
           {
             "path": [
-              "report_hash"
+              "evidence_hash"
             ],
-            "equals": "5430199b5e2930bba17b75d9d6385b4f496e95af0dbe7867a37b3201c2de47a2"
+            "equals": "4794c5f0fb40ef343523d56744c6e7a9e9fa7b24fcdd22879df7f7af078bc26d"
           },
           {
             "path": [
-              "historical_contract_rules_complete"
+              "tick_field_event_count"
+            ],
+            "equals": 10
+          },
+          {
+            "path": [
+              "full_contract_rule_rows_emitted"
+            ],
+            "equals": 0
+          },
+          {
+            "path": [
+              "contract_rule_history_complete"
             ],
             "equals": false
           }
@@ -89,24 +125,42 @@
       "name": "LIFECYCLE",
       "status": "PARTIAL",
       "gaps": [
-        "Only three reviewed announcement articles are qualified; market-wide lifecycle coverage is incomplete."
+        "The durable M11T/M11X source set and M11V compilation now cover 15 consistent listing candidates, 7 unresolved listings and 11 delisting events, but market-wide listing/delisting/relisting lifecycle coverage remains incomplete."
       ],
       "evidence": {
-        "path": "docs/data/11f-announcement-coverage.json",
-        "git_blob_sha": "98c8483118d618727bb32d6f20a6095d371c0bca",
-        "schema": "PVB24_ANNOUNCEMENT_SOURCE_COVERAGE_V1",
+        "path": "docs/data/11v-historical-metadata-evidence.json",
+        "git_blob_sha": "7aadc0469e02f0687b185623e38e13a55e0d7a07",
+        "schema": "PVB24_PARTIAL_HISTORICAL_METADATA_EVIDENCE_V1",
         "checks": [
           {
             "path": [
-              "report_hash"
+              "evidence_hash"
             ],
-            "equals": "5430199b5e2930bba17b75d9d6385b4f496e95af0dbe7867a37b3201c2de47a2"
+            "equals": "4794c5f0fb40ef343523d56744c6e7a9e9fa7b24fcdd22879df7f7af078bc26d"
           },
           {
             "path": [
-              "coverage_scope"
+              "listing_candidate_count"
             ],
-            "equals": "REVIEWED_ARTICLES_ONLY_NOT_MARKET_COMPLETE"
+            "equals": 15
+          },
+          {
+            "path": [
+              "unresolved_listing_count"
+            ],
+            "equals": 7
+          },
+          {
+            "path": [
+              "delisting_event_count"
+            ],
+            "equals": 11
+          },
+          {
+            "path": [
+              "security_history_complete"
+            ],
+            "equals": false
           }
         ]
       }
@@ -231,22 +285,52 @@
       "name": "FUNDING_SCHEDULE",
       "status": "PARTIAL",
       "gaps": [
-        "Cross-month interval continuity and complete historical funding schedule are not qualified."
+        "M11U reconsumed 67 requested months and audited 6,024 archive settlement rows with no possible missing whole declared-interval pairs, but the source time/rate comparison is not complete and no complete causal historical funding schedule or coverage attestation exists."
       ],
       "evidence": {
-        "path": "docs/data/11g-funding-qualification.json",
-        "git_blob_sha": "40eb70b9f6a13f4edffd1c4441fa0f717094480e",
-        "schema": "PVB24_FUNDING_QUALIFICATION_SUMMARY_V1",
+        "path": "docs/data/11u-funding-schedule-audit.json",
+        "git_blob_sha": "7e0b4d9fdb52f1be1fbfd99d1de1515ad8463e86",
+        "schema": "PVB24_FUNDING_SCHEDULE_AUDIT_V1",
         "checks": [
           {
             "path": [
-              "source_coverage_data_hash"
+              "audit_hash"
             ],
-            "equals": "7cede73083b59738ce753df2efbac6fd6ffed1e3fad03d9613eece00197a94d4"
+            "equals": "e774d7d89ff81042cb89ad338c3816122b34d25fdcbafb246c5a528bcd68cc9c"
+          },
+          {
+            "path": [
+              "revalidated_months"
+            ],
+            "equals": 67
+          },
+          {
+            "path": [
+              "archive_settlement_rows"
+            ],
+            "equals": 6024
+          },
+          {
+            "path": [
+              "source_query_reconsumption_complete"
+            ],
+            "equals": true
+          },
+          {
+            "path": [
+              "source_time_rate_comparison_complete"
+            ],
+            "equals": false
           },
           {
             "path": [
               "funding_schedule_complete"
+            ],
+            "equals": false
+          },
+          {
+            "path": [
+              "funding_coverage_attestation_emitted"
             ],
             "equals": false
           }
