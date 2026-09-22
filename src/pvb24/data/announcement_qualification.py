@@ -250,6 +250,59 @@ def qualify_candidate(candidate, raw):
     }
 
 
+def retained_source_fetch(root, report_sha256):
+    """Build an offline fetcher from a content-addressed retained qualification report."""
+
+    root = Path(root)
+    if not isinstance(report_sha256, str) or not re.fullmatch(r"[0-9a-f]{64}", report_sha256):
+        raise ValueError("Explicit retained qualification report SHA required")
+    report_path = root / "reports" / f"{report_sha256}.json"
+    raw_report = report_path.read_bytes()
+    if hashlib.sha256(raw_report).hexdigest() != report_sha256:
+        raise ValueError("Retained qualification report hash changed")
+    report = strict_json(raw_report)
+    results = report.get("results")
+    if (
+        report.get("schema") != SCHEMA
+        or report.get("final_test_access") != "LOCKED"
+        or report.get("source_fetch_complete") is not True
+        or not isinstance(results, list)
+        or report.get("candidate_count") != len(results)
+        or digest(results) != report.get("results_hash")
+    ):
+        raise ValueError("Complete locked retained qualification report required")
+
+    by_url = {}
+    for result in results:
+        url = result.get("article_url")
+        source_sha256 = result.get("source_sha256")
+        source_object = result.get("source_object")
+        if (
+            result.get("source_retained") is not True
+            or not isinstance(url, str)
+            or not isinstance(source_sha256, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", source_sha256)
+            or source_object != f"objects/{source_sha256}.json"
+            or url in by_url
+        ):
+            raise ValueError("Complete unique content-addressed retained sources required")
+        payload = (root / source_object).read_bytes()
+        if hashlib.sha256(payload).hexdigest() != source_sha256:
+            raise ValueError("Retained announcement source bytes changed")
+        by_url[url] = payload
+
+    if len(by_url) != report["candidate_count"]:
+        raise ValueError("Every retained candidate source must remain available")
+
+    def fetch(url):
+        try:
+            return by_url[url]
+        except KeyError as exc:
+            raise ValueError("Requested announcement is absent from retained source set") from exc
+
+    return fetch
+
+
 def qualify_inventory(
     inventory_root,
     inventory_report,
