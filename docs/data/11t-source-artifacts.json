@@ -1,0 +1,103 @@
+{
+  "schema": "PVB24_M11T_SOURCE_ARTIFACTS_V1",
+  "source_run_id": 35636682664,
+  "source_run_name": "PVB-24 Catalog Anchor Review",
+  "source_head_sha": "c51a89b15030a5d5996a6fc3877969bcf112d757",
+  "source_branch": "build/pvb24-v1",
+  "source_conclusion": "success",
+  "artifacts": [
+    {
+      "artifact_id": 10656661240,
+      "name": "catalog-evidence-48",
+      "archive_file": "catalog-evidence-48.zip",
+      "archive_sha256": "3dabca6439ce92be40864af6597f011fd86b0451fff33b963c437fd7dd9fff01",
+      "archive_size": 136108,
+      "member_count": 61,
+      "uncompressed_size": 428008,
+      "restore_dir": "catalog-evidence-48",
+      "expires_at": "2026-10-05T18:10:52Z",
+      "report_pins": [
+        {
+          "path": "anchor/reports/6069f2a4d161ccf42a9a534d7ba528c4d3159e1c62ca7db5ca0db043c5429928.json",
+          "sha256": "6069f2a4d161ccf42a9a534d7ba528c4d3159e1c62ca7db5ca0db043c5429928"
+        },
+        {
+          "path": "slice/reports/6ddb4ac65c3ebef820b63d45f112fee79247606bae2c8bde3715e5a02bc3854e.json",
+          "sha256": "6ddb4ac65c3ebef820b63d45f112fee79247606bae2c8bde3715e5a02bc3854e"
+        }
+      ]
+    },
+    {
+      "artifact_id": 10656820989,
+      "name": "catalog-evidence-161",
+      "archive_file": "catalog-evidence-161.zip",
+      "archive_sha256": "ed3b722671e8f2b08f6e66ba8236123ee66f476508280fdd46ff25ab19c674d4",
+      "archive_size": 69120,
+      "member_count": 28,
+      "uncompressed_size": 223639,
+      "restore_dir": "catalog-evidence-161",
+      "expires_at": "2026-10-05T18:10:47Z",
+      "report_pins": [
+        {
+          "path": "anchor/reports/0f8495236d2b09015efcd8a90d0b70839f1bd895446d82e5ae53f55591ea1821.json",
+          "sha256": "0f8495236d2b09015efcd8a90d0b70839f1bd895446d82e5ae53f55591ea1821"
+        },
+        {
+          "path": "slice/reports/0185a4c59f1606a8b310f84698db61d46e11a733f56acd936f4418384e23bbe6.json",
+          "sha256": "0185a4c59f1606a8b310f84698db61d46e11a733f56acd936f4418384e23bbe6"
+        }
+      ]
+    },
+    {
+      "artifact_id": 10655933711,
+      "name": "announcement-inventory-evidence",
+      "archive_file": "announcement-inventory-evidence.zip",
+      "archive_sha256": "69018e311d3aafed8985524f5d09e8f08e27551e5dfa50d8cc1c25831c478e43",
+      "archive_size": 139062,
+      "member_count": 38,
+      "uncompressed_size": 557778,
+      "restore_dir": "announcement-inventory-evidence",
+      "expires_at": "2026-10-05T18:11:05Z",
+      "report_pins": [
+        {
+          "path": "reports/07ba9ba9e59ab2823d545d687bb157744d855ce971361b6da13b3f2274430cf1.json",
+          "sha256": "07ba9ba9e59ab2823d545d687bb157744d855ce971361b6da13b3f2274430cf1"
+        }
+      ]
+    },
+    {
+      "artifact_id": 10656103428,
+      "name": "announcement-body-qualification-evidence",
+      "archive_file": "announcement-body-qualification-evidence.zip",
+      "archive_sha256": "95095899140c1fdfa38db7f171fe7ba5ad4c1d655fe8915d696d42f0c55b7647",
+      "archive_size": 805938,
+      "member_count": 149,
+      "uncompressed_size": 4848749,
+      "restore_dir": "announcement-body-qualification-evidence",
+      "expires_at": "2026-10-05T18:11:57Z",
+      "report_pins": [
+        {
+          "path": "reports/ed5539a48c6fca0fca16823bfd4dfd60ad3048c57716635adbb5d04d4b5ddd3a.json",
+          "sha256": "ed5539a48c6fca0fca16823bfd4dfd60ad3048c57716635adbb5d04d4b5ddd3a"
+        }
+      ]
+    },
+    {
+      "artifact_id": 10657081026,
+      "name": "lifecycle-archive-reconciliation-evidence",
+      "archive_file": "lifecycle-archive-reconciliation-evidence.zip",
+      "archive_sha256": "4d8cbb1a7e69acc9ae0ba2fd9e34ae22add956643b847125d853ac9869343021",
+      "archive_size": 1074874,
+      "member_count": 153,
+      "uncompressed_size": 1236466,
+      "restore_dir": "lifecycle-archive-reconciliation-evidence",
+      "expires_at": "2026-10-05T18:12:49Z",
+      "report_pins": [
+        {
+          "path": "reports/2c935625dffef3a949b7b30c4dfb55ca75b6b78c70771958d710c6925a0253bd.json",
+          "sha256": "2c935625dffef3a949b7b30c4dfb55ca75b6b78c70771958d710c6925a0253bd"
+        }
+      ]
+    }
+  ]
+}
