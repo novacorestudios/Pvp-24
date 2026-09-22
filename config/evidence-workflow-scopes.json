@@ -62,7 +62,10 @@
         "src/pvb24/data/evidence_replay.py",
         "src/pvb24/data/historical_metadata_evidence.py",
         "tests/test_evidence_replay.py",
-        "tests/test_historical_metadata_evidence.py"
+        "tests/test_historical_metadata_evidence.py",
+        "scripts/requalify_retained_announcement_evidence.py",
+        "src/pvb24/data/announcement_requalification.py",
+        "tests/test_announcement_requalification.py"
       ]
     },
     {
@@ -154,20 +157,6 @@
         "src/pvb24/data/security_master_audit.py",
         "scripts/audit_security_master_obligations.py",
         "docs/data/11v-historical-metadata-evidence.json"
-      ]
-    },
-    {
-      "workflow": ".github/workflows/m11y-retained-requalification.yml",
-      "patterns": [
-        ".github/workflows/m11y-retained-requalification.yml",
-        "docs/data/11t-durable-evidence.json",
-        "evidence/m11t/**",
-        "scripts/durable_m11t_evidence.py",
-        "scripts/requalify_retained_announcement_evidence.py",
-        "src/pvb24/data/announcement_qualification.py",
-        "src/pvb24/data/announcement_requalification.py",
-        "src/pvb24/data/durable_evidence.py",
-        "tests/test_announcement_requalification.py"
       ]
     }
   ]

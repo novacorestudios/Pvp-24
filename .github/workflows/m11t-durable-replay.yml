@@ -18,6 +18,9 @@ jobs:
       github.repository == 'novacorestudios/Pvp-24' &&
       github.ref == 'refs/heads/build/pvb24-v1'
     runs-on: ubuntu-latest
+    env:
+      SOURCE_QUALIFICATION_SHA256: >-
+        ed5539a48c6fca0fca16823bfd4dfd60ad3048c57716635adbb5d04d4b5ddd3a
     steps:
       - uses: actions/checkout@v4
         with:
@@ -46,6 +49,17 @@ jobs:
       - name: Replay qualification, recovery, and compilation
         run: |
           python scripts/replay_durable_evidence_chain.py             --locator docs/data/11t-durable-evidence.json             --baseline docs/data/11t-durable-replay-baseline.json             --inventory-root               artifacts/m11t-replay/source/announcement-inventory-evidence             --qualification-root               artifacts/m11t-replay/source/announcement-body-qualification-evidence             --lifecycle-root               artifacts/m11t-replay/source/lifecycle-archive-reconciliation-evidence             --tick-evidence docs/data/11f-announcement-coverage.json             --output artifacts/m11t-replay/output/11t-durable-replay-comparison.json
+      - name: Requalify exact retained announcement sources
+        run: |
+          python scripts/requalify_retained_announcement_evidence.py \
+            --locator docs/data/11t-durable-evidence.json \
+            --inventory-root \
+              artifacts/m11t-replay/source/announcement-inventory-evidence \
+            --qualification-root \
+              artifacts/m11t-replay/source/announcement-body-qualification-evidence \
+            --source-report-sha256 "$SOURCE_QUALIFICATION_SHA256" \
+            --output \
+              artifacts/m11t-replay/output/11y-retained-announcement-requalification.json
       - name: Seal evidence artifact qualification
         if: github.event_name != 'pull_request'
         env:
