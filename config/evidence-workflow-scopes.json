@@ -19,14 +19,19 @@
       "workflow": ".github/workflows/catalog-anchor-review.yml",
       "patterns": [
         ".github/workflows/catalog-anchor-review.yml",
+        "docs/data/11t-durable-evidence.json",
+        "evidence/m11t/**",
+        "scripts/acquire_reviewed_announcement_catalog.py",
+        "scripts/durable_m11t_evidence.py",
+        "scripts/qualify_announcement_inventory.py",
+        "scripts/reconcile_lifecycle_activity.py",
+        "scripts/review_announcement_catalog_anchor.py",
         "src/pvb24/data/announcement_anchor.py",
         "src/pvb24/data/announcement_catalog.py",
         "src/pvb24/data/announcement_qualification.py",
         "src/pvb24/data/daily_activity.py",
-        "scripts/reconcile_lifecycle_activity.py",
-        "scripts/review_announcement_catalog_anchor.py",
-        "scripts/acquire_reviewed_announcement_catalog.py",
-        "scripts/qualify_announcement_inventory.py"
+        "src/pvb24/data/durable_evidence.py",
+        "tests/test_announcement_qualification_replay.py"
       ]
     },
     {
