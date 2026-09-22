@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 SCOPES = Path("config/evidence-workflow-scopes.json")
 WORKFLOWS = (
     Path(".github/workflows/catalog-anchor-review.yml"),
