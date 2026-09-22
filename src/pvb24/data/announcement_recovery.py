@@ -110,8 +110,8 @@ def _body_text(raw):
     raise ValueError("Unsupported retained body encoding")
 
 
-def _parse_recovery_time(value, *, timezone="UTC"):
-    if timezone.upper() != "UTC":
+def _parse_recovery_time(value, *, timezone):
+    if not isinstance(timezone, str) or timezone.upper() != "UTC":
         raise ValueError("Explicit UTC retained lifecycle timestamp required")
     value = value.replace(" at ", " ").replace("/", "-").strip()
     parsed = None
