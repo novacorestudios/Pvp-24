@@ -400,6 +400,55 @@ def probe_plan(qualification):
     return _probe_plan(records)
 
 
+
+def validate_lifecycle_summary(qualification, report):
+    """Recompute lifecycle reconciliation counts/hashes from the qualified facts."""
+
+    if report.get("schema") != SCHEMA or report.get("final_test_access") != "LOCKED":
+        raise ValueError("Locked lifecycle reconciliation report required")
+    qualified = _qualified_lifecycle_records(qualification)
+    effective, superseded, late_revisions = _effective_lifecycle_records(qualification)
+    if report.get("qualification_results_hash") != qualification.get("results_hash"):
+        raise ValueError("Lifecycle/qualification result identities disagree")
+    if report.get("qualification_review_requests_hash") != qualification.get(
+        "review_requests_hash"
+    ):
+        raise ValueError("Lifecycle/qualification review identities disagree")
+    if report.get("qualified_fact_count") != len(qualified):
+        raise ValueError("Lifecycle qualified fact count mismatch")
+    if report.get("effective_fact_count") != len(effective):
+        raise ValueError("Lifecycle effective fact count mismatch")
+
+    if (
+        report.get("superseded_count") != len(superseded)
+        or canonical(report.get("superseded_facts")) != canonical(list(superseded))
+        or report.get("superseded_hash") != digest(superseded)
+    ):
+        raise ValueError("Lifecycle superseded facts summary mismatch")
+    if (
+        report.get("late_revision_count") != len(late_revisions)
+        or canonical(report.get("late_revisions")) != canonical(list(late_revisions))
+        or report.get("late_revision_hash") != digest(late_revisions)
+    ):
+        raise ValueError("Lifecycle late revision summary mismatch")
+    if report.get("probe_count") != len(_probe_plan(effective)):
+        raise ValueError("Lifecycle probe count mismatch")
+
+    reconciliations = report.get("reconciliations")
+    if (
+        not isinstance(reconciliations, list)
+        or report.get("reconciliation_count") != len(reconciliations)
+        or report.get("reconciliation_hash") != digest(reconciliations)
+    ):
+        raise ValueError("Lifecycle reconciliation count/hash mismatch")
+    counts = {}
+    for row in reconciliations:
+        status = row.get("status")
+        counts[status] = counts.get(status, 0) + 1
+    if dict(sorted(counts.items())) != report.get("status_counts"):
+        raise ValueError("Lifecycle reconciliation status counts mismatch")
+    return report
+
 def _observation(result, attempt):
     activity = result.get("activity") or {}
     return {
