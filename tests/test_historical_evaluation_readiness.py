@@ -221,9 +221,7 @@ def test_repository_readiness_matrix_uses_latest_committed_audit_evidence():
     assert "Only three reviewed announcement articles" not in json.dumps(payload)
 
     for name in ("HISTORICAL_UNIVERSE", "SECURITY_MASTER", "CONTRACT_RULES", "LIFECYCLE"):
-        assert rows[name]["evidence"]["path"] == (
-            "docs/data/11v-historical-metadata-evidence.json"
-        )
+        assert rows[name]["evidence"]["path"] == ("docs/data/11v-historical-metadata-evidence.json")
         assert rows[name]["evidence"]["git_blob_sha"] == (
             "7aadc0469e02f0687b185623e38e13a55e0d7a07"
         )
