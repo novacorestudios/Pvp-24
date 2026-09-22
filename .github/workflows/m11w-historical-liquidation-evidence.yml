@@ -8,6 +8,14 @@ on:
       - ".github/workflows/m11w-historical-liquidation-evidence.yml"
       - "src/pvb24/data/margin_tier_history.py"
       - "scripts/compile_historical_liquidation_evidence.py"
+      - "src/pvb24/data/evidence_ci.py"
+      - "scripts/verify_evidence_ci.py"
+      - "scripts/qualify_evidence_artifact.py"
+      - "tests/test_evidence_ci.py"
+      - "scripts/verify_provenance.py"
+      - "src/pvb24/ids.py"
+      - "src/pvb24/types.py"
+      - "pyproject.toml"
   workflow_dispatch:
 
 permissions:
@@ -16,6 +24,9 @@ permissions:
 
 jobs:
   compile:
+    if: >-
+      github.repository == 'novacorestudios/Pvp-24' &&
+      github.ref == 'refs/heads/build/pvb24-v1'
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
@@ -26,6 +37,16 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install -e '.[dev]'
+      - name: Qualify exact producer SHA against CI
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONPATH: src
+        run: |
+          python scripts/verify_evidence_ci.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --sha "$GITHUB_SHA" \
+            --output artifacts/evidence-ci/ci.json
       - name: Restore pinned M11W source probe
         run: |
           mkdir -p artifacts/m11w
@@ -45,8 +66,20 @@ jobs:
             --source f9e6ea2d58ce4de5bf9ecadea5170526:2b809598c051204e5575467a44903792fa797506e74c4188fa934f75199ea609 \
             --output artifacts/m11w/evidence/11w-historical-liquidation-evidence.json
           sha256sum artifacts/m11w/evidence/11w-historical-liquidation-evidence.json
+      - name: Seal evidence artifact qualification
+        if: github.event_name != 'pull_request'
+        env:
+          PYTHONPATH: src
+        run: |
+          python scripts/qualify_evidence_artifact.py create \
+            --root artifacts/m11w/evidence \
+            --ci-attestation artifacts/evidence-ci/ci.json
+          python scripts/qualify_evidence_artifact.py verify \
+            --root artifacts/m11w/evidence \
+            --ci-attestation artifacts/evidence-ci/ci.json \
+            --expected-sha "$GITHUB_SHA"
       - uses: actions/upload-artifact@v4
         with:
           name: m11w-historical-liquidation-evidence
-          path: artifacts/m11w/evidence/11w-historical-liquidation-evidence.json
+          path: artifacts/m11w/evidence
           if-no-files-found: error
