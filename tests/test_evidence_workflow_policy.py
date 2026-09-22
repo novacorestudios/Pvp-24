@@ -1,4 +1,4 @@
-import json
+from json import loads
 from pathlib import Path
 
 
@@ -6,7 +6,7 @@ SCOPES = Path("config/evidence-workflow-scopes.json")
 
 
 def workflow_paths():
-    value = json.loads(SCOPES.read_text())
+    value = loads(SCOPES.read_text())
     return [Path(row["workflow"]) for row in value["workflows"]]
 
 
@@ -32,7 +32,7 @@ def test_evidence_workflows_are_post_ci_dispatch_only():
 
 
 def test_scope_file_covers_every_evidence_workflow_file():
-    value = json.loads(SCOPES.read_text())
+    value = loads(SCOPES.read_text())
     scoped = {row["workflow"] for row in value["workflows"]}
     actual = {
         path.as_posix() for path in Path(".github/workflows").glob("*.yml") if path.name != "ci.yml"
@@ -41,7 +41,7 @@ def test_scope_file_covers_every_evidence_workflow_file():
 
 
 def test_scope_common_dependencies_include_ci_policy_contract():
-    value = json.loads(SCOPES.read_text())
+    value = loads(SCOPES.read_text())
     required = {
         "src/pvb24/data/evidence_ci.py",
         "scripts/verify_evidence_ci.py",
