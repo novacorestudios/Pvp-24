@@ -7,7 +7,6 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-
 SCHEMA = "PVB24_EVIDENCE_WORKFLOW_SCOPES_V1"
 
 
