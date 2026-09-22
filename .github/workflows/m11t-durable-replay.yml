@@ -94,6 +94,17 @@ jobs:
             --lifecycle-sha256 "$(sha256sum "$LIFE" | cut -d' ' -f1)" \
             --output \
               artifacts/m11t-replay/output/11y-requalified-security-master-delta.json
+      - name: Compile V6 Security Master obligation audit
+        run: |
+          BASE="artifacts/m11t-replay/base-security/11x-security-master-obligations.json"
+          DELTA="artifacts/m11t-replay/output/11y-requalified-security-master-delta.json"
+          python scripts/compile_security_master_successor.py \
+            --base "$BASE" \
+            --base-sha256 "$BASE_SECURITY_SHA256" \
+            --delta "$DELTA" \
+            --delta-sha256 "$(sha256sum "$DELTA" | cut -d' ' -f1)" \
+            --output \
+              artifacts/m11t-replay/output/11y-security-master-obligations-v6.json
       - name: Seal evidence artifact qualification
         if: github.event_name != 'pull_request'
         env:
