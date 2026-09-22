@@ -3,10 +3,10 @@
 ## Current authoritative checkpoint — 2026-09-22
 
 - Repository: `novacorestudios/Pvp-24`; work branch: `build/pvb24-v1`.
-- Audit-remediation implementation checkpoint before this F9 documentation sync:
-  `527a15c3d89c966686fe51fec38a3b243bbee674`.
-- Last implementation CI before this documentation sync: **PVB-24 CI #283 — SUCCESS**.
-- CI #283 passed **743 tests**, Ruff format/check, provenance, reference smoke,
+- Audit-remediation implementation checkpoint after strict F4/F9 closure:
+  `f9d1358570ea05877a932a4526b583b95cdc5e35`.
+- Strict closure verification: **PVB-24 CI #295 — SUCCESS**.
+- CI #295 passed **754 tests**, Ruff format/check, provenance, reference smoke,
   Freqtrade smoke, Freqtrade parity and framework parity.
 - Reference smoke remained non-trading:
   `orders_sent_to_exchange=0`, `paper_ready=false`.
@@ -32,7 +32,7 @@ Closed findings:
 - F1 — cutoff coverage / generalized cutoff scope.
 - F2 — connector pseudo-symbol parsing such as `ANDUSDT`.
 - F3 — timezone causality and explicit UTC requirements.
-- F4 — lifecycle report/fact symbol binding.
+- F4 — lifecycle identity binding plus recomputed internal hashes/counts at the metadata trust boundary.
 - F5 — conflicting delisting revisions and causal postponement semantics.
 - F6 — durable, content-addressed M11T evidence preservation and restore.
 - F7 — per-source point-in-time availability and reconciliation availability.
