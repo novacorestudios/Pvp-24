@@ -68,9 +68,7 @@ def source_response(code="a" * 32):
 
 
 def write_source_report(root, recorded):
-    requests = [
-        row["review_request"] for row in recorded if row.get("status") == QUALIFIED
-    ]
+    requests = [row["review_request"] for row in recorded if row.get("status") == QUALIFIED]
     report = {
         "schema": "PVB24_ANNOUNCEMENT_BODY_QUALIFICATION_V3",
         "quality": "PRELIMINARY",
@@ -142,7 +140,7 @@ def test_requalification_promotes_retained_source_without_claiming_completeness(
     monkeypatch.setattr(
         module,
         "retained_source_fetch",
-        lambda *args, **kwargs: (lambda url: raw),
+        lambda *args, **kwargs: lambda url: raw,
     )
 
     report = module.requalify_retained_qualification(
@@ -186,7 +184,7 @@ def test_requalification_rejects_previously_qualified_semantic_drift(tmp_path, m
     monkeypatch.setattr(
         module,
         "retained_source_fetch",
-        lambda *args, **kwargs: (lambda url: raw),
+        lambda *args, **kwargs: lambda url: raw,
     )
     changed = dict(replay)
     changed["facts"] = [{**replay["facts"][0], "max_leverage": 49}]
@@ -224,7 +222,7 @@ def test_requalification_rejects_source_revision_change(tmp_path, monkeypatch):
     monkeypatch.setattr(
         module,
         "retained_source_fetch",
-        lambda *args, **kwargs: (lambda url: raw),
+        lambda *args, **kwargs: lambda url: raw,
     )
     changed = {**replay, "source_sha256": "f" * 64}
     monkeypatch.setattr(module, "qualify_candidate", lambda *args, **kwargs: changed)

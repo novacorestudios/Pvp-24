@@ -50,9 +50,7 @@ def main():
                 "source_bytes_reverified_count": report["source_bytes_reverified_count"],
                 "status_counts": report["status_counts"],
                 "changed_result_count": report["changed_result_count"],
-                "status_promoted_to_qualified_count": report[
-                    "status_promoted_to_qualified_count"
-                ],
+                "status_promoted_to_qualified_count": report["status_promoted_to_qualified_count"],
                 "reason_only_change_count": report["reason_only_change_count"],
                 "historical_universe_complete": report["historical_universe_complete"],
                 "security_master_complete": report["security_master_complete"],

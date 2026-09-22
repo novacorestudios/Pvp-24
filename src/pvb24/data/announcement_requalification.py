@@ -62,9 +62,7 @@ def _source_report(root: Path, expected_sha256: str) -> dict:
 
 def _without_transport_fields(row: dict) -> dict:
     return {
-        key: value
-        for key, value in row.items()
-        if key not in ("retrieved_at", "source_object")
+        key: value for key, value in row.items() if key not in ("retrieved_at", "source_object")
     }
 
 
@@ -91,9 +89,7 @@ def requalify_retained_qualification(
 ) -> dict:
     """Replay exact retained bytes into a separate, lineage-bound qualification report."""
 
-    if not isinstance(durable_bundle_sha256, str) or not _SHA256.fullmatch(
-        durable_bundle_sha256
-    ):
+    if not isinstance(durable_bundle_sha256, str) or not _SHA256.fullmatch(durable_bundle_sha256):
         raise ValueError("Explicit durable bundle SHA-256 required")
 
     qualification_root = Path(qualification_root)
@@ -149,9 +145,7 @@ def requalify_retained_qualification(
     counts = Counter(row["status"] for row in results)
     requests = [row["review_request"] for row in results if row["status"] == QUALIFIED]
     promoted = [
-        row
-        for row in changes
-        if row["old_status"] != QUALIFIED and row["new_status"] == QUALIFIED
+        row for row in changes if row["old_status"] != QUALIFIED and row["new_status"] == QUALIFIED
     ]
     reason_only = [
         row
