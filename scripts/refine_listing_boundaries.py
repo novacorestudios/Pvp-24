@@ -43,9 +43,7 @@ def main():
                 "resolved_announcement_boundary_count": report[
                     "resolved_announcement_boundary_count"
                 ],
-                "remaining_unresolved_listing_count": report[
-                    "remaining_unresolved_listing_count"
-                ],
+                "remaining_unresolved_listing_count": report["remaining_unresolved_listing_count"],
                 "historical_universe_complete": report["historical_universe_complete"],
                 "refinement_hash": report["refinement_hash"],
             }

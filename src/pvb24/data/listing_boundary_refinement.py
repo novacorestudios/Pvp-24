@@ -53,9 +53,8 @@ def _validate_security_master(report):
     if recorded != digest(unhashed):
         raise ValueError("V6 Security Master audit hash mismatch")
     unresolved = report.get("unresolved_listings")
-    if (
-        not isinstance(unresolved, list)
-        or report.get("unresolved_listing_count") != len(unresolved)
+    if not isinstance(unresolved, list) or report.get("unresolved_listing_count") != len(
+        unresolved
     ):
         raise ValueError("V6 unresolved listing count mismatch")
     return report

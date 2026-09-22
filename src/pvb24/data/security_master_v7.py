@@ -131,9 +131,7 @@ def compile_security_master_v7(
         if evidence is not None:
             updated["listing_boundary_resolution"] = RESOLVED
             updated["listing_boundary_resolution_evidence"] = evidence
-            updated["listing_boundary_exact_time_source"] = (
-                "OFFICIAL_RETAINED_ANNOUNCEMENT"
-            )
+            updated["listing_boundary_exact_time_source"] = "OFFICIAL_RETAINED_ANNOUNCEMENT"
             updated["archive_proves_exact_launch"] = False
             applied.add(key)
         active.append(updated)
@@ -187,9 +185,7 @@ def compile_security_master_v7(
         "unresolved_listing_count": len(unresolved_listings),
         "unresolved_listings": unresolved_listings,
         "announcement_boundary_corroborated_count": len(resolved),
-        "announcement_boundary_corroborated": refinement[
-            "resolved_announcement_boundaries"
-        ],
+        "announcement_boundary_corroborated": refinement["resolved_announcement_boundaries"],
         "symbol_obligations": obligations,
         "classification_history_complete": False,
         "rename_relisting_history_complete": False,

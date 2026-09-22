@@ -37,9 +37,7 @@ def main():
     print(
         json.dumps(
             {
-                "selected_active_transition_count": report[
-                    "selected_active_transition_count"
-                ],
+                "selected_active_transition_count": report["selected_active_transition_count"],
                 "archive_reconciled_active_transition_count": report[
                     "archive_reconciled_active_transition_count"
                 ],
