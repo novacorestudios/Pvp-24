@@ -92,6 +92,41 @@ def test_grouped_scheduled_row_expands_each_symbol():
     assert next(f for f in facts if f["symbol"] == "CHZUSDT")["launch_at"].day == 29
 
 
+def test_grouped_scheduled_row_never_promotes_connector_word_to_symbol():
+    facts = extract_body_facts(
+        "LISTING",
+        rich(
+            "Binance Futures will launch USDT-margined BNT, UNFI and CHZ perpetual contracts "
+            "with up to 20X leverage with trading open scheduled as below: "
+            "USDT-Margined BNT, UNFI and CHZ 20X Perpetual Contracts at "
+            "2020/12/28 7:00 AM (UTC)"
+        ),
+    )
+    assert [fact["symbol"] for fact in facts] == ["BNTUSDT", "CHZUSDT", "UNFIUSDT"]
+    assert "ANDUSDT" not in {fact["symbol"] for fact in facts}
+
+
+@pytest.mark.parametrize(
+    "names",
+    [
+        "BNT or CHZ",
+        "BNT, and CHZ",
+        "BNT & & CHZ",
+    ],
+)
+def test_grouped_scheduled_row_rejects_ambiguous_connectors(names):
+    with pytest.raises(ValueError, match="Explicit unique USDT-margined listing symbols"):
+        extract_body_facts(
+            "LISTING",
+            rich(
+                "Binance Futures will launch USDT-margined BNT and CHZ perpetual contracts "
+                "with up to 20X leverage with trading open scheduled as below: "
+                f"USDT-Margined {names} 20X Perpetual Contracts at "
+                "2020/12/28 7:00 AM (UTC)"
+            ),
+        )
+
+
 def test_coin_margined_listing_is_not_promoted():
     with pytest.raises(ValueError, match="unambiguous"):
         extract_body_facts(
