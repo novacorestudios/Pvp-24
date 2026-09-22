@@ -175,7 +175,12 @@ def test_busd_only_contract_never_becomes_fake_usdt_symbol(tmp_path):
         "Contract and delist this contract at 2022-05-19 09:00 AM (UTC).",
     )
     assert report["recovered_delisting_fact_count"] == 0
+    assert report["recovered_symbol_count"] == 0
+    assert report["recovered"] == []
     assert report["remaining_semantic_unqualified_count"] == 1
+    assert report["remaining"][0]["new_reason"] == (
+        "Retained cutoff schedule does not cover every recovered symbol"
+    )
     assert "FTTBUSDUSDT" not in report["recovered_symbols"]
 
 
@@ -203,7 +208,11 @@ def test_listing_timezone_offset_fails_closed(tmp_path):
         "2022/04/05 2:00 AM (UTC+8). Users will be able to select between 1-50x leverage.",
     )
     assert report["recovered_listing_fact_count"] == 0
+    assert report["recovered_symbols"] == []
     assert report["remaining_semantic_unqualified_count"] == 1
+    assert "Explicit UTC retained lifecycle timestamp required" in report["remaining"][0][
+        "new_reason"
+    ]
 
 
 def test_listing_without_timezone_fails_closed(tmp_path):
@@ -214,7 +223,9 @@ def test_listing_without_timezone_fails_closed(tmp_path):
         "2022/04/05 2:00 AM. Users will be able to select between 1-50x leverage.",
     )
     assert report["recovered_listing_fact_count"] == 0
+    assert report["recovered_symbols"] == []
     assert report["remaining_semantic_unqualified_count"] == 1
+    assert report["remaining"][0]["new_reason"]
 
 
 def test_delisting_cutoff_timezone_offset_fails_closed(tmp_path):
@@ -228,7 +239,11 @@ def test_delisting_cutoff_timezone_offset_fails_closed(tmp_path):
         "AAAUSDT and BBBUSDT.",
     )
     assert report["recovered_delisting_fact_count"] == 0
+    assert report["recovered_symbols"] == []
     assert report["remaining_semantic_unqualified_count"] == 1
+    assert "Explicit UTC retained lifecycle timestamp required" in report["remaining"][0][
+        "new_reason"
+    ]
 
 
 def test_post_effective_known_update_is_retrospective_not_causal(tmp_path):
