@@ -183,7 +183,9 @@ def _listing_variant_facts(body_text):
         return [
             {
                 "symbol": single.group("symbol").upper(),
-                "launch_at": _parse_recovery_time(single.group(2), timezone=single.group("timezone")),
+                "launch_at": _parse_recovery_time(
+                    single.group(2), timezone=single.group("timezone")
+                ),
                 "max_leverage": maximum,
                 "contract_type": "PERPETUAL",
                 "quote_asset": "USDT",
@@ -205,7 +207,9 @@ def _listing_variant_facts(body_text):
         return [
             {
                 "symbol": direct.group("base").upper() + "USDT",
-                "launch_at": _parse_recovery_time(direct.group(3), timezone=direct.group("timezone")),
+                "launch_at": _parse_recovery_time(
+                    direct.group(3), timezone=direct.group("timezone")
+                ),
                 "max_leverage": direct_maximum,
                 "contract_type": "PERPETUAL",
                 "quote_asset": "USDT",
