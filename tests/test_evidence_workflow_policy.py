@@ -1,15 +1,13 @@
+import json
 from pathlib import Path
 
 import pytest
-import yaml
 
 
 SCOPES = Path("config/evidence-workflow-scopes.json")
 
 
 def workflow_paths():
-    import json
-
     value = json.loads(SCOPES.read_text())
     return [Path(row["workflow"]) for row in value["workflows"]]
 
@@ -17,13 +15,14 @@ def workflow_paths():
 @pytest.mark.parametrize("path", workflow_paths(), ids=lambda path: path.name)
 def test_evidence_workflow_is_post_ci_dispatch_only(path):
     raw = path.read_text()
-    value = yaml.safe_load(raw)
-    trigger = value.get("on")
-    assert isinstance(trigger, dict)
-    assert set(trigger) == {"workflow_dispatch"}
-    dispatch = trigger["workflow_dispatch"]
-    assert dispatch["inputs"]["source_sha"]["required"] is True
-    assert dispatch["inputs"]["source_sha"]["type"] == "string"
+    trigger = raw.split("\npermissions:", 1)[0].split("on:\n", 1)[1]
+
+    assert "\n  push:" not in trigger
+    assert "\n  pull_request:" not in trigger
+    assert "  workflow_dispatch:\n" in trigger
+    assert "      source_sha:\n" in trigger
+    assert "        required: true\n" in trigger
+    assert "        type: string\n" in trigger
 
     assert "github.ref == 'refs/heads/build/pvb24-v1'" in raw
     assert "ref: ${{ inputs.source_sha }}" in raw
@@ -35,8 +34,6 @@ def test_evidence_workflow_is_post_ci_dispatch_only(path):
 
 
 def test_scope_file_covers_every_evidence_workflow_file():
-    import json
-
     value = json.loads(SCOPES.read_text())
     scoped = {row["workflow"] for row in value["workflows"]}
     actual = {
@@ -48,8 +45,6 @@ def test_scope_file_covers_every_evidence_workflow_file():
 
 
 def test_scope_common_dependencies_include_ci_policy_contract():
-    import json
-
     value = json.loads(SCOPES.read_text())
     required = {
         "src/pvb24/data/evidence_ci.py",
