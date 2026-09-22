@@ -255,6 +255,172 @@ def test_multiple_recovered_starts_fail_closed_as_relisting_obligation(tmp_path)
     assert "RESOLVE_RELISTING_OR_DUPLICATE_START_SEMANTICS" in obligation["obligations"]
 
 
+def test_conflicting_delisting_dates_fail_closed_without_inactive_transition(tmp_path):
+    recovered = [
+        recovered_article(
+            "LISTING",
+            "list-ccc",
+            "2023-12-10T00:00:00+00:00",
+            [
+                {
+                    "symbol": "CCCUSDT",
+                    "launch_at": "2024-01-01T00:00:00+00:00",
+                    "max_leverage": 20,
+                    "contract_type": "PERPETUAL",
+                    "quote_asset": "USDT",
+                }
+            ],
+        ),
+        recovered_article(
+            "DELISTING",
+            "delist-ccc-1",
+            "2024-01-10T00:00:00+00:00",
+            [{"symbol": "CCCUSDT", "scheduled_settlement_at": "2024-02-01T00:00:00+00:00"}],
+        ),
+        recovered_article(
+            "DELISTING",
+            "delist-ccc-2",
+            "2024-01-11T00:00:00+00:00",
+            [{"symbol": "CCCUSDT", "scheduled_settlement_at": "2024-03-01T00:00:00+00:00"}],
+        ),
+    ]
+    report = compile_with_recovery(tmp_path, recovered)
+    assert report["delisting_revision_conflict_count"] == 1
+    conflict = report["delisting_revision_conflicts"][0]
+    assert conflict["symbol"] == "CCCUSDT"
+    assert conflict["resolution_status"] == "UNRESOLVED_CONFLICT"
+    assert len(conflict["announced_delisting_times"]) == 2
+    assert all(
+        row["symbol"] != "CCCUSDT" for row in report["selected_inactive_transitions"]
+    )
+    obligation = next(row for row in report["symbol_obligations"] if row["symbol"] == "CCCUSDT")
+    assert "RESOLVE_DELISTING_REVISION_OR_RELISTING_SEMANTICS" in obligation["obligations"]
+
+
+def test_same_delisting_date_is_corroborated_into_one_transition(tmp_path):
+    recovered = [
+        recovered_article(
+            "LISTING",
+            "list-ccc",
+            "2023-12-10T00:00:00+00:00",
+            [
+                {
+                    "symbol": "CCCUSDT",
+                    "launch_at": "2024-01-01T00:00:00+00:00",
+                    "max_leverage": 20,
+                    "contract_type": "PERPETUAL",
+                    "quote_asset": "USDT",
+                }
+            ],
+        ),
+        recovered_article(
+            "DELISTING",
+            "delist-ccc-a",
+            "2024-01-10T00:00:00+00:00",
+            [{"symbol": "CCCUSDT", "scheduled_settlement_at": "2024-02-01T00:00:00+00:00"}],
+        ),
+        recovered_article(
+            "DELISTING",
+            "delist-ccc-b",
+            "2024-01-11T00:00:00+00:00",
+            [{"symbol": "CCCUSDT", "scheduled_settlement_at": "2024-02-01T00:00:00+00:00"}],
+        ),
+    ]
+    report = compile_with_recovery(tmp_path, recovered)
+    rows = [row for row in report["selected_inactive_transitions"] if row["symbol"] == "CCCUSDT"]
+    assert len(rows) == 1
+    assert rows[0]["evidence_count"] == 2
+    assert rows[0]["revision_resolution"] == "CORROBORATED"
+    assert report["delisting_revision_conflict_count"] == 0
+
+
+def test_explicit_causal_postponement_supersedes_earlier_delisting(tmp_path):
+    recovered = [
+        recovered_article(
+            "LISTING",
+            "list-ccc",
+            "2023-12-10T00:00:00+00:00",
+            [
+                {
+                    "symbol": "CCCUSDT",
+                    "launch_at": "2024-01-01T00:00:00+00:00",
+                    "max_leverage": 20,
+                    "contract_type": "PERPETUAL",
+                    "quote_asset": "USDT",
+                }
+            ],
+        ),
+        recovered_article(
+            "DELISTING",
+            "delist-ccc-original",
+            "2024-01-10T00:00:00+00:00",
+            [{"symbol": "CCCUSDT", "scheduled_settlement_at": "2024-02-01T00:00:00+00:00"}],
+        ),
+        recovered_article(
+            "DELISTING",
+            "delist-ccc-postponed",
+            "2024-01-20T00:00:00+00:00",
+            [
+                {
+                    "symbol": "CCCUSDT",
+                    "scheduled_settlement_at": "2024-03-01T00:00:00+00:00",
+                    "revision_type": "POSTPONEMENT",
+                }
+            ],
+        ),
+    ]
+    report = compile_with_recovery(tmp_path, recovered)
+    row = next(
+        row for row in report["selected_inactive_transitions"] if row["symbol"] == "CCCUSDT"
+    )
+    assert row["effective_from"] == "2024-03-01T00:00:00.000000Z"
+    assert row["revision_resolution"] == "EXPLICIT_POSTPONEMENT"
+    assert row["superseded_delisting_times"] == ["2024-02-01T00:00:00.000000Z"]
+    assert report["delisting_revision_conflict_count"] == 0
+
+
+def test_postponement_known_after_old_delisting_does_not_rewrite_history(tmp_path):
+    recovered = [
+        recovered_article(
+            "LISTING",
+            "list-ccc",
+            "2023-12-10T00:00:00+00:00",
+            [
+                {
+                    "symbol": "CCCUSDT",
+                    "launch_at": "2024-01-01T00:00:00+00:00",
+                    "max_leverage": 20,
+                    "contract_type": "PERPETUAL",
+                    "quote_asset": "USDT",
+                }
+            ],
+        ),
+        recovered_article(
+            "DELISTING",
+            "delist-ccc-original",
+            "2024-01-10T00:00:00+00:00",
+            [{"symbol": "CCCUSDT", "scheduled_settlement_at": "2024-02-01T00:00:00+00:00"}],
+        ),
+        recovered_article(
+            "DELISTING",
+            "delist-ccc-late-postponement",
+            "2024-02-02T00:00:00+00:00",
+            [
+                {
+                    "symbol": "CCCUSDT",
+                    "scheduled_settlement_at": "2024-03-01T00:00:00+00:00",
+                    "revision_type": "POSTPONEMENT",
+                }
+            ],
+        ),
+    ]
+    report = compile_with_recovery(tmp_path, recovered)
+    assert report["delisting_revision_conflict_count"] == 1
+    assert all(
+        row["symbol"] != "CCCUSDT" for row in report["selected_inactive_transitions"]
+    )
+
+
 def test_unknown_m11v_boundary_remains_blocking_with_recovered_evidence(tmp_path):
     recovered = [
         recovered_article(
