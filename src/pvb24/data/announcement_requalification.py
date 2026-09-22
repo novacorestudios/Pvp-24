@@ -16,12 +16,14 @@ from pathlib import Path
 
 from pvb24.data.announcement_qualification import (
     QUALIFIED,
-    SCHEMA as QUALIFICATION_SCHEMA,
     SEMANTIC_UNQUALIFIED,
     load_inventory,
     qualify_candidate,
     retained_source_fetch,
     validate_qualification_summary,
+)
+from pvb24.data.announcement_qualification import (
+    SCHEMA as QUALIFICATION_SCHEMA,
 )
 from pvb24.data.announcements import strict_json
 from pvb24.ids import canonical, digest
