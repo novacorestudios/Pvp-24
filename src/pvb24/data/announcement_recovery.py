@@ -174,7 +174,8 @@ def _listing_variant_facts(body_text):
     single = re.search(
         r"Binance Futures will launch\s+"
         r"(?P<symbol>(?:[A-Z0-9]+USDT|[A-Z0-9]+/USDT))\s+"
-        r"perpetual contracts?,?\s+(?:and\s+)?(?:with\s+)?trading open at\s+"
+        r"perpetual contracts?,?\s+"
+        r"(?:(?:and\s+)?open trading|(?:and\s+)?(?:with\s+)?trading open)\s+at\s+"
         + _LISTING_TIME.pattern
         + r"\s*\((?P<timezone>UTC(?:[+-]\d{1,2})?)\)",
         body_text,
