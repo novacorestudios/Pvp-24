@@ -120,11 +120,11 @@ def compile_security_master_successor(
 
     exact = _unique_map(delta["base_active_corroborated"], "exact active delta")
     unknown = _unique_map(delta["base_active_unknown_boundaries"], "unknown active delta")
-    contradicted = _unique_map(
-        delta["base_active_contradicted"], "contradicted active delta"
-    )
-    if set(exact) & set(unknown) or set(exact) & set(contradicted) or set(unknown) & set(
-        contradicted
+    contradicted = _unique_map(delta["base_active_contradicted"], "contradicted active delta")
+    if (
+        set(exact) & set(unknown)
+        or set(exact) & set(contradicted)
+        or set(unknown) & set(contradicted)
     ):
         raise ValueError("Overlapping requalified active boundary states")
 
@@ -169,8 +169,7 @@ def compile_security_master_successor(
     reconciled_active_count = sum(row["boundary_reconciled"] for row in active)
     if (
         len(active) != delta["recommended_successor_active_transition_count"]
-        or reconciled_active_count
-        != delta["recommended_successor_archive_reconciled_active_count"]
+        or reconciled_active_count != delta["recommended_successor_archive_reconciled_active_count"]
         or len(active) - reconciled_active_count
         != delta["recommended_successor_announcement_only_active_count"]
     ):
@@ -217,9 +216,7 @@ def compile_security_master_successor(
         if item is None:
             raise ValueError("Unresolved listing symbol missing base obligation row")
         item["has_unresolved_listing_boundary"] = True
-        item["obligations"] = sorted(
-            {*item["obligations"], "RESOLVE_LISTING_BOUNDARY"}
-        )
+        item["obligations"] = sorted({*item["obligations"], "RESOLVE_LISTING_BOUNDARY"})
     for row in rejected:
         item = obligations.get(row["symbol"])
         if item is None:
@@ -260,18 +257,12 @@ def compile_security_master_successor(
         "requalified_unknown_listing_count": delta["unknown_listing_count"],
         "requalified_contradicted_listing_count": delta["contradicted_listing_count"],
         "requalified_exact_delisting_count": delta["exact_delisting_count"],
-        "requalified_active_newly_reconciled_count": delta[
-            "base_active_newly_reconciled_count"
-        ],
+        "requalified_active_newly_reconciled_count": delta["base_active_newly_reconciled_count"],
         "rejected_active_transition_count": len(rejected),
         "rejected_active_transitions": rejected,
-        "requalified_exact_delisting_unpaired_count": delta[
-            "exact_delisting_unpaired_count"
-        ],
+        "requalified_exact_delisting_unpaired_count": delta["exact_delisting_unpaired_count"],
         "requalified_exact_delistings_unpaired": delta["exact_delistings_unpaired"],
-        "symbol_obligations": [
-            obligations[symbol] for symbol in sorted(obligations)
-        ],
+        "symbol_obligations": [obligations[symbol] for symbol in sorted(obligations)],
         "classification_history_complete": False,
         "rename_relisting_history_complete": False,
         "source_window_coverage_complete": False,

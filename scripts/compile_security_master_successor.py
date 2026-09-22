@@ -39,9 +39,7 @@ def main():
     print(
         json.dumps(
             {
-                "selected_active_transition_count": report[
-                    "selected_active_transition_count"
-                ],
+                "selected_active_transition_count": report["selected_active_transition_count"],
                 "archive_reconciled_active_transition_count": report[
                     "archive_reconciled_active_transition_count"
                 ],
@@ -49,9 +47,7 @@ def main():
                     "announcement_only_active_transition_count"
                 ],
                 "unresolved_listing_count": report["unresolved_listing_count"],
-                "rejected_active_transition_count": report[
-                    "rejected_active_transition_count"
-                ],
+                "rejected_active_transition_count": report["rejected_active_transition_count"],
                 "requalified_exact_delisting_unpaired_count": report[
                     "requalified_exact_delisting_unpaired_count"
                 ],
