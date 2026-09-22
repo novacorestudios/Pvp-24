@@ -50,7 +50,7 @@ def changed_paths(base, head):
 
 
 def dispatch(repository, workflow, ref, source_sha, token):
-    workflow_id = urllib.parse.quote(workflow, safe="")
+    workflow_id = urllib.parse.quote(Path(workflow).name, safe="")
     url = f"https://api.github.com/repos/{repository}/actions/workflows/{workflow_id}/dispatches"
     payload = json.dumps({"ref": ref, "inputs": {"source_sha": source_sha}}).encode()
     request = urllib.request.Request(
