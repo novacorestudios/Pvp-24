@@ -113,6 +113,8 @@ def _qualification_replay(root, report_sha256, inventory_root):
     replayed_requests = [
         row["review_request"] for row in replayed_semantics if row["status"] == QUALIFIED
     ]
+    status_changes = [row for row in changes if row["old_status"] != row["new_status"]]
+    reason_only_changes = [row for row in changes if row["old_status"] == row["new_status"]]
     summary = {
         "report_sha256": report_sha256,
         "candidate_count": report["candidate_count"],
@@ -124,6 +126,8 @@ def _qualification_replay(root, report_sha256, inventory_root):
         "qualified_review_request_count": len(report["review_requests"]),
         "changed_result_count": len(changes),
         "changed_codes": [row["code"] for row in changes],
+        "status_changed_count": len(status_changes),
+        "reason_only_change_count": len(reason_only_changes),
         "replayed_status_counts": dict(sorted(replayed_counts.items())),
         "replayed_review_requests_hash": digest(replayed_requests),
         "recorded_semantic_hash": digest(recorded_semantics),
@@ -216,8 +220,11 @@ def replay_durable_evidence_chain(
     if _file_sha256(lifecycle_pin) != lifecycle_sha:
         raise ValueError("Durable lifecycle report filename/hash mismatch")
 
+    qualification_path = (
+        Path(qualification_root) / "reports" / f"{qualification_expected['report_sha256']}.json"
+    )
     compilation_report = compile_partial_historical_metadata(
-        Path(qualification_root) / "reports" / f"{qualification_expected['report_sha256']}.json",
+        qualification_path,
         qualification_expected["report_sha256"],
         lifecycle_pin,
         lifecycle_sha,
@@ -242,6 +249,7 @@ def replay_durable_evidence_chain(
         "compilation": compilation_actual,
         "all_match": not mismatches,
         "mismatches": mismatches,
+        "qualification_replay_consumed_by_downstream": False,
         "strategy_changed": False,
         "final_test_access": "LOCKED",
         "live_enabled": False,
