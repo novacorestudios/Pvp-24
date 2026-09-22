@@ -4,7 +4,7 @@ from pathlib import Path
 from pvb24.data.requalified_security_master import (
     compile_requalified_security_master_delta,
 )
-from pvb24.ids import canonical, digest
+from pvb24.ids import digest
 
 
 def write(path, value):
