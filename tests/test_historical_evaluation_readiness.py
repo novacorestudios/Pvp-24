@@ -211,3 +211,34 @@ def test_repository_readiness_matrix_is_pinned_and_blocks_performance_today():
     assert set(report["blocked_capabilities"]) == set(REQUIRED_CAPABILITIES)
     with pytest.raises(HistoricalEvaluationBlocked):
         require_performance_ready(ROOT, path.relative_to(ROOT))
+
+
+def test_repository_readiness_matrix_uses_latest_committed_audit_evidence():
+    payload = json.loads((ROOT / "docs/data/11m-pre-final-readiness.json").read_text())
+    rows = {row["name"]: row for row in payload["capabilities"]}
+
+    assert all(row["status"] == "PARTIAL" for row in rows.values())
+    assert "Only three reviewed announcement articles" not in json.dumps(payload)
+
+    for name in ("HISTORICAL_UNIVERSE", "SECURITY_MASTER", "CONTRACT_RULES", "LIFECYCLE"):
+        assert rows[name]["evidence"]["path"] == (
+            "docs/data/11v-historical-metadata-evidence.json"
+        )
+        assert rows[name]["evidence"]["git_blob_sha"] == (
+            "7aadc0469e02f0687b185623e38e13a55e0d7a07"
+        )
+
+    assert rows["FUNDING_SCHEDULE"]["evidence"]["path"] == (
+        "docs/data/11u-funding-schedule-audit.json"
+    )
+    assert rows["FUNDING_SCHEDULE"]["evidence"]["git_blob_sha"] == (
+        "7e0b4d9fdb52f1be1fbfd99d1de1515ad8463e86"
+    )
+    assert rows["LIQUIDATION_RULES"]["evidence"]["path"] == (
+        "docs/data/11w-historical-liquidation-evidence.json"
+    )
+
+    report = evaluate_readiness(ROOT, Path("docs/data/11m-pre-final-readiness.json"))
+    assert report["ready_for_performance_run"] is False
+    assert set(report["blocked_capabilities"]) == set(REQUIRED_CAPABILITIES)
+    assert report["final_test_access"] == "LOCKED"
