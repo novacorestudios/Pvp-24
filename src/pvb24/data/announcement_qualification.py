@@ -250,7 +250,6 @@ def qualify_candidate(candidate, raw):
     }
 
 
-
 def validate_qualification_summary(report):
     """Recompute qualification summary identities without trusting recorded hashes/counts."""
 
