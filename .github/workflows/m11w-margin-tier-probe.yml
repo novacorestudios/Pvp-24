@@ -8,13 +8,25 @@ on:
       - ".github/workflows/m11w-margin-tier-probe.yml"
       - "src/pvb24/data/margin_tier_source.py"
       - "scripts/probe_margin_tier_sources.py"
+      - "src/pvb24/data/evidence_ci.py"
+      - "scripts/verify_evidence_ci.py"
+      - "scripts/qualify_evidence_artifact.py"
+      - "tests/test_evidence_ci.py"
+      - "scripts/verify_provenance.py"
+      - "src/pvb24/ids.py"
+      - "src/pvb24/types.py"
+      - "pyproject.toml"
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
 
 jobs:
   probe:
+    if: >-
+      github.repository == 'novacorestudios/Pvp-24' &&
+      github.ref == 'refs/heads/build/pvb24-v1'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,6 +34,16 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install -e '.[dev]'
+      - name: Qualify exact producer SHA against CI
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONPATH: src
+        run: |
+          python scripts/verify_evidence_ci.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --sha "$GITHUB_SHA" \
+            --output artifacts/evidence-ci/ci.json
       - name: Verify repository provenance
         run: python scripts/verify_provenance.py
       - name: Probe reviewed official margin-tier sources
@@ -33,6 +55,18 @@ jobs:
             --code 2efd086c96a7435fb89b3392d5eb6df9 \
             --code f9e6ea2d58ce4de5bf9ecadea5170526 \
             | tee artifacts/m11w/source-probe-summary.json
+      - name: Seal evidence artifact qualification
+        if: github.event_name != 'pull_request'
+        env:
+          PYTHONPATH: src
+        run: |
+          python scripts/qualify_evidence_artifact.py create \
+            --root artifacts/m11w \
+            --ci-attestation artifacts/evidence-ci/ci.json
+          python scripts/qualify_evidence_artifact.py verify \
+            --root artifacts/m11w \
+            --ci-attestation artifacts/evidence-ci/ci.json \
+            --expected-sha "$GITHUB_SHA"
       - uses: actions/upload-artifact@v4
         with:
           name: m11w-margin-tier-source-probe
