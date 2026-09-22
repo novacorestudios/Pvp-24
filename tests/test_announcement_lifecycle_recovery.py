@@ -179,7 +179,7 @@ def test_busd_only_contract_never_becomes_fake_usdt_symbol(tmp_path):
     assert report["recovered"] == []
     assert report["remaining_semantic_unqualified_count"] == 1
     assert report["remaining"][0]["new_reason"] == (
-        "Retained cutoff schedule does not cover every recovered symbol"
+        "No explicit USDT perpetual delisting facts in retained source"
     )
     assert "FTTBUSDUSDT" not in report["recovered_symbols"]
 
@@ -271,4 +271,9 @@ def test_malformed_grouped_cutoff_fails_closed(tmp_path):
         "AAAUSDT.",
     )
     assert report["recovered_delisting_fact_count"] == 0
+    assert report["recovered_symbol_count"] == 0
+    assert report["recovered"] == []
     assert report["remaining_semantic_unqualified_count"] == 1
+    assert report["remaining"][0]["new_reason"] == (
+        "Retained cutoff schedule does not cover every recovered symbol"
+    )
