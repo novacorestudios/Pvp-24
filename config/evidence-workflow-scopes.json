@@ -73,7 +73,13 @@
         "tests/test_requalified_security_master.py",
         "scripts/compile_security_master_successor.py",
         "src/pvb24/data/security_master_successor.py",
-        "tests/test_security_master_successor.py"
+        "tests/test_security_master_successor.py",
+        "scripts/refine_listing_boundaries.py",
+        "src/pvb24/data/listing_boundary_refinement.py",
+        "tests/test_listing_boundary_refinement.py",
+        "scripts/compile_security_master_v7.py",
+        "src/pvb24/data/security_master_v7.py",
+        "tests/test_security_master_v7.py"
       ]
     },
     {

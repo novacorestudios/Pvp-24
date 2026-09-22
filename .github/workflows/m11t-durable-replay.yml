@@ -105,6 +105,28 @@ jobs:
             --delta-sha256 "$(sha256sum "$DELTA" | cut -d' ' -f1)" \
             --output \
               artifacts/m11t-replay/output/11y-security-master-obligations-v6.json
+      - name: Refine unresolved announcement listing boundaries
+        run: |
+          V6="artifacts/m11t-replay/output/11y-security-master-obligations-v6.json"
+          LIFE="artifacts/m11t-replay/output/11y-requalified-lifecycle-activity.json"
+          python scripts/refine_listing_boundaries.py \
+            --security-master "$V6" \
+            --security-master-sha256 "$(sha256sum "$V6" | cut -d' ' -f1)" \
+            --lifecycle "$LIFE" \
+            --lifecycle-sha256 "$(sha256sum "$LIFE" | cut -d' ' -f1)" \
+            --output \
+              artifacts/m11t-replay/output/11z-listing-boundary-refinement.json
+      - name: Compile V7 Security Master obligation audit
+        run: |
+          V6="artifacts/m11t-replay/output/11y-security-master-obligations-v6.json"
+          REFINE="artifacts/m11t-replay/output/11z-listing-boundary-refinement.json"
+          python scripts/compile_security_master_v7.py \
+            --base "$V6" \
+            --base-sha256 "$(sha256sum "$V6" | cut -d' ' -f1)" \
+            --refinement "$REFINE" \
+            --refinement-sha256 "$(sha256sum "$REFINE" | cut -d' ' -f1)" \
+            --output \
+              artifacts/m11t-replay/output/11z-security-master-obligations-v7.json
       - name: Seal evidence artifact qualification
         if: github.event_name != 'pull_request'
         env:
