@@ -85,7 +85,13 @@
         "tests/test_monthly_listing_boundary.py",
         "scripts/compile_security_master_v8.py",
         "src/pvb24/data/security_master_v8.py",
-        "tests/test_security_master_v8.py"
+        "tests/test_security_master_v8.py",
+        "scripts/acquire_ancillary_listing_boundaries.py",
+        "src/pvb24/data/ancillary_listing_boundary.py",
+        "tests/test_ancillary_listing_boundary.py",
+        "scripts/compile_security_master_v9.py",
+        "src/pvb24/data/security_master_v9.py",
+        "tests/test_security_master_v9.py"
       ]
     },
     {

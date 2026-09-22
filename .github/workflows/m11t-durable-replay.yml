@@ -147,6 +147,26 @@ jobs:
             --monthly-sha256 "$(sha256sum "$MONTHLY" | cut -d' ' -f1)" \
             --output \
               artifacts/m11t-replay/output/11z-security-master-obligations-v8.json
+      - name: Acquire ancillary fallback for unresolved listing boundaries
+        run: |
+          V8="artifacts/m11t-replay/output/11z-security-master-obligations-v8.json"
+          python scripts/acquire_ancillary_listing_boundaries.py \
+            --security-master "$V8" \
+            --security-master-sha256 "$(sha256sum "$V8" | cut -d' ' -f1)" \
+            --output-root artifacts/m11t-replay/output/11z-ancillary-boundary-source \
+            --output \
+              artifacts/m11t-replay/output/11z-ancillary-listing-boundary-evidence.json
+      - name: Compile V9 Security Master obligation audit
+        run: |
+          V8="artifacts/m11t-replay/output/11z-security-master-obligations-v8.json"
+          ANC="artifacts/m11t-replay/output/11z-ancillary-listing-boundary-evidence.json"
+          python scripts/compile_security_master_v9.py \
+            --base "$V8" \
+            --base-sha256 "$(sha256sum "$V8" | cut -d' ' -f1)" \
+            --ancillary "$ANC" \
+            --ancillary-sha256 "$(sha256sum "$ANC" | cut -d' ' -f1)" \
+            --output \
+              artifacts/m11t-replay/output/11z-security-master-obligations-v9.json
       - name: Seal evidence artifact qualification
         if: github.event_name != 'pull_request'
         env:
