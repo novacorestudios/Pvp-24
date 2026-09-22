@@ -98,25 +98,41 @@ jobs:
           python scripts/durable_m11t_evidence.py restore             --locator docs/data/11t-durable-evidence.json             --destination artifacts/m11t-restore-test
           test -f             artifacts/m11t-restore-test/announcement-body-qualification-evidence/reports/ed5539a48c6fca0fca16823bfd4dfd60ad3048c57716635adbb5d04d4b5ddd3a.json
           test -f             artifacts/m11t-restore-test/lifecycle-archive-reconciliation-evidence/reports/2c935625dffef3a949b7b30c4dfb55ca75b6b78c70771958d710c6925a0253bd.json
+      - name: Stage qualified durable evidence artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf artifacts/m11t-qualified
+          mkdir -p artifacts/m11t-qualified
+          cp evidence/m11t/m11t-evidence-*.zip artifacts/m11t-qualified/
+          cp evidence/m11t/m11t-evidence-*.manifest.json artifacts/m11t-qualified/
+          cp docs/data/11t-durable-evidence.json artifacts/m11t-qualified/
       - name: Seal evidence artifact qualification
-        if: github.event_name != 'pull_request'
         env:
           PYTHONPATH: src
         run: |
           python scripts/qualify_evidence_artifact.py create \
-            --root evidence/m11t \
+            --root artifacts/m11t-qualified \
             --ci-attestation artifacts/evidence-ci/ci.json
           python scripts/qualify_evidence_artifact.py verify \
-            --root evidence/m11t \
+            --root artifacts/m11t-qualified \
             --ci-attestation artifacts/evidence-ci/ci.json \
             --expected-sha "${{ inputs.source_sha }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m11t-durable-source-evidence-qualified
+          path: artifacts/m11t-qualified
+          if-no-files-found: error
       - name: Commit immutable durable evidence
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add evidence/m11t docs/data/11t-durable-evidence.json
+          git add \
+            evidence/m11t/m11t-evidence-*.zip \
+            evidence/m11t/m11t-evidence-*.manifest.json \
+            docs/data/11t-durable-evidence.json
           if git diff --cached --quiet; then
             echo "Durable evidence already preserved."
             exit 0
