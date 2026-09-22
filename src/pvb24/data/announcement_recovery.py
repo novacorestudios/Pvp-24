@@ -462,10 +462,12 @@ def recover_retained_lifecycle_facts(root, expected_report_sha256):
 
         facts = None
         method = None
+        specialized_error: str | None = None
         try:
             specialized_facts = _specialized_recovery(row["kind"], raw)
-        except (ValueError, TypeError, KeyError, ArithmeticError) as specialized_exc:
+        except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
             specialized_facts = None
+            specialized_error = str(exc)
         if replayed.get("status") == QUALIFIED and specialized_facts is not None:
             if canonical(replayed["facts"]) != canonical(specialized_facts):
                 remaining.append(
@@ -490,7 +492,7 @@ def recover_retained_lifecycle_facts(root, expected_report_sha256):
                     "title": row["title"],
                     "old_reason": row["reason"],
                     "new_status": SEMANTIC_UNQUALIFIED,
-                    "new_reason": str(specialized_exc),
+                    "new_reason": specialized_error or "Specialized lifecycle recovery failed",
                     "source_sha256": row["source_sha256"],
                 }
             )
