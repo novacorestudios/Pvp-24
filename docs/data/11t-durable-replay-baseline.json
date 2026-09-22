@@ -11,7 +11,15 @@
     "source_fetch_complete": true,
     "results_hash": "e78a2f4fa45755a063733777a3e47cf833dd41537689b75820c324b5d40fbf6e",
     "review_requests_hash": "f6473119a542498f9c5c79aaf07d34732771258fff644e3fa32e6682e9ac61c4",
-    "qualified_review_request_count": 28
+    "qualified_review_request_count": 28,
+    "source_bytes_verified_count": 148,
+    "changed_result_count": 0,
+    "changed_codes": [],
+    "replayed_status_counts": {
+      "QUALIFIED_PRELIMINARY": 28,
+      "SEMANTIC_UNQUALIFIED": 120
+    },
+    "replayed_review_requests_hash": "f6473119a542498f9c5c79aaf07d34732771258fff644e3fa32e6682e9ac61c4"
   },
   "recovery": {
     "output_sha256": "aedcd648151c26968268c1580b7c6bf10284a1d1774c86bc21074f7fe697943d",
