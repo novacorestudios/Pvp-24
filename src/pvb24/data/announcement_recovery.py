@@ -110,7 +110,9 @@ def _body_text(raw):
     raise ValueError("Unsupported retained body encoding")
 
 
-def _parse_recovery_time(value):
+def _parse_recovery_time(value, *, timezone="UTC"):
+    if timezone.upper() != "UTC":
+        raise ValueError("Explicit UTC retained lifecycle timestamp required")
     value = value.replace(" at ", " ").replace("/", "-").strip()
     parsed = None
     for fmt in ("%Y-%m-%d %I:%M %p", "%Y-%m-%d %H:%M"):
@@ -144,14 +146,16 @@ def _listing_variant_facts(body_text):
     grouped = re.compile(
         r"(?:launch\s+|,\s*|\band\s+)(?:a\s+)?"
         r"(?P<names>(?:[A-Z0-9]+/USDT(?:\s*(?:,|and)\s*)?)+)\s+"
-        r"perpetual contracts?\s+with trading opening at\s+" + _LISTING_TIME.pattern,
+        r"perpetual contracts?\s+with trading opening at\s+"
+        + _LISTING_TIME.pattern
+        + r"\s*\((?P<timezone>UTC(?:[+-]\d{1,2})?)\)",
         flags=re.IGNORECASE,
     )
     for match in grouped.finditer(body_text):
         names = re.findall(r"\b([A-Z0-9]+)/USDT\b", match.group("names"), flags=re.IGNORECASE)
         if not names or len(names) != len(set(name.upper() for name in names)):
             raise ValueError("Unique explicit USDT listing symbols required")
-        launch_at = _parse_recovery_time(match.groups()[-1])
+        launch_at = _parse_recovery_time(match.group(2), timezone=match.group("timezone"))
         for name in names:
             facts.append(
                 {
@@ -169,7 +173,9 @@ def _listing_variant_facts(body_text):
 
     single = re.search(
         r"Binance Futures will launch\s+(?P<symbol>[A-Z0-9]+USDT)\s+"
-        r"perpetual contracts?,?\s+with trading open at\s+" + _LISTING_TIME.pattern,
+        r"perpetual contracts?,?\s+with trading open at\s+"
+        + _LISTING_TIME.pattern
+        + r"\s*\((?P<timezone>UTC(?:[+-]\d{1,2})?)\)",
         body_text,
         flags=re.IGNORECASE,
     )
@@ -177,7 +183,7 @@ def _listing_variant_facts(body_text):
         return [
             {
                 "symbol": single.group("symbol").upper(),
-                "launch_at": _parse_recovery_time(single.groups()[-1]),
+                "launch_at": _parse_recovery_time(single.group(2), timezone=single.group("timezone")),
                 "max_leverage": maximum,
                 "contract_type": "PERPETUAL",
                 "quote_asset": "USDT",
@@ -187,7 +193,8 @@ def _listing_variant_facts(body_text):
     direct = re.search(
         r"Binance Futures will launch USDT-margined\s+(?P<base>[A-Z0-9]+)\s+"
         r"perpetual contracts?\s+with up to\s+(?P<maximum>\d+)x leverage at\s+"
-        + _LISTING_TIME.pattern,
+        + _LISTING_TIME.pattern
+        + r"\s*\((?P<timezone>UTC(?:[+-]\d{1,2})?)\)",
         body_text,
         flags=re.IGNORECASE,
     )
@@ -198,7 +205,7 @@ def _listing_variant_facts(body_text):
         return [
             {
                 "symbol": direct.group("base").upper() + "USDT",
-                "launch_at": _parse_recovery_time(direct.groups()[-1]),
+                "launch_at": _parse_recovery_time(direct.group(3), timezone=direct.group("timezone")),
                 "max_leverage": direct_maximum,
                 "contract_type": "PERPETUAL",
                 "quote_asset": "USDT",
@@ -208,10 +215,15 @@ def _listing_variant_facts(body_text):
 
 
 def _time_matches(value):
-    return [
-        (match.start(), match.end(), _parse_recovery_time(match.group(1)))
-        for match in _DELISTING_TIME.finditer(value)
-    ]
+    result = []
+    for match in _DELISTING_TIME.finditer(value):
+        suffix = value[match.end() : match.end() + 16]
+        timezone_match = re.match(r"\s*\((UTC(?:[+-]\d{1,2})?)\)", suffix, flags=re.IGNORECASE)
+        if timezone_match is None:
+            raise ValueError("Explicit UTC retained lifecycle timestamp required")
+        when = _parse_recovery_time(match.group(1), timezone=timezone_match.group(1))
+        result.append((match.start(), match.end() + timezone_match.end(), when))
+    return result
 
 
 def _append_base_symbol(result, base):
@@ -446,9 +458,39 @@ def recover_retained_lifecycle_facts(root, expected_report_sha256):
 
         facts = None
         method = None
-        if replayed.get("status") == QUALIFIED:
-            facts = replayed["facts"]
-            method = "WIDENED_SHARED_DECODER"
+        try:
+            specialized_facts = _specialized_recovery(row["kind"], raw)
+        except (ValueError, TypeError, KeyError, ArithmeticError) as specialized_exc:
+            specialized_facts = None
+        if replayed.get("status") == QUALIFIED and specialized_facts is not None:
+            if canonical(replayed["facts"]) != canonical(specialized_facts):
+                remaining.append(
+                    {
+                        "code": row["code"],
+                        "kind": row["kind"],
+                        "title": row["title"],
+                        "old_reason": row["reason"],
+                        "new_status": SEMANTIC_UNQUALIFIED,
+                        "new_reason": "Shared/specialized lifecycle semantics disagree",
+                        "source_sha256": row["source_sha256"],
+                    }
+                )
+                continue
+            facts = specialized_facts
+            method = "VALIDATED_SHARED_DECODER"
+        elif replayed.get("status") == QUALIFIED:
+            remaining.append(
+                {
+                    "code": row["code"],
+                    "kind": row["kind"],
+                    "title": row["title"],
+                    "old_reason": row["reason"],
+                    "new_status": SEMANTIC_UNQUALIFIED,
+                    "new_reason": str(specialized_exc),
+                    "source_sha256": row["source_sha256"],
+                }
+            )
+            continue
         elif replayed.get("status") == SEMANTIC_UNQUALIFIED:
             try:
                 facts = _specialized_recovery(row["kind"], raw)
