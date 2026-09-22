@@ -47,8 +47,7 @@ def fixture(tmp_path):
                 "archive_sha256": digest(payload),
                 "archive_size": len(payload),
                 "member_count": 2,
-                "uncompressed_size": len(b'{"source":"pinned"}\n')
-                + len(b'{"result":"pinned"}\n'),
+                "uncompressed_size": len(b'{"source":"pinned"}\n') + len(b'{"result":"pinned"}\n'),
                 "restore_dir": "sample",
                 "expires_at": "2026-10-05T00:00:00Z",
                 "report_pins": [
