@@ -21,7 +21,8 @@ RECOVERY_SCHEMA = "PVB24_RETAINED_ANNOUNCEMENT_RECOVERY_V2"
 CONFLICT_RESOLUTION_SCHEMA = "PVB24_LISTING_CONFLICT_RESOLUTION_V1"
 CONFLICT_ACTIVITY_SCHEMA = "PVB24_LISTING_CONFLICT_ACTIVITY_V1"
 REVIEWED_FACTS_SCHEMA = "PVB24_REVIEWED_LISTING_FACTS_V1"
-OUTPUT_SCHEMA = "PVB24_SECURITY_MASTER_OBLIGATION_AUDIT_V4"
+OUTPUT_SCHEMA = "PVB24_SECURITY_MASTER_OBLIGATION_AUDIT_V5"
+AVAILABILITY_MODEL = "PER_SOURCE_POINT_IN_TIME_V1"
 CONSISTENT = "CONSISTENT_EVENT_BOUNDARY_ONLY"
 UNKNOWN = "UNKNOWN"
 
@@ -247,6 +248,69 @@ def _dedupe(events):
             row["revision_id"],
         ),
     )
+
+
+def _source_row(row, *, include_effective=False):
+    value = {
+        "available_at": row["available_at"],
+        "source": row["source"],
+        "revision_id": row["revision_id"],
+        "boundary_reconciled": row["boundary_reconciled"],
+    }
+    if include_effective:
+        value["effective_from"] = row["effective_from"]
+    if row.get("revision_type") is not None:
+        value["revision_type"] = row["revision_type"]
+    return value
+
+
+def _source_rows(rows, *, include_effective=False):
+    return [
+        _source_row(row, include_effective=include_effective)
+        for row in sorted(
+            rows,
+            key=lambda item: (
+                item["available_at"],
+                item["effective_from"],
+                item["source"],
+                item["revision_id"],
+            ),
+        )
+    ]
+
+
+def _evidence_timeline(rows):
+    timeline = []
+    for as_of in sorted({row["available_at"] for row in rows}):
+        visible = [row for row in rows if row["available_at"] <= as_of]
+        timeline.append(
+            {
+                "as_of": as_of,
+                "evidence_count": len(visible),
+                "boundary_reconciled": any(row["boundary_reconciled"] for row in visible),
+                "sources": _source_rows(visible),
+            }
+        )
+    return timeline
+
+
+def _availability_fields(rows, *, selection_available_at=None):
+    if not rows:
+        raise ValueError("At least one lifecycle evidence row required")
+    first = min(row["available_at"] for row in rows)
+    complete = max(row["available_at"] for row in rows)
+    reconciled = [row["available_at"] for row in rows if row["boundary_reconciled"]]
+    selection = first if selection_available_at is None else selection_available_at
+    if selection < first or selection > complete:
+        raise ValueError("Transition selection availability must come from selected evidence")
+    return {
+        "available_at": selection,
+        "first_evidence_available_at": first,
+        "selection_available_at": selection,
+        "evidence_complete_at": complete,
+        "boundary_reconciled_available_at": min(reconciled) if reconciled else None,
+        "evidence_timeline": _evidence_timeline(rows),
+    }
 
 
 def compile_security_master_obligations(
@@ -643,10 +707,17 @@ def compile_security_master_obligations(
         reconciled_times = sorted(
             {row["effective_from"] for row in rows if row["boundary_reconciled"]}
         )
+        selection_basis = "UNIQUE_EFFECTIVE_TIME"
+        selection_available_at = None
         if len(times) == 1:
             selected = by_time[times[0]]
         elif len(reconciled_times) == 1:
             selected = by_time[reconciled_times[0]]
+            reconciled_selected = [row for row in selected if row["boundary_reconciled"]]
+            if not reconciled_selected:
+                raise ValueError("Reconciled listing selection lacks reconciled source row")
+            selection_available_at = min(row["available_at"] for row in reconciled_selected)
+            selection_basis = "UNIQUE_RECONCILED_EFFECTIVE_TIME"
             listing_conflicts.append(
                 {
                     "symbol": symbol,
@@ -654,6 +725,7 @@ def compile_security_master_obligations(
                     "other_announced_starts": [
                         time for time in times if time != reconciled_times[0]
                     ],
+                    "selection_available_at": selection_available_at,
                     "blocking_obligation": "RESOLVE_RELISTING_OR_DUPLICATE_START_SEMANTICS",
                 }
             )
@@ -669,26 +741,25 @@ def compile_security_master_obligations(
             continue
         effective = selected[0]["effective_from"]
         selected_starts[symbol] = effective
+        availability = _availability_fields(
+            selected,
+            selection_available_at=selection_available_at,
+        )
         active_transitions.append(
             {
                 "symbol": symbol,
                 "transition": "ACTIVE_LISTING",
                 "effective_from": effective,
-                "available_at": min(row["available_at"] for row in selected),
+                **availability,
+                "availability_model": AVAILABILITY_MODEL,
+                "selection_basis": selection_basis,
                 "trading_start": effective,
                 "classification": "UNKNOWN",
                 "classification_evidence_hint": reviewed_classification_hints.get(symbol),
                 "prior_epoch_disclosed": symbol in reviewed_prior_epoch_symbols,
                 "evidence_count": len(selected),
                 "boundary_reconciled": any(row["boundary_reconciled"] for row in selected),
-                "sources": [
-                    {
-                        "source": row["source"],
-                        "revision_id": row["revision_id"],
-                        "boundary_reconciled": row["boundary_reconciled"],
-                    }
-                    for row in selected
-                ],
+                "sources": _source_rows(selected),
                 "historical_verified": False,
                 "universe_eligible": False,
             }
@@ -739,17 +810,11 @@ def compile_security_master_obligations(
                 "symbol": symbol,
                 "announced_delisting_times": times,
                 "evidence_count": len(rows),
-                "sources": [
-                    {
-                        "effective_from": row["effective_from"],
-                        "available_at": row["available_at"],
-                        "source": row["source"],
-                        "revision_id": row["revision_id"],
-                        "boundary_reconciled": row["boundary_reconciled"],
-                        "revision_type": row.get("revision_type"),
-                    }
-                    for row in rows
-                ],
+                "first_evidence_available_at": min(row["available_at"] for row in rows),
+                "evidence_complete_at": max(row["available_at"] for row in rows),
+                "evidence_timeline": _evidence_timeline(rows),
+                "availability_model": AVAILABILITY_MODEL,
+                "sources": _source_rows(rows, include_effective=True),
                 "resolution_status": "UNRESOLVED_CONFLICT",
                 "resolution_requires": [
                     "EXPLICIT_CAUSAL_POSTPONEMENT",
@@ -763,17 +828,20 @@ def compile_security_master_obligations(
             continue
 
         effective = selected[0]["effective_from"]
-        available = min(row["available_at"] for row in selected)
-        source_rows = [
-            {
-                "available_at": row["available_at"],
-                "source": row["source"],
-                "revision_id": row["revision_id"],
-                "boundary_reconciled": row["boundary_reconciled"],
-                "revision_type": row.get("revision_type"),
-            }
-            for row in selected
-        ]
+        selection_available_at = None
+        if delisting_resolution == "EXPLICIT_POSTPONEMENT":
+            resolution_rows = [
+                row for row in selected if row.get("revision_type") == "POSTPONEMENT"
+            ]
+            if not resolution_rows:
+                raise ValueError("Postponement resolution lacks postponement source")
+            selection_available_at = min(row["available_at"] for row in resolution_rows)
+        availability = _availability_fields(
+            selected,
+            selection_available_at=selection_available_at,
+        )
+        available = availability["available_at"]
+        source_rows = _source_rows(selected)
         start = selected_starts.get(symbol)
         listing_conflict = any(item["symbol"] == symbol for item in listing_conflicts)
         if start is None or start >= effective or listing_conflict:
@@ -782,7 +850,8 @@ def compile_security_master_obligations(
                 {
                     "symbol": symbol,
                     "effective_from": effective,
-                    "available_at": available,
+                    **availability,
+                    "availability_model": AVAILABILITY_MODEL,
                     "evidence_count": len(selected),
                     "sources": source_rows,
                     "revision_resolution": delisting_resolution,
@@ -802,7 +871,9 @@ def compile_security_master_obligations(
                 "symbol": symbol,
                 "transition": "INACTIVE_DELISTED",
                 "effective_from": effective,
-                "available_at": available,
+                **availability,
+                "availability_model": AVAILABILITY_MODEL,
+                "selection_basis": delisting_resolution,
                 "trading_start": start,
                 "classification": "UNKNOWN",
                 "evidence_count": len(selected),
@@ -870,6 +941,8 @@ def compile_security_master_obligations(
 
     report = {
         "schema": OUTPUT_SCHEMA,
+        "availability_model": AVAILABILITY_MODEL,
+        "point_in_time_source_availability_preserved": True,
         "inputs": {
             "m11v_sha256": expected_sha256,
             "m11v_evidence_hash": source["evidence_hash"],
