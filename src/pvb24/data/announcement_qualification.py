@@ -250,6 +250,55 @@ def qualify_candidate(candidate, raw):
     }
 
 
+
+def validate_qualification_summary(report):
+    """Recompute qualification summary identities without trusting recorded hashes/counts."""
+
+    if report.get("schema") != SCHEMA or report.get("final_test_access") != "LOCKED":
+        raise ValueError("Locked announcement qualification report required")
+    results = report.get("results")
+    if (
+        not isinstance(results, list)
+        or report.get("candidate_count") != len(results)
+        or digest(results) != report.get("results_hash")
+    ):
+        raise ValueError("Qualification result count/hash mismatch")
+
+    counts = Counter(row.get("status") for row in results)
+    if dict(sorted(counts.items())) != report.get("status_counts"):
+        raise ValueError("Qualification status counts differ from result rows")
+
+    requests = []
+    for row in results:
+        if row.get("status") != QUALIFIED:
+            continue
+        facts = row.get("facts")
+        if not isinstance(facts, list) or not facts or digest(facts) != row.get("facts_hash"):
+            raise ValueError("Qualified announcement facts hash mismatch")
+        request = row.get("review_request")
+        published = row.get("published_at")
+        if not isinstance(request, dict) or not isinstance(published, str):
+            raise ValueError("Qualified announcement review request required")
+        published_day = datetime.fromisoformat(published.replace("Z", "+00:00")).date().isoformat()
+        expected_request = {
+            "code": row.get("code"),
+            "published_day": published_day,
+            "kind": row.get("kind"),
+            "body_sha256": row.get("body_sha256"),
+            "facts_hash": row.get("facts_hash"),
+        }
+        if canonical(request) != canonical(expected_request):
+            raise ValueError("Qualified announcement review request identity mismatch")
+        requests.append(request)
+
+    if (
+        canonical(requests) != canonical(report.get("review_requests"))
+        or digest(requests) != report.get("review_requests_hash")
+        or report.get("source_fetch_complete") is not (counts[SOURCE_ERROR] == 0)
+    ):
+        raise ValueError("Qualification summary differs from result rows")
+    return report
+
 def retained_source_fetch(root, report_sha256):
     """Build an offline fetcher from a content-addressed retained qualification report."""
 
