@@ -82,7 +82,6 @@ def _change_record(recorded: dict, replayed: dict) -> dict:
     }
 
 
-
 def validate_requalification_summary(report: dict) -> dict:
     """Recompute successor qualification counts, hashes, lineage, and locked readiness flags."""
 
@@ -146,9 +145,8 @@ def validate_requalification_summary(report: dict) -> dict:
         raise ValueError("Requalification status counts mismatch")
 
     requests = [row["review_request"] for row in results if row["status"] == QUALIFIED]
-    if (
-        report.get("review_requests") != requests
-        or report.get("review_requests_hash") != digest(requests)
+    if report.get("review_requests") != requests or report.get("review_requests_hash") != digest(
+        requests
     ):
         raise ValueError("Requalification review request summary mismatch")
 
@@ -160,7 +158,9 @@ def validate_requalification_summary(report: dict) -> dict:
     ):
         raise ValueError("Requalification change summary mismatch")
     promoted = [
-        row for row in changes if row.get("old_status") != QUALIFIED and row.get("new_status") == QUALIFIED
+        row
+        for row in changes
+        if row.get("old_status") != QUALIFIED and row.get("new_status") == QUALIFIED
     ]
     reason_only = [
         row
