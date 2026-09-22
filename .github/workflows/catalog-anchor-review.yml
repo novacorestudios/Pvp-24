@@ -164,7 +164,15 @@ jobs:
         with:
           name: announcement-inventory-evidence
           path: artifacts/announcement-inventory
-      - name: Acquire and semantically qualify candidate bodies
+      - name: Restore retained candidate body sources
+        run: |
+          python scripts/durable_m11t_evidence.py verify \
+            --locator docs/data/11t-durable-evidence.json
+          python scripts/durable_m11t_evidence.py restore \
+            --locator docs/data/11t-durable-evidence.json \
+            --destination artifacts/catalog-retained \
+            --artifact announcement-body-qualification-evidence
+      - name: Replay and semantically qualify retained candidate bodies
         shell: bash
         run: |
           set -euo pipefail
@@ -175,6 +183,10 @@ jobs:
             --inventory-root artifacts/announcement-inventory \
             --inventory-report "reports/$HINV.json" \
             --inventory-sha256 "$HINV" \
+            --retained-source-root \
+              artifacts/catalog-retained/announcement-body-qualification-evidence \
+            --retained-report-sha256 \
+              ed5539a48c6fca0fca16823bfd4dfd60ad3048c57716635adbb5d04d4b5ddd3a \
             --output artifacts/announcement-body-qualification
       - name: Seal evidence artifact qualification
         env:
