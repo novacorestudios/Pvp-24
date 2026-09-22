@@ -44,7 +44,11 @@ def _validate_tick_summary(report):
     articles = report.get("articles")
     failures = report.get("failures")
     coverage = report.get("coverage")
-    if not isinstance(articles, list) or not isinstance(failures, list) or not isinstance(coverage, list):
+    if (
+        not isinstance(articles, list)
+        or not isinstance(failures, list)
+        or not isinstance(coverage, list)
+    ):
         raise ValueError("Tick evidence summary collections required")
     if (
         report.get("acquired_articles") != len(articles)
@@ -104,6 +108,7 @@ def _validate_tick_summary(report):
     if report_hash != digest(unhashed):
         raise ValueError("Tick evidence report hash mismatch")
     return report
+
 
 def _time(value):
     parsed = utc(datetime.fromisoformat(value))
