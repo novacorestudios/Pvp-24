@@ -132,6 +132,8 @@ def compile_partial_historical_metadata(
         if article.get("source_sha256") != row.get("article_source_sha256"):
             raise ValueError("Lifecycle source revision differs from qualification evidence")
         fact = _matching_fact(article, row)
+        if fact.get("symbol") != symbol:
+            raise ValueError("Lifecycle symbol differs from qualified fact")
         event_at = _event_time(kind, fact)
         if event_at != _time(row["event_at"]):
             raise ValueError("Lifecycle event time differs from qualified fact")
