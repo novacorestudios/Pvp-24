@@ -449,6 +449,7 @@ def validate_lifecycle_summary(qualification, report):
         raise ValueError("Lifecycle reconciliation status counts mismatch")
     return report
 
+
 def _observation(result, attempt):
     activity = result.get("activity") or {}
     return {
