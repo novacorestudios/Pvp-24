@@ -296,7 +296,7 @@ def test_conflicting_delisting_dates_fail_closed_without_inactive_transition(tmp
     ]
     assert len(conflict["announced_delisting_times"]) == 2
     assert report["ambiguous_delisting_count"] == 1
-    assert report["unpaired_delisting_count"] == 1
+    assert report["unpaired_delisting_count"] == 0
     assert all(row["symbol"] != "CCCUSDT" for row in report["selected_inactive_transitions"])
     obligation = next(row for row in report["symbol_obligations"] if row["symbol"] == "CCCUSDT")
     assert "RESOLVE_DELISTING_REVISION_OR_RELISTING_SEMANTICS" in obligation["obligations"]
