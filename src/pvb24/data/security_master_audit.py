@@ -705,7 +705,9 @@ def compile_security_master_obligations(
             by_time[row["effective_from"]].append(row)
         times = sorted(by_time)
 
-        resolution = "SINGLE" if len(times) == 1 and len(rows) == 1 else "CORROBORATED"
+        delisting_resolution = (
+            "SINGLE" if len(times) == 1 and len(rows) == 1 else "CORROBORATED"
+        )
         selected = by_time[times[0]] if len(times) == 1 else None
         superseded_times = []
 
@@ -728,14 +730,11 @@ def compile_security_master_obligations(
                 if (
                     older_times
                     and all(time < postponed_to for time in older_times)
-                    and any(
-                        row["available_at"] <= min(older_times)
-                        for row in postponements
-                    )
+                    and any(row["available_at"] <= min(older_times) for row in postponements)
                 ):
                     selected = by_time[postponed_to]
                     superseded_times = older_times
-                    resolution = "EXPLICIT_POSTPONEMENT"
+                    delisting_resolution = "EXPLICIT_POSTPONEMENT"
 
         if selected is None:
             conflict_row = {
@@ -788,7 +787,7 @@ def compile_security_master_obligations(
                     "available_at": available,
                     "evidence_count": len(selected),
                     "sources": source_rows,
-                    "revision_resolution": resolution,
+                    "revision_resolution": delisting_resolution,
                     "superseded_delisting_times": superseded_times,
                     "blocking_obligation": (
                         "RESOLVE_RELISTING_BEFORE_DELISTING"
@@ -813,7 +812,7 @@ def compile_security_master_obligations(
                 "source": representative["source"],
                 "revision_id": representative["revision_id"],
                 "sources": source_rows,
-                "revision_resolution": resolution,
+                "revision_resolution": delisting_resolution,
                 "superseded_delisting_times": superseded_times,
                 "historical_verified": False,
                 "universe_eligible": False,
