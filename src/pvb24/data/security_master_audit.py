@@ -705,9 +705,7 @@ def compile_security_master_obligations(
             by_time[row["effective_from"]].append(row)
         times = sorted(by_time)
 
-        delisting_resolution = (
-            "SINGLE" if len(times) == 1 and len(rows) == 1 else "CORROBORATED"
-        )
+        delisting_resolution = "SINGLE" if len(times) == 1 and len(rows) == 1 else "CORROBORATED"
         selected = by_time[times[0]] if len(times) == 1 else None
         superseded_times = []
 
