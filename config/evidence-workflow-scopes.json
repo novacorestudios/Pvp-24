@@ -1,0 +1,149 @@
+{
+  "schema": "PVB24_EVIDENCE_WORKFLOW_SCOPES_V1",
+  "common": [
+    "src/pvb24/data/evidence_ci.py",
+    "scripts/verify_evidence_ci.py",
+    "scripts/qualify_evidence_artifact.py",
+    "scripts/dispatch_evidence_workflows.py",
+    "tests/test_evidence_ci.py",
+    "tests/test_evidence_dispatch.py",
+    "config/evidence-workflow-scopes.json",
+    "scripts/verify_provenance.py",
+    "src/pvb24/ids.py",
+    "src/pvb24/types.py",
+    "pyproject.toml"
+  ],
+  "workflows": [
+    {
+      "workflow": ".github/workflows/catalog-anchor-review.yml",
+      "patterns": [
+        ".github/workflows/catalog-anchor-review.yml",
+        "src/pvb24/data/announcement_anchor.py",
+        "src/pvb24/data/announcement_catalog.py",
+        "src/pvb24/data/announcement_qualification.py",
+        "src/pvb24/data/daily_activity.py",
+        "scripts/reconcile_lifecycle_activity.py",
+        "scripts/review_announcement_catalog_anchor.py",
+        "scripts/acquire_reviewed_announcement_catalog.py",
+        "scripts/qualify_announcement_inventory.py"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/m11t-durable-evidence.yml",
+      "patterns": [
+        ".github/workflows/m11t-durable-evidence.yml",
+        "src/pvb24/data/durable_evidence.py",
+        "scripts/durable_m11t_evidence.py",
+        "tests/test_durable_evidence.py",
+        "docs/data/11t-source-artifacts.json"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/m11t-durable-replay.yml",
+      "patterns": [
+        ".github/workflows/m11t-durable-replay.yml",
+        "src/pvb24/data/announcements.py",
+        "src/pvb24/data/announcement_qualification.py",
+        "src/pvb24/data/announcement_recovery.py",
+        "src/pvb24/data/historical_metadata_evidence.py",
+        "src/pvb24/data/durable_evidence.py",
+        "src/pvb24/data/evidence_replay.py",
+        "scripts/replay_durable_evidence_chain.py",
+        "tests/test_evidence_replay.py",
+        "docs/data/11f-announcement-coverage.json",
+        "docs/data/11t-durable-evidence.json",
+        "docs/data/11t-durable-replay-baseline.json",
+        "docs/M11T_DURABLE_REPLAY.md",
+        "evidence/m11t/**"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/m11v-historical-metadata-evidence.yml",
+      "patterns": [
+        ".github/workflows/m11v-historical-metadata-evidence.yml",
+        "src/pvb24/data/historical_metadata_evidence.py",
+        "src/pvb24/data/durable_evidence.py",
+        "scripts/compile_historical_metadata_evidence.py",
+        "scripts/durable_m11t_evidence.py",
+        "docs/data/11f-announcement-coverage.json",
+        "docs/data/11t-durable-evidence.json",
+        "evidence/m11t/**"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/m11w-historical-liquidation-evidence.yml",
+      "patterns": [
+        ".github/workflows/m11w-historical-liquidation-evidence.yml",
+        "src/pvb24/data/margin_tier_history.py",
+        "scripts/compile_historical_liquidation_evidence.py"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/m11w-margin-tier-probe.yml",
+      "patterns": [
+        ".github/workflows/m11w-margin-tier-probe.yml",
+        "src/pvb24/data/margin_tier_source.py",
+        "scripts/probe_margin_tier_sources.py"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/m11x-listing-conflict-resolution.yml",
+      "patterns": [
+        ".github/workflows/m11x-listing-conflict-resolution.yml",
+        "src/pvb24/data/listing_conflict_resolution.py",
+        "src/pvb24/data/listing_conflict_activity.py",
+        "scripts/resolve_listing_conflicts.py",
+        "scripts/audit_listing_conflict_activity.py"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/m11x-listing-conflict-source.yml",
+      "patterns": [
+        ".github/workflows/m11x-listing-conflict-source.yml",
+        "src/pvb24/data/listing_conflict_source.py",
+        "scripts/probe_listing_conflict_sources.py"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/m11x-retained-listing-recovery.yml",
+      "patterns": [
+        ".github/workflows/m11x-retained-listing-recovery.yml",
+        "src/pvb24/data/announcements.py",
+        "src/pvb24/data/announcement_qualification.py",
+        "src/pvb24/data/announcement_recovery.py",
+        "src/pvb24/data/durable_evidence.py",
+        "scripts/recover_retained_listing_facts.py",
+        "scripts/durable_m11t_evidence.py",
+        "docs/data/11t-durable-evidence.json",
+        "evidence/m11t/**"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/m11x-reviewed-listing-facts.yml",
+      "patterns": [
+        ".github/workflows/m11x-reviewed-listing-facts.yml",
+        "src/pvb24/data/reviewed_listing_facts.py",
+        "src/pvb24/data/reviewed_listing_activity.py",
+        "scripts/compile_reviewed_listing_facts.py",
+        "scripts/audit_reviewed_listing_activity.py"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/m11x-reviewed-listing-source.yml",
+      "patterns": [
+        ".github/workflows/m11x-reviewed-listing-source.yml",
+        "src/pvb24/data/reviewed_listing_source.py",
+        "scripts/probe_reviewed_listing_sources.py"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/m11x-security-master-audit.yml",
+      "patterns": [
+        ".github/workflows/m11x-security-master-audit.yml",
+        "src/pvb24/data/security_master_audit.py",
+        "scripts/audit_security_master_obligations.py",
+        "docs/data/11v-historical-metadata-evidence.json"
+      ]
+    }
+  ]
+}

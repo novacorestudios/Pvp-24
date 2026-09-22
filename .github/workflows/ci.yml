@@ -1,6 +1,7 @@
 name: PVB-24 CI
 on: [push, pull_request, workflow_dispatch]
 permissions:
+  actions: write
   contents: read
 jobs:
   governance:
@@ -34,3 +35,27 @@ jobs:
       - run: .deps/freqtrade/.venv/bin/python scripts/smoke_freqtrade.py
       - run: .deps/freqtrade/.venv/bin/python scripts/smoke_freqtrade_parity.py
       - run: .deps/freqtrade/.venv/bin/python scripts/smoke_freqtrade_parity.py --framework
+
+  dispatch-evidence:
+    needs: [governance, freqtrade-smoke]
+    if: >-
+      github.event_name == 'push' &&
+      github.repository == 'novacorestudios/Pvp-24' &&
+      github.ref == 'refs/heads/build/pvb24-v1' &&
+      needs.governance.result == 'success' &&
+      needs.freqtrade-smoke.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Dispatch only affected evidence workflows
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/dispatch_evidence_workflows.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --ref build/pvb24-v1 \
+            --source-sha "$GITHUB_SHA" \
+            --base "${{ github.event.before }}" \
+            --head "$GITHUB_SHA"
