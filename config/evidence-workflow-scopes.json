@@ -1,17 +1,18 @@
 {
   "schema": "PVB24_EVIDENCE_WORKFLOW_SCOPES_V1",
   "common": [
-    "src/pvb24/data/evidence_ci.py",
-    "scripts/verify_evidence_ci.py",
-    "scripts/qualify_evidence_artifact.py",
-    "scripts/dispatch_evidence_workflows.py",
-    "tests/test_evidence_ci.py",
-    "tests/test_evidence_dispatch.py",
     "config/evidence-workflow-scopes.json",
+    "pyproject.toml",
+    "scripts/dispatch_evidence_workflows.py",
+    "scripts/qualify_evidence_artifact.py",
+    "scripts/verify_evidence_ci.py",
     "scripts/verify_provenance.py",
+    "src/pvb24/data/evidence_ci.py",
     "src/pvb24/ids.py",
     "src/pvb24/types.py",
-    "pyproject.toml"
+    "tests/test_evidence_ci.py",
+    "tests/test_evidence_dispatch.py",
+    "tests/test_evidence_workflow_policy.py"
   ],
   "workflows": [
     {
