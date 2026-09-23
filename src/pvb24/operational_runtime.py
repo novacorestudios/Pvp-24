@@ -6,6 +6,7 @@ change frozen controls, or authorize an execution transport.
 
 from dataclasses import dataclass
 
+from pvb24.integrations.execution_adapter import ExecutionAdapter
 from pvb24.integrations.freqtrade_bridge import SharedPaperBridge, require_executor_config
 
 
@@ -22,6 +23,7 @@ class OperationalRuntime:
         require_executor_config(config)
         self.config = config
         self.bridge = SharedPaperBridge(config, journal, scope)
+        self.execution = ExecutionAdapter(self.bridge)
         self._started = False
         self._closed = False
 
@@ -63,13 +65,13 @@ class OperationalRuntime:
 
     def dispatch_local_entry(self, client_id, inputs, book):
         self._guard()
-        return self.bridge.dispatch_local_entry(client_id, inputs, book)
+        return self.execution.submit_entry(client_id, inputs, book)
 
     def pump(self, *, max_actions=100, max_events=100):
         self._guard()
         if self.bridge.local_session is None:
             return None
-        return self.bridge.pump_local(max_actions=max_actions, max_events=max_events)
+        return self.execution.pump(max_actions=max_actions, max_events=max_events)
 
     def close(self):
         if self._closed:
