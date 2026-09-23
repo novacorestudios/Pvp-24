@@ -101,9 +101,7 @@ class OperationalRuntime:
             raise RuntimeError("Runtime recovery must complete before reconciliation")
         if self.reconciliation is None:
             raise RuntimeError("Account reconciliation is not bound")
-        result = self.reconciliation.reconcile(
-            observed, now, reduction_models=reduction_models
-        )
+        result = self.reconciliation.reconcile(observed, now, reduction_models=reduction_models)
         self._reconciled = result.entry_gate_ready
         return result
 
