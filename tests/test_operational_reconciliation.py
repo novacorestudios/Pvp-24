@@ -24,6 +24,8 @@ def test_runtime_guard_blocks_until_bound_reconciliation_is_ready():
     runtime.config = {
         "dry_run": True,
         "live_enabled": False,
+        "trading_mode": "futures",
+        "margin_mode": "isolated",
         "timeframe": "1h",
         "max_open_trades": 3,
         "trailing_stop": False,
