@@ -1,6 +1,70 @@
-# Handoff — Post-audit remediation checkpoint
+# Handoff — Operational runtime closure checkpoint
 
-## Current authoritative checkpoint — 2026-09-22
+## Current authoritative checkpoint — 2026-09-23
+
+- Repository: `novacorestudios/Pvp-24`; work branch: `build/pvb24-v1`.
+- Operational-runtime closure checkpoint:
+  `c0b073b8af2b748b0407f55d0f5e5e94618727f6`.
+- Verification: **PVB-24 CI #349 — SUCCESS**.
+- CI #349 passed **801 tests**, Ruff format/check, frozen provenance,
+  operational-package preflight, reference smoke, Freqtrade smoke, Freqtrade
+  parity/framework parity, and post-CI evidence dispatch.
+- `governance`: SUCCESS.
+- `freqtrade-smoke`: SUCCESS.
+- `dispatch-evidence`: SUCCESS.
+- Frozen provenance remains unchanged:
+  `source_sha256=098a3ca390bce81d506bdec011fc3a936ecbb793f46c2f117f337998bfc1c5d8`,
+  `config_hash=6d267edbcde56081012bc7b93d46f2c7f345aceb0e3bc769095ba53ef00b5be7`.
+- LIVE remains **DISABLED**.
+- PAPER readiness remains **false / NOT READY**.
+- Operational readiness in the committed Freqtrade package remains **false**.
+- Final Test remains **LOCKED**.
+- Historical performance remains **BLOCKED** by the frozen historical-readiness gate.
+- No strategy/Alpha/threshold/sizing/leverage/risk/entry/exit semantics changed.
+
+### Operational engineering closure
+
+The production-runtime engineering lane requested after the audit is now closed
+at the checkpoint above:
+
+1. Runtime wiring — complete and CI-verified.
+2. Durable execution adapter — complete and CI-verified.
+3. Restart/recovery gate — complete and CI-verified.
+4. Account/owned-position reconciliation boundary — complete and CI-verified.
+5. Operational configuration validation — complete and bound to frozen controls.
+6. Safety/preflight — complete and executed by CI.
+7. Production regression/Ruff/smoke validation — complete on the exact checkpoint.
+8. Operational release/runbook — documented in `docs/OPERATIONAL_RELEASE.md`.
+
+The reconciliation entry gate blocks new strategy cycles and new entries when
+account state is not ready, while fresh evidence delivery and safety-critical
+protection/exit pumping remain available. This prevents a reconciliation pause
+from deadlocking the actions required to make an owned position safer.
+
+Restart remains fail-closed: execution recovery must complete before account
+reconciliation and before new strategy operation. Shutdown resets recovery and
+reconciliation readiness so a later process must establish both again.
+
+The operational preflight now verifies the frozen strategy configuration hash,
+PAPER-only mode, UTC timebase, pinned Freqtrade identity, operational
+strategy/execution controls, manifest provenance, disabled LIVE state, blocked
+execution transport and unpromoted PAPER readiness.
+
+### Boundary after operational closure
+
+This checkpoint closes implementation of the operational runtime; it does **not**
+claim that the project is ready to trade.
+
+The separate historical/data qualification lane remains authoritative for PAPER
+readiness and any future performance evaluation. In particular, the existing
+historical readiness matrix remains fail-closed and Final Test must not be
+unlocked until its independent prerequisites are satisfied.
+
+---
+
+## Prior authoritative checkpoint — 2026-09-22
+
+## Audit-remediation checkpoint — 2026-09-22
 
 - Repository: `novacorestudios/Pvp-24`; work branch: `build/pvb24-v1`.
 - Audit-remediation implementation checkpoint after strict F4/F9 closure:
