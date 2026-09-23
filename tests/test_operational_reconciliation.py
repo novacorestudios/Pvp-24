@@ -22,9 +22,7 @@ def test_runtime_guard_blocks_until_bound_reconciliation_is_ready():
     runtime._reconciled = False
     runtime.reconciliation = object()
     runtime.config = {}
-    runtime.bridge = SimpleNamespace(
-        local_session=None, _guard=lambda: None
-    )
+    runtime.bridge = SimpleNamespace(local_session=None, _guard=lambda: None)
     with pytest.raises(RuntimeError, match="reconciliation must complete"):
         runtime._guard()
 
