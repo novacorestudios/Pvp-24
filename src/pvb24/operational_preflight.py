@@ -1,6 +1,6 @@
 """Fail-closed packaging preflight for a deployable PVB-24 PAPER process.
 
-This module validates immutable repository/runtime wiring only.  It does not
+This module validates immutable repository/runtime wiring only. It does not
 connect to an exchange, run strategy performance, or authorize LIVE trading.
 """
 
@@ -45,6 +45,18 @@ def require_operational_package(root: str | Path) -> PreflightReport:
     manifest = _load_object(manifest_path)
     require_paper(config)
 
+    if config.get("strategy") != "PVB24Executor":
+        raise ValueError("PAPER config must select PVB24Executor")
+    pvb24 = config.get("pvb24")
+    if not isinstance(pvb24, dict):
+        raise ValueError("PAPER config requires a pvb24 control block")
+    if pvb24.get("operational_ready") is not False:
+        raise ValueError("Packaging preflight cannot promote operational readiness")
+    if pvb24.get("execution_transport") != "BLOCKED_UNTIL_QUALIFIED":
+        raise ValueError("Execution transport must remain blocked until qualified")
+    if pvb24.get("config_purpose") != "SHARED_STRATEGY_LOAD_AND_PARITY_ONLY":
+        raise ValueError("PAPER config purpose changed outside the qualified operational scope")
+
     if manifest.get("branch") != "build/pvb24-v1":
         raise ValueError("Operational package must remain bound to build/pvb24-v1")
     if manifest.get("freeze_status") != "FROZEN_BEFORE_PERFORMANCE":
@@ -71,6 +83,9 @@ def require_operational_package(root: str | Path) -> PreflightReport:
         checks=(
             "paper-config-fail-closed",
             "strategy-executor-present",
+            "strategy-selection-pinned",
+            "execution-transport-blocked",
+            "operational-readiness-not-promoted",
             "frozen-provenance-present",
             "performance-not-run",
             "live-disabled",
