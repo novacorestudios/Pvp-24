@@ -6,6 +6,7 @@ change frozen controls, or authorize an execution transport.
 
 from dataclasses import dataclass
 
+from pvb24.integrations.account_reconciliation_adapter import AccountReconciliationAdapter
 from pvb24.integrations.execution_adapter import ExecutionAdapter
 from pvb24.integrations.freqtrade_bridge import SharedPaperBridge, require_executor_config
 
@@ -33,6 +34,8 @@ class OperationalRuntime:
         self._started = False
         self._closed = False
         self._recovered = False
+        self.reconciliation = None
+        self._reconciled = False
 
     def start(self):
         if self._closed:
@@ -44,6 +47,7 @@ class OperationalRuntime:
         # Core delivery/planning may run without a transport.  Once a durable
         # PAPER session is bound, recovery becomes mandatory before operation.
         self._recovered = self.bridge.local_session is None
+        self._reconciled = self.reconciliation is None
         return self
 
     def _guard(self):
@@ -53,6 +57,8 @@ class OperationalRuntime:
         self.bridge._guard()
         if self.bridge.local_session is not None and not self._recovered:
             raise RuntimeError("Runtime recovery must complete before operation")
+        if self.reconciliation is not None and not self._reconciled:
+            raise RuntimeError("Account reconciliation must complete before operation")
 
     def bind_local_paper_model(
         self, backend, clock, *, max_protection_ack_age=None, protection_policy_id=None
@@ -77,6 +83,29 @@ class OperationalRuntime:
         recovery = self.execution.recover(max_events=max_events)
         self._recovered = recovery.caught_up and not recovery.unresolved
         return RuntimeRecovery(recovery, self._recovered)
+
+    def bind_account_reconciliation(self, policy):
+        if not self._started or self._closed:
+            raise RuntimeError("Runtime is not active")
+        if self.reconciliation is not None:
+            raise RuntimeError("Account reconciliation already bound")
+        self.reconciliation = AccountReconciliationAdapter(
+            self.bridge.journal, self.bridge.scope, policy
+        )
+        self._reconciled = False
+
+    def reconcile_account(self, observed, now, *, reduction_models=None):
+        if not self._started or self._closed:
+            raise RuntimeError("Runtime is not active")
+        if not self._recovered:
+            raise RuntimeError("Runtime recovery must complete before reconciliation")
+        if self.reconciliation is None:
+            raise RuntimeError("Account reconciliation is not bound")
+        result = self.reconciliation.reconcile(
+            observed, now, reduction_models=reduction_models
+        )
+        self._reconciled = result.entry_gate_ready
+        return result
 
     def deliver(self, delivery):
         self._guard()
