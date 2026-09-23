@@ -21,7 +21,16 @@ def test_runtime_guard_blocks_until_bound_reconciliation_is_ready():
     runtime._recovered = True
     runtime._reconciled = False
     runtime.reconciliation = object()
-    runtime.config = {}
+    runtime.config = {
+        "dry_run": True,
+        "live_enabled": False,
+        "timeframe": "1h",
+        "max_open_trades": 3,
+        "trailing_stop": False,
+        "position_adjustment_enable": False,
+        "minimal_roi": {},
+        "pvb24": {"operational_ready": False, "quality_mode": "VERIFIED"},
+    }
     runtime.bridge = SimpleNamespace(local_session=None, _guard=lambda: None)
     with pytest.raises(RuntimeError, match="reconciliation must complete"):
         runtime._guard()
