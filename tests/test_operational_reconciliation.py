@@ -46,13 +46,15 @@ def test_runtime_guard_blocks_until_bound_reconciliation_is_ready():
         runtime._guard()
 
 
-def test_reconciliation_result_controls_runtime_gate():
+def test_reconciliation_result_controls_runtime_gate(monkeypatch):
     runtime = OperationalRuntime.__new__(OperationalRuntime)
     runtime._started = True
     runtime._closed = False
     runtime._recovered = True
     runtime._reconciled = False
-    runtime.bridge = SimpleNamespace()
+    runtime.config = {}
+    runtime.bridge = SimpleNamespace(local_session=None, _guard=lambda: None)
+    monkeypatch.setattr("pvb24.operational_runtime.require_executor_config", lambda config: None)
     results = iter(
         [
             SimpleNamespace(entry_gate_ready=False),
@@ -68,12 +70,15 @@ def test_reconciliation_result_controls_runtime_gate():
     assert runtime._reconciled is True
 
 
-def test_reconciliation_requires_restart_recovery_first():
+def test_reconciliation_requires_restart_recovery_first(monkeypatch):
     runtime = OperationalRuntime.__new__(OperationalRuntime)
     runtime._started = True
     runtime._closed = False
     runtime._recovered = False
+    runtime.config = {}
+    runtime.bridge = SimpleNamespace(local_session=None, _guard=lambda: None)
     runtime.reconciliation = object()
+    monkeypatch.setattr("pvb24.operational_runtime.require_executor_config", lambda config: None)
     with pytest.raises(RuntimeError, match="recovery must complete"):
         runtime.reconcile_account("observation", "now")
 
