@@ -16,6 +16,12 @@ class RuntimeCycle:
     plan: object
 
 
+@dataclass(frozen=True)
+class RuntimeRecovery:
+    execution: object | None
+    ready: bool
+
+
 class OperationalRuntime:
     """Wire recovery, market delivery, signals and planning through one authority."""
 
@@ -26,6 +32,7 @@ class OperationalRuntime:
         self.execution = ExecutionAdapter(self.bridge)
         self._started = False
         self._closed = False
+        self._recovered = False
 
     def start(self):
         if self._closed:
@@ -34,6 +41,9 @@ class OperationalRuntime:
             raise RuntimeError("Runtime already started")
         require_executor_config(self.config)
         self._started = True
+        # Core delivery/planning may run without a transport.  Once a durable
+        # PAPER session is bound, recovery becomes mandatory before operation.
+        self._recovered = self.bridge.local_session is None
         return self
 
     def _guard(self):
@@ -41,6 +51,8 @@ class OperationalRuntime:
             raise RuntimeError("Runtime is not active")
         require_executor_config(self.config)
         self.bridge._guard()
+        if self.bridge.local_session is not None and not self._recovered:
+            raise RuntimeError("Runtime recovery must complete before operation")
 
     def bind_local_paper_model(
         self, backend, clock, *, max_protection_ack_age=None, protection_policy_id=None
@@ -52,6 +64,19 @@ class OperationalRuntime:
             max_protection_ack_age=max_protection_ack_age,
             protection_policy_id=protection_policy_id,
         )
+        self._recovered = False
+
+    def recover(self, *, max_events=100):
+        if not self._started or self._closed:
+            raise RuntimeError("Runtime is not active")
+        require_executor_config(self.config)
+        self.bridge._guard()
+        if self.bridge.local_session is None:
+            self._recovered = True
+            return RuntimeRecovery(None, True)
+        recovery = self.execution.recover(max_events=max_events)
+        self._recovered = recovery.caught_up and not recovery.unresolved
+        return RuntimeRecovery(recovery, self._recovered)
 
     def deliver(self, delivery):
         self._guard()
@@ -79,6 +104,7 @@ class OperationalRuntime:
         self.bridge.close_local()
         self._closed = True
         self._started = False
+        self._recovered = False
 
     def __enter__(self):
         return self.start()
