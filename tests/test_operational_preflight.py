@@ -14,6 +14,8 @@ def test_repository_operational_package_is_fail_closed():
     assert report.live_enabled is False
     assert report.paper_ready is False
     assert "performance-not-run" in report.checks
+    assert "strategy-selection-pinned" in report.checks
+    assert "execution-transport-blocked" in report.checks
 
 
 def _copy_package(tmp_path):
@@ -26,6 +28,11 @@ def _copy_package(tmp_path):
         target = tmp_path / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(source.read_bytes())
+
+
+def _config(tmp_path):
+    path = tmp_path / "integrations/freqtrade/config.pvb24.paper.json"
+    return path, json.loads(path.read_text())
 
 
 def test_preflight_rejects_live_enablement(tmp_path):
@@ -52,4 +59,40 @@ def test_preflight_rejects_missing_strategy_executor(tmp_path):
     _copy_package(tmp_path)
     (tmp_path / "integrations/freqtrade/strategies/PVB24Executor.py").unlink()
     with pytest.raises(ValueError, match="Required operational package file missing"):
+        require_operational_package(tmp_path)
+
+
+def test_preflight_rejects_strategy_selection_drift(tmp_path):
+    _copy_package(tmp_path)
+    path, config = _config(tmp_path)
+    config["strategy"] = "OtherStrategy"
+    path.write_text(json.dumps(config))
+    with pytest.raises(ValueError, match="must select PVB24Executor"):
+        require_operational_package(tmp_path)
+
+
+def test_preflight_rejects_operational_readiness_promotion(tmp_path):
+    _copy_package(tmp_path)
+    path, config = _config(tmp_path)
+    config["pvb24"]["operational_ready"] = True
+    path.write_text(json.dumps(config))
+    with pytest.raises(ValueError, match="cannot promote operational readiness"):
+        require_operational_package(tmp_path)
+
+
+def test_preflight_rejects_execution_transport_enablement(tmp_path):
+    _copy_package(tmp_path)
+    path, config = _config(tmp_path)
+    config["pvb24"]["execution_transport"] = "ENABLED"
+    path.write_text(json.dumps(config))
+    with pytest.raises(ValueError, match="Execution transport must remain blocked"):
+        require_operational_package(tmp_path)
+
+
+def test_preflight_rejects_config_purpose_drift(tmp_path):
+    _copy_package(tmp_path)
+    path, config = _config(tmp_path)
+    config["pvb24"]["config_purpose"] = "LIVE"
+    path.write_text(json.dumps(config))
+    with pytest.raises(ValueError, match="config purpose changed"):
         require_operational_package(tmp_path)
