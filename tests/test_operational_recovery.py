@@ -45,6 +45,8 @@ def runtime(session, recoveries=()):
     value._started = True
     value._closed = False
     value._recovered = False
+    value.reconciliation = None
+    value._reconciled = True
     return value
 
 
