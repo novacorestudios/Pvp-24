@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from pvb24.operational_preflight import require_operational_package
 
 
