@@ -6,11 +6,12 @@ connect to an exchange, run strategy performance, or authorize LIVE trading.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from pvb24.safety import require_paper
+from pvb24.integrations.freqtrade_bridge import require_executor_config
 
 
 @dataclass(frozen=True)
@@ -18,6 +19,7 @@ class PreflightReport:
     strategy_executor: str
     config: str
     manifest: str
+    strategy_config: str
     live_enabled: bool
     paper_ready: bool
     checks: tuple[str, ...]
@@ -35,15 +37,45 @@ def require_operational_package(root: str | Path) -> PreflightReport:
     root = Path(root).resolve()
     config_path = root / "integrations/freqtrade/config.pvb24.paper.json"
     manifest_path = root / "config/manifest.json"
+    strategy_config_path = root / "config/pvb24_v1.json"
     strategy_path = root / "integrations/freqtrade/strategies/PVB24Executor.py"
 
-    for path in (config_path, manifest_path, strategy_path):
+    for path in (config_path, manifest_path, strategy_config_path, strategy_path):
         if not path.is_file():
             raise ValueError(f"Required operational package file missing: {path.relative_to(root)}")
 
     config = _load_object(config_path)
     manifest = _load_object(manifest_path)
-    require_paper(config)
+    strategy_config = _load_object(strategy_config_path)
+    require_executor_config(config)
+
+    canonical = json.dumps(
+        strategy_config, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    )
+    if hashlib.sha256(canonical.encode("utf-8")).hexdigest() != manifest.get("config_hash"):
+        raise ValueError("Frozen strategy configuration checksum mismatch")
+    if strategy_config.get("mode") != "PAPER" or strategy_config.get("live_enabled") is not False:
+        raise ValueError("Frozen strategy configuration must remain PAPER-only")
+    if strategy_config.get("timezone") != "UTC":
+        raise ValueError("Frozen strategy configuration must remain UTC")
+    if strategy_config.get("freqtrade") != manifest.get("freqtrade"):
+        raise ValueError("Frozen strategy and manifest Freqtrade pins differ")
+
+    signal = strategy_config.get("signal", {})
+    risk = strategy_config.get("risk", {})
+    execution = strategy_config.get("execution", {})
+    exit_config = strategy_config.get("exit", {})
+    if signal.get("timeframe_seconds") != 3600 or config.get("timeframe") != "1h":
+        raise ValueError("Operational timeframe differs from frozen strategy")
+    if risk.get("max_positions") != config.get("max_open_trades"):
+        raise ValueError("Operational position capacity differs from frozen strategy")
+    if (
+        execution.get("entry_type") != "LIMIT"
+        or execution.get("entry_tif") != "IOC"
+        or execution.get("margin_mode") != "ISOLATED"
+        or exit_config.get("stop_reference") != "CONTRACT_PRICE"
+    ):
+        raise ValueError("Operational execution controls differ from frozen strategy")
 
     if config.get("strategy") != "PVB24Executor":
         raise ValueError("PAPER config must select PVB24Executor")
@@ -78,10 +110,15 @@ def require_operational_package(root: str | Path) -> PreflightReport:
         strategy_executor=str(strategy_path.relative_to(root)),
         config=str(config_path.relative_to(root)),
         manifest=str(manifest_path.relative_to(root)),
+        strategy_config=str(strategy_config_path.relative_to(root)),
         live_enabled=False,
         paper_ready=False,
         checks=(
             "paper-config-fail-closed",
+            "frozen-config-hash-verified",
+            "paper-mode-pinned",
+            "utc-timebase-pinned",
+            "operational-controls-cross-checked",
             "strategy-executor-present",
             "strategy-selection-pinned",
             "execution-transport-blocked",

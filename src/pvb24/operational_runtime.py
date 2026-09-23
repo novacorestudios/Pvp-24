@@ -50,20 +50,23 @@ class OperationalRuntime:
         self._reconciled = self.reconciliation is None
         return self
 
-    def _guard(self):
+    def _base_guard(self):
         if not self._started or self._closed:
             raise RuntimeError("Runtime is not active")
         require_executor_config(self.config)
         self.bridge._guard()
         if self.bridge.local_session is not None and not self._recovered:
             raise RuntimeError("Runtime recovery must complete before operation")
+
+    def _guard(self):
+        self._base_guard()
         if self.reconciliation is not None and not self._reconciled:
             raise RuntimeError("Account reconciliation must complete before operation")
 
     def bind_local_paper_model(
         self, backend, clock, *, max_protection_ack_age=None, protection_policy_id=None
     ):
-        self._guard()
+        self._base_guard()
         self.bridge.bind_local_model(
             backend,
             clock,
@@ -87,6 +90,8 @@ class OperationalRuntime:
     def bind_account_reconciliation(self, policy):
         if not self._started or self._closed:
             raise RuntimeError("Runtime is not active")
+        require_executor_config(self.config)
+        self.bridge._guard()
         if self.reconciliation is not None:
             raise RuntimeError("Account reconciliation already bound")
         self.reconciliation = AccountReconciliationAdapter(
@@ -95,8 +100,7 @@ class OperationalRuntime:
         self._reconciled = False
 
     def reconcile_account(self, observed, now, *, reduction_models=None):
-        if not self._started or self._closed:
-            raise RuntimeError("Runtime is not active")
+        self._base_guard()
         if not self._recovered:
             raise RuntimeError("Runtime recovery must complete before reconciliation")
         if self.reconciliation is None:
@@ -106,7 +110,9 @@ class OperationalRuntime:
         return result
 
     def deliver(self, delivery):
-        self._guard()
+        # Evidence delivery must remain available while new entries are paused by
+        # account reconciliation; otherwise stale state could prevent recovery.
+        self._base_guard()
         return self.bridge.deliver(delivery)
 
     def cycle(self, universe, signal_time, inputs, now):
@@ -120,7 +126,9 @@ class OperationalRuntime:
         return self.execution.submit_entry(client_id, inputs, book)
 
     def pump(self, *, max_actions=100, max_events=100):
-        self._guard()
+        # Safety-critical protection/exit actions must continue while the
+        # reconciliation entry gate is closed.
+        self._base_guard()
         if self.bridge.local_session is None:
             return None
         return self.execution.pump(max_actions=max_actions, max_events=max_events)
@@ -132,6 +140,7 @@ class OperationalRuntime:
         self._closed = True
         self._started = False
         self._recovered = False
+        self._reconciled = False
 
     def __enter__(self):
         return self.start()

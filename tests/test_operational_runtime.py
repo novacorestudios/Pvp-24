@@ -56,3 +56,5 @@ def test_runtime_close_is_idempotent():
     assert runtime.bridge.calls == 1
     assert runtime._closed is True
     assert runtime._started is False
+    assert runtime._recovered is False
+    assert runtime._reconciled is False

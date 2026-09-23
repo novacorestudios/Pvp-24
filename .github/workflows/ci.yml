@@ -19,6 +19,7 @@ jobs:
       - run: python -m ruff check .
       - run: python -m pytest -q
       - run: python scripts/verify_provenance.py
+      - run: python scripts/check_operational_package.py
       - run: python scripts/smoke_reference.py --output artifacts/reference-smoke-ci
   freqtrade-smoke:
     runs-on: ubuntu-latest

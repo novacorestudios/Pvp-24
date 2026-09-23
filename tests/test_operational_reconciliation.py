@@ -76,3 +76,45 @@ def test_reconciliation_requires_restart_recovery_first():
     runtime.reconciliation = object()
     with pytest.raises(RuntimeError, match="recovery must complete"):
         runtime.reconcile_account("observation", "now")
+
+
+def test_reconciliation_gate_keeps_evidence_and_protective_pump_available(monkeypatch):
+    runtime = OperationalRuntime.__new__(OperationalRuntime)
+    runtime._started = True
+    runtime._closed = False
+    runtime._recovered = True
+    runtime._reconciled = False
+    runtime.reconciliation = object()
+    runtime.config = {}
+    delivered = []
+    runtime.bridge = SimpleNamespace(
+        local_session=object(),
+        _guard=lambda: None,
+        deliver=lambda value: delivered.append(value) or "delivered",
+    )
+    runtime.execution = SimpleNamespace(
+        pump=lambda *, max_actions=100, max_events=100: ("pumped", max_actions, max_events)
+    )
+    monkeypatch.setattr("pvb24.operational_runtime.require_executor_config", lambda config: None)
+
+    assert runtime.deliver("fresh-evidence") == "delivered"
+    assert delivered == ["fresh-evidence"]
+    assert runtime.pump(max_actions=7, max_events=9) == ("pumped", 7, 9)
+
+    with pytest.raises(RuntimeError, match="reconciliation must complete"):
+        runtime.dispatch_local_entry("cid", "inputs", "book")
+
+
+def test_reconciliation_gate_blocks_new_strategy_cycle(monkeypatch):
+    runtime = OperationalRuntime.__new__(OperationalRuntime)
+    runtime._started = True
+    runtime._closed = False
+    runtime._recovered = True
+    runtime._reconciled = False
+    runtime.reconciliation = object()
+    runtime.config = {}
+    runtime.bridge = SimpleNamespace(local_session=None, _guard=lambda: None)
+    monkeypatch.setattr("pvb24.operational_runtime.require_executor_config", lambda config: None)
+
+    with pytest.raises(RuntimeError, match="reconciliation must complete"):
+        runtime.cycle("universe", "signal-time", "inputs", "now")

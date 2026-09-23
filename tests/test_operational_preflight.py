@@ -1,3 +1,4 @@
+import hashlib
 import json
 from pathlib import Path
 
@@ -13,6 +14,9 @@ def test_repository_operational_package_is_fail_closed():
     assert report.strategy_executor == "integrations/freqtrade/strategies/PVB24Executor.py"
     assert report.live_enabled is False
     assert report.paper_ready is False
+    assert report.strategy_config == "config/pvb24_v1.json"
+    assert "frozen-config-hash-verified" in report.checks
+    assert "operational-controls-cross-checked" in report.checks
     assert "performance-not-run" in report.checks
     assert "strategy-selection-pinned" in report.checks
     assert "execution-transport-blocked" in report.checks
@@ -22,6 +26,7 @@ def _copy_package(tmp_path):
     for relative in (
         "integrations/freqtrade/config.pvb24.paper.json",
         "config/manifest.json",
+        "config/pvb24_v1.json",
         "integrations/freqtrade/strategies/PVB24Executor.py",
     ):
         source = ROOT / relative
@@ -95,4 +100,31 @@ def test_preflight_rejects_config_purpose_drift(tmp_path):
     config["pvb24"]["config_purpose"] = "LIVE"
     path.write_text(json.dumps(config))
     with pytest.raises(ValueError, match="config purpose changed"):
+        require_operational_package(tmp_path)
+
+
+def test_preflight_rejects_frozen_config_tampering(tmp_path):
+    _copy_package(tmp_path)
+    path = tmp_path / "config/pvb24_v1.json"
+    config = json.loads(path.read_text())
+    config["mode"] = "LIVE"
+    path.write_text(json.dumps(config))
+    with pytest.raises(ValueError, match="checksum mismatch"):
+        require_operational_package(tmp_path)
+
+
+def test_preflight_rejects_semantic_paper_mode_drift_even_with_rehashed_manifest(tmp_path):
+    _copy_package(tmp_path)
+    config_path = tmp_path / "config/pvb24_v1.json"
+    config = json.loads(config_path.read_text())
+    config["mode"] = "LIVE"
+    config_path.write_text(json.dumps(config))
+
+    canonical = json.dumps(config, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    manifest_path = tmp_path / "config/manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["config_hash"] = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    manifest_path.write_text(json.dumps(manifest))
+
+    with pytest.raises(ValueError, match="must remain PAPER-only"):
         require_operational_package(tmp_path)
